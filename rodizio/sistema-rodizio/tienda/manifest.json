@@ -1,0 +1,32 @@
+{
+  "name": "Rodízio Cúcuta — Menú y Pedidos",
+  "short_name": "Rodízio Cúcuta",
+  "description": "Pide tu rodízio favorito desde el celular: menú, carrito y seguimiento de pedido.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c0e12",
+  "theme_color": "#2A2D33",
+  "lang": "es-CO",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

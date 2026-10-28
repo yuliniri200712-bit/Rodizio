@@ -1,0 +1,1432 @@
+{
+  "admins": {
+    "5RvHI9C3LQUJe5tDlJx7CwyvbZI2": true
+  },
+  "cashSettlements": {
+    "-P0UlCqrLWSSNCaZVkgd": {
+      "actualCash": 39000,
+      "closedAt": 1788313132655,
+      "difference": 0,
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "expectedCash": 39000,
+      "ordersCount": 1
+    },
+    "-P0UmjAhpjVgRPT45DBW": {
+      "actualCash": 39000,
+      "closedAt": 1788313531281,
+      "difference": 0,
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "expectedCash": 39000,
+      "ordersCount": 1
+    },
+    "-P0V0pQ3aHGX59kvjJcT": {
+      "actualCash": 39000,
+      "closedAt": 1788317488968,
+      "difference": 0,
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "expectedCash": 39000,
+      "ordersCount": 1
+    },
+    "-P0XW0GfHvHwVRruNG7R": {
+      "actualCash": 29000,
+      "closedAt": 1788359218485,
+      "difference": 0,
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "expectedCash": 29000,
+      "ordersCount": 1
+    },
+    "-P0bDMc12Ngf9g3dAb8l": {
+      "actualCash": 50000,
+      "closedAt": 1788438215336,
+      "difference": -45000,
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "expectedCash": 95000,
+      "ordersCount": 1
+    },
+    "-P0iXNgrONeoEaZolulD": {
+      "actualCash": 39000,
+      "closedAt": 1788560903088,
+      "difference": 0,
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "expectedCash": 39000,
+      "ordersCount": 1
+    },
+    "-P0mR510f_7Co1EO2W4V": {
+      "actualCash": 147000,
+      "closedAt": 1788626362621,
+      "difference": 0,
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "expectedCash": 147000,
+      "ordersCount": 1
+    }
+  },
+  "categories": {
+    "acompanamientos": {
+      "name": "Acompañamientos",
+      "order": 4
+    },
+    "aves": {
+      "name": "Aves",
+      "order": 1
+    },
+    "bebidas": {
+      "name": "Bebidas",
+      "order": 6
+    },
+    "cerdo": {
+      "name": "Cerdo",
+      "order": 2
+    },
+    "cortes": {
+      "name": "Cortes de Res",
+      "order": 0
+    },
+    "embutidos": {
+      "name": "Embutidos",
+      "order": 3
+    },
+    "postres": {
+      "name": "Postres",
+      "order": 5
+    }
+  },
+  "consents": {
+    "2kyna7BawxQpJU4XXlxoG8t2rAN2": {
+      "accepted": true,
+      "at": 1788358609801,
+      "scope": "cliente"
+    },
+    "AF5jVL2vhJUa4HNs1CP0OLePSuX2": {
+      "accepted": true,
+      "at": 1788566463579,
+      "scope": "cliente"
+    },
+    "PrIFt3HAs9S7jUjRlenGEve3luq2": {
+      "accepted": true,
+      "at": 1788309750557,
+      "scope": "cliente"
+    }
+  },
+  "driverRatings": {
+    "-P0P5x5cSXyhFN9StWxp": {
+      "at": 1788570920868,
+      "customerName": "julian rolon",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "rating": 5
+    },
+    "-P0bCakRD6qtVjHTg4kS": {
+      "at": 1788438250495,
+      "customerName": "julian rolon",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "rating": 5
+    },
+    "-P0iX09pTHkixC6J5M6p": {
+      "at": 1788566509864,
+      "customerName": "julian rolon",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "rating": 5
+    },
+    "-P0mQQTuMmvRbOzLMvnI": {
+      "at": 1788626345878,
+      "customerName": "julian rolon",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "rating": 4
+    }
+  },
+  "drivers": {
+    "tfxFFuPXvdY3umT8PXEU02fArUh2": {
+      "access": true,
+      "available": true,
+      "name": "Julian Rolon",
+      "phone": "3332218536"
+    }
+  },
+  "errorLogs": {
+    "-P0byawS1r0Fe-mjC65T": {
+      "at": 1788450861001,
+      "context": "driver:cashHistory",
+      "message": "permission_denied at /cashSettlements: Client doesn't have permission to access the desired data.",
+      "stack": "Error: permission_denied at /cashSettlements: Client doesn't have permission to access the desired data.\n    at errorForServerCode (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:133213)\n    at onComplete (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:133291)\n    at Object.onComplete (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:144994)\n    at PersistentConnection.onListenRevoked_ (https://www.gstatic.com/firebasejs/10.13.0/firebase-dat",
+      "url": "https://rodizio-driver.web.app/",
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Mobile Safari/537.36"
+    },
+    "-P0d2uU_MQIty95LWEld": {
+      "at": 1788469028974,
+      "context": "driver:cashHistory",
+      "message": "permission_denied at /cashSettlements: Client doesn't have permission to access the desired data.",
+      "stack": "Error: permission_denied at /cashSettlements: Client doesn't have permission to access the desired data.\n    at errorForServerCode (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:133213)\n    at onComplete (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:133291)\n    at Object.onComplete (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:144994)\n    at PersistentConnection.onListenRevoked_ (https://www.gstatic.com/firebasejs/10.13.0/firebase-dat",
+      "url": "https://rodizio-driver.web.app/",
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Mobile Safari/537.36"
+    },
+    "-P0iWwfe25I7jk7V-Skv": {
+      "at": 1788560788350,
+      "context": "driver:cashHistory",
+      "message": "permission_denied at /cashSettlements: Client doesn't have permission to access the desired data.",
+      "stack": "Error: permission_denied at /cashSettlements: Client doesn't have permission to access the desired data.\n    at errorForServerCode (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:133213)\n    at onComplete (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:133291)\n    at Object.onComplete (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:144994)\n    at PersistentConnection.onListenRevoked_ (https://www.gstatic.com/firebasejs/10.13.0/firebase-dat",
+      "url": "https://rodizio-driver.web.app/",
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Mobile Safari/537.36"
+    },
+    "-P0mQThdOvzdy4ULLNoI": {
+      "at": 1788626201576,
+      "context": "driver:cashHistory",
+      "message": "permission_denied at /cashSettlements: Client doesn't have permission to access the desired data.",
+      "stack": "Error: permission_denied at /cashSettlements: Client doesn't have permission to access the desired data.\n    at errorForServerCode (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:133213)\n    at onComplete (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:133291)\n    at Object.onComplete (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:144994)\n    at PersistentConnection.onListenRevoked_ (https://www.gstatic.com/firebasejs/10.13.0/firebase-dat",
+      "url": "https://rodizio-driver.web.app/",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36"
+    },
+    "-P0mQThhnVBc5W5QEfWC": {
+      "at": 1788626201577,
+      "context": "driver:ratings",
+      "message": "permission_denied at /driverRatings: Client doesn't have permission to access the desired data.",
+      "stack": "Error: permission_denied at /driverRatings: Client doesn't have permission to access the desired data.\n    at errorForServerCode (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:133213)\n    at onComplete (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:133291)\n    at Object.onComplete (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:144994)\n    at PersistentConnection.onListenRevoked_ (https://www.gstatic.com/firebasejs/10.13.0/firebase-datab",
+      "url": "https://rodizio-driver.web.app/",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36"
+    },
+    "-P0mcuCPtS-Z_fJKUuLX": {
+      "at": 1788629722050,
+      "context": "driver:cashHistory",
+      "message": "permission_denied at /cashSettlements: Client doesn't have permission to access the desired data.",
+      "stack": "Error: permission_denied at /cashSettlements: Client doesn't have permission to access the desired data.\n    at errorForServerCode (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:133213)\n    at onComplete (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:133291)\n    at Object.onComplete (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:144994)\n    at PersistentConnection.onListenRevoked_ (https://www.gstatic.com/firebasejs/10.13.0/firebase-dat",
+      "url": "https://rodizio-driver.web.app/",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36"
+    },
+    "-P0mcuCSDPJ6fd49erPM": {
+      "at": 1788629722056,
+      "context": "driver:ratings",
+      "message": "permission_denied at /driverRatings: Client doesn't have permission to access the desired data.",
+      "stack": "Error: permission_denied at /driverRatings: Client doesn't have permission to access the desired data.\n    at errorForServerCode (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:133213)\n    at onComplete (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:133291)\n    at Object.onComplete (https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js:1:144994)\n    at PersistentConnection.onListenRevoked_ (https://www.gstatic.com/firebasejs/10.13.0/firebase-datab",
+      "url": "https://rodizio-driver.web.app/",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36"
+    }
+  },
+  "orders": {
+    "-P-zuSUPdaNl5ddzChGx": {
+      "address": "calle 13 # 28-40",
+      "createdAt": 1787778685017,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerName": "julian rolon",
+      "deliveryMode": "domicilio",
+      "items": [
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "",
+          "price": 34000,
+          "qty": 1
+        },
+        {
+          "id": "chorizo-bife",
+          "image": "images/chorizo-bife.jpg",
+          "name": "Bife de Chorizo",
+          "notes": "",
+          "price": 36000,
+          "qty": 2
+        }
+      ],
+      "phone": "123456",
+      "reference": "Apto 701c",
+      "shipping": 5000,
+      "status": "entregado",
+      "subtotal": 106000,
+      "total": 111000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    },
+    "-P0-0BAXrPCg2pwuzsKX": {
+      "address": "calle 13 # 28-40",
+      "createdAt": 1787780449108,
+      "customerEmail": "julianrolon200712@hotmail.com",
+      "deliveryMode": "domicilio",
+      "items": [
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "",
+          "price": 34000,
+          "qty": 1
+        },
+        {
+          "id": "chorizo-bife",
+          "image": "images/chorizo-bife.jpg",
+          "name": "Bife de Chorizo",
+          "notes": "",
+          "price": 36000,
+          "qty": 1
+        }
+      ],
+      "phone": "3052321975",
+      "reference": "",
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P03d5OVU3Zmhy3FbEPU": {
+          "at": 1787858020075,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "recibido"
+        },
+        "-P03d6PgJV9DaNtJHQ7N": {
+          "at": 1787858024240,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P03d6YoNqfBT2_Jr7MS": {
+          "at": 1787858024824,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P03d6ftD8N3OOA7804T": {
+          "at": 1787858025342,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 70000,
+      "total": 75000,
+      "uid": "5RvHI9C3LQUJe5tDlJx7CwyvbZI2"
+    },
+    "-P02-WhmIfOIl6ohWMry": {
+      "address": "calle 13 # 28-40",
+      "createdAt": 1787830606849,
+      "customerEmail": "julianrolon200712@hotmail.com",
+      "deliveryMode": "domicilio",
+      "items": [
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "",
+          "price": 34000,
+          "qty": 2
+        },
+        {
+          "id": "chorizo-bife",
+          "image": "images/chorizo-bife.jpg",
+          "name": "Bife de Chorizo",
+          "notes": "",
+          "price": 36000,
+          "qty": 2
+        }
+      ],
+      "phone": "3052321975",
+      "reference": "Apto 701C",
+      "scheduledFor": 1787875200000,
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P03U6Wzgg06JBCBh9Vr": {
+          "at": 1787855403273,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "recibido"
+        },
+        "-P03U7DLncObzoBWAMIT": {
+          "at": 1787855406111,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P03U7T9hbZN0HYgLcU1": {
+          "at": 1787855407121,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P03U7i_JZljfXluPELj": {
+          "at": 1787855408173,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 140000,
+      "total": 145000,
+      "uid": "5RvHI9C3LQUJe5tDlJx7CwyvbZI2"
+    },
+    "-P03TlkGBM_OGvKaiD73": {
+      "address": "calle 13 # 28-40",
+      "createdAt": 1787855314088,
+      "customerEmail": "julianrolon200712@hotmail.com",
+      "deliveryMode": "domicilio",
+      "etaMinutes": 15,
+      "etaSetAt": 1787855335277,
+      "items": [
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "",
+          "price": 34000,
+          "qty": 2
+        }
+      ],
+      "phone": "3052321975",
+      "reference": "Apto 701C",
+      "shipping": 5000,
+      "status": "cancelado",
+      "subtotal": 68000,
+      "total": 73000,
+      "uid": "5RvHI9C3LQUJe5tDlJx7CwyvbZI2"
+    },
+    "-P0N9KDe1ts92PsmBkpc": {
+      "address": "calle 13 # 28-40",
+      "cashSettled": true,
+      "createdAt": 1788185498658,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerName": "julian rolon",
+      "deliveryMode": "domicilio",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverLocation": {
+        "lat": 7.876646861863359,
+        "lng": -72.49108879502539,
+        "updatedAt": 1788185612499
+      },
+      "driverName": "",
+      "driverPhone": "",
+      "items": [
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "hola",
+          "price": 34000,
+          "qty": 1
+        }
+      ],
+      "phone": "3052321975",
+      "reference": "Apto 701c",
+      "scheduledFor": 1788220800000,
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0N9MZ0Zu8TAr9rPUiJ": {
+          "at": 1788185508233,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0N9NadzvK-ZK6BrWoY": {
+          "at": 1788185512495,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0N9leaGoWYje618EoN": {
+          "at": 1788185615137,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "entregado"
+        },
+        "-P0NDySEqrwSE8tm4ZfX": {
+          "at": 1788186716114,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "recibido"
+        },
+        "-P0NDyc6q--lyKy5S3WW": {
+          "at": 1788186716808,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0NDyqW3j-hW3lFa1eB": {
+          "at": 1788186717729,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0NDyzd3SGWu91OlWzf": {
+          "at": 1788186718316,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "entregado"
+        },
+        "-P0NDzTPG_Zxl-ZxrEOl": {
+          "at": 1788186720282,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "recibido"
+        },
+        "-P0NE-UnDfR4gmO9bHFk": {
+          "at": 1788186724467,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 34000,
+      "total": 39000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    },
+    "-P0P5x5cSXyhFN9StWxp": {
+      "address": "calle 13 # 28-40",
+      "cashSettled": true,
+      "createdAt": 1788218167864,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerName": "julian rolon",
+      "deliveryMode": "domicilio",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverLocation": {
+        "lat": 7.88781410105609,
+        "lng": -72.48976857139839,
+        "updatedAt": 1788219029602
+      },
+      "driverName": "Julian Rolon",
+      "driverPhone": "3332218536",
+      "driverRatingSubmitted": true,
+      "items": [
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "cin cebolla",
+          "price": 34000,
+          "qty": 3
+        },
+        {
+          "id": "gaseosa",
+          "image": "images/gaseosa.jpg",
+          "name": "Gaseosa 400ml",
+          "notes": "",
+          "price": 6000,
+          "qty": 3
+        }
+      ],
+      "phone": "3052321975",
+      "reference": "Apto 701c",
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0P6FqgFintOsVaDnlG": {
+          "at": 1788218248772,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0P6JEKxVkFg9jCmizS": {
+          "at": 1788218262639,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0P9tebgE8bFDB6sR5r": {
+          "at": 1788219202370,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 120000,
+      "total": 125000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    },
+    "-P0RghMSZhMOENF4nJKm": {
+      "address": "calle 13 # 28-40",
+      "cashSettled": true,
+      "createdAt": 1788261619352,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerName": "julian rolon",
+      "deliveryMode": "domicilio",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "driverPhone": "3332218536",
+      "items": [
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "",
+          "price": 34000,
+          "qty": 6
+        }
+      ],
+      "phone": "3052321975",
+      "reference": "Apto 701c",
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0RhU6ZjbnyxLiivXze": {
+          "at": 1788261823120,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "en_camino"
+        },
+        "-P0RhjPSuYlyjBACLPtg": {
+          "at": 1788261889881,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 204000,
+      "total": 209000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    },
+    "-P0RhETmj7XpTo_d9MgA": {
+      "address": "Urbanización El Cuji, Cúcuta, Villa Del Rosario, Cúcuta, Norte de Santander",
+      "cashSettled": true,
+      "createdAt": 1788261759092,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerName": "julian rolon",
+      "deliveryMode": "domicilio",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "driverPhone": "3332218536",
+      "items": [
+        {
+          "id": "chorizo-bife",
+          "image": "images/chorizo-bife.jpg",
+          "name": "Bife de Chorizo",
+          "notes": "",
+          "price": 36000,
+          "qty": 4
+        }
+      ],
+      "phone": "3332218536",
+      "reference": "Apto 701c",
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0RhUQ0QgGvyzxbjoG0": {
+          "at": 1788261824381,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "en_camino"
+        },
+        "-P0Rhjsawn90C9F6vjs5": {
+          "at": 1788261891799,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 144000,
+      "total": 149000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    },
+    "-P0UZe9IW7eVPuZefv-K": {
+      "address": "Calle 9, La Riviera, Comuna 2 - Centro Oriental, Perímetro Urbano Cúcuta, Cúcuta, Oriental, Norte de Santander, RAP Gran Santander, 540005, Colombia",
+      "cashSettled": true,
+      "createdAt": 1788309840652,
+      "customerEmail": "julianrolon831@gmail.com",
+      "customerLocation": {
+        "lat": 7.889943051626272,
+        "lng": -72.48998933081337
+      },
+      "customerName": "Andres Rolon",
+      "deliveryMode": "domicilio",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "driverPhone": "3332218536",
+      "items": [
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "",
+          "price": 34000,
+          "qty": 4
+        }
+      ],
+      "phone": "3332218536",
+      "reference": "colegio gimnasio domingo savio",
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0U_Vs39aUkcWSuaLGX": {
+          "at": 1788310064775,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0U_WUdZISzmF2h1fNr": {
+          "at": 1788310067307,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0U_X0CxOKQn2KNnSsw": {
+          "at": 1788310069455,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "entregado"
+        },
+        "-P0U__R9VlEZO7l4_96m": {
+          "at": 1788310083469,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0U_gkAIGaVQW2UlO2K": {
+          "at": 1788310113422,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0U_gyHXjfZ4Yggh1Sn": {
+          "at": 1788310114325,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "recibido"
+        },
+        "-P0U_rdVqKetBZPnh7Ha": {
+          "at": 1788310158098,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "en_camino"
+        },
+        "-P0U_ucCVwxcvSvEb-FK": {
+          "at": 1788310170295,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "note": "Cliente no contesta",
+          "status": "no_entregado"
+        },
+        "-P0UiJd1OwW9TxbCS1Mw": {
+          "at": 1788312374000,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "note": "Reintento de entrega",
+          "status": "en_camino"
+        },
+        "-P0UiRzZlM5PxLgpuk4K": {
+          "at": 1788312408192,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 136000,
+      "tipAmount": 5000,
+      "total": 141000,
+      "uid": "PrIFt3HAs9S7jUjRlenGEve3luq2"
+    },
+    "-P0UkwGTm6lFveOFZTSP": {
+      "address": "calle 13 # 28-40",
+      "cashSettled": true,
+      "createdAt": 1788313060636,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerName": "julian rolon",
+      "deliveryMode": "domicilio",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "driverPhone": "3332218536",
+      "items": [
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "",
+          "price": 34000,
+          "qty": 1
+        }
+      ],
+      "phone": "3332218536",
+      "reference": "Apto 701c",
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0Ul4R4IqpdlUq4ZpSv": {
+          "at": 1788313098172,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0Ul5fAth0wL3ytGtiA": {
+          "at": 1788313103252,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0UlAP4INU9Ard5mDT9": {
+          "at": 1788313122630,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 34000,
+      "tipAmount": 5000,
+      "total": 39000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    },
+    "-P0UmVZV7eTaYSjaFzO9": {
+      "address": "calle 13 # 28-40",
+      "cashSettled": true,
+      "createdAt": 1788313471440,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerName": "julian rolon",
+      "deliveryMode": "domicilio",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "driverPhone": "3332218536",
+      "etaMinutes": 45,
+      "etaSetAt": 1788313489507,
+      "items": [
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "",
+          "price": 34000,
+          "qty": 1
+        }
+      ],
+      "phone": "3332218536",
+      "reference": "Apto 701c",
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0Um__13hmQw_JQqAhs": {
+          "at": 1788313491962,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0Um_pAM5VNVwxpOdnK": {
+          "at": 1788313492986,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0Umha8054N-gy3SwVi": {
+          "at": 1788313524781,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 34000,
+      "tipAmount": 10000,
+      "total": 39000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    },
+    "-P0V05pjUvH24P5o3uqm": {
+      "address": "calle 13 # 28-40",
+      "cashSettled": true,
+      "createdAt": 1788317298161,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerName": "julian rolon",
+      "deliveryMode": "domicilio",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "driverPhone": "3332218536",
+      "etaMinutes": 60,
+      "etaSetAt": 1788317317098,
+      "internalNote": "llegó con tranquilidad",
+      "items": [
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "",
+          "price": 34000,
+          "qty": 1
+        }
+      ],
+      "phone": "123456",
+      "reference": "Apto 701c",
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0V0As2Sf_EuJsFPrGc": {
+          "at": 1788317318789,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0V0C1rPswghstjAmH2": {
+          "at": 1788317323576,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0V0maXJtE0cDLSJBbm": {
+          "at": 1788317477417,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 34000,
+      "tipAmount": 10000,
+      "total": 39000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    },
+    "-P0XTxnREl77NA_OBl3v": {
+      "address": "Biblioteca Eduardo Cote Lamus, Avenida 12E, Govica, Comuna 2 - Centro Oriental, Perímetro Urbano Cúcuta, Cúcuta, Oriental, Norte de Santander, RAP Gran Santander, 540005, Colombia",
+      "cashSettled": true,
+      "createdAt": 1788358679986,
+      "customerEmail": "mariaalexaserrano2010@gmail.com",
+      "customerLocation": {
+        "lat": 7.8975375,
+        "lng": -72.4885398
+      },
+      "customerName": "Maria Serrano",
+      "deliveryMode": "domicilio",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "driverPhone": "3332218536",
+      "etaMinutes": 60,
+      "etaSetAt": 1788358715096,
+      "items": [
+        {
+          "id": "alitas-bbq",
+          "image": "images/alitas-bbq.jpg",
+          "name": "Alitas BBQ",
+          "notes": "Muy caliente",
+          "price": 24000,
+          "qty": 1
+        }
+      ],
+      "phone": "3017035490",
+      "reference": "UFPS",
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0XU7wuumjylmbzI5oe": {
+          "at": 1788358725653,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0XULmOvz09Mez7GwJm": {
+          "at": 1788358782229,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0XUp3105dwMelrdGuN": {
+          "at": 1788358906227,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "note": "Otro motivo",
+          "status": "no_entregado"
+        },
+        "-P0XUsfv3xzBgbEJEtXP": {
+          "at": 1788358921104,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "note": "Reintento de entrega",
+          "status": "en_camino"
+        },
+        "-P0XVxObRzEFCmtlErw0": {
+          "at": 1788359202615,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 24000,
+      "tipAmount": 5000,
+      "total": 29000,
+      "uid": "2kyna7BawxQpJU4XXlxoG8t2rAN2"
+    },
+    "-P0bC5K6yQTdPh42BhaW": {
+      "couponCode": "BIENVENIDO",
+      "createdAt": 1788437882376,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerName": "julian rolon",
+      "deliveryMode": "recoger",
+      "discountAmount": 51000,
+      "items": [
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "Sin salsas\nSin gaseosa\nCon baja sal\nSin espinacas",
+          "price": 34000,
+          "qty": 3
+        }
+      ],
+      "phone": "3332218536",
+      "reference": "Apto 701c",
+      "scheduledFor": 1788439800000,
+      "shipping": 0,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0bCGMNBUnBhEGSHPkL": {
+          "at": 1788437927583,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0bCIbd9mDYTC_ZNjSf": {
+          "at": 1788437936823,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0bCQcnyWNR3VFYTjSz": {
+          "at": 1788437969633,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 102000,
+      "total": 51000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    },
+    "-P0bCakRD6qtVjHTg4kS": {
+      "address": "calle 13 # 28-40",
+      "cashSettled": true,
+      "couponCode": "BIENVENIDO",
+      "createdAt": 1788438021416,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerName": "julian rolon",
+      "deliveryMode": "domicilio",
+      "discountAmount": 90000,
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "driverPhone": "3332218536",
+      "driverRatingSubmitted": true,
+      "items": [
+        {
+          "id": "chorizo-bife",
+          "image": "images/chorizo-bife.jpg",
+          "name": "Bife de Chorizo",
+          "notes": "",
+          "price": 36000,
+          "qty": 5
+        }
+      ],
+      "phone": "3332218536",
+      "reference": "Apto 701c",
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0bCkA4voZ60lnl48HP": {
+          "at": 1788438053793,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0bCrE87nOr9mIt8UyV": {
+          "at": 1788438082693,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0bDKbSshwcXMsLuiHg": {
+          "at": 1788438207116,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 180000,
+      "tipAmount": 10000,
+      "total": 95000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    },
+    "-P0bzLvQsTr_gxTOk7fE": {
+      "address": "calle 13 # 28-40",
+      "createdAt": 1788451057550,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerName": "julian rolon",
+      "deliveryMode": "domicilio",
+      "items": [
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "",
+          "price": 34000,
+          "qty": 2
+        },
+        {
+          "id": "chorizo-bife",
+          "image": "images/chorizo-bife.jpg",
+          "name": "Bife de Chorizo",
+          "notes": "",
+          "price": 36000,
+          "qty": 1
+        }
+      ],
+      "phone": "3332218536",
+      "reference": "Apto 701c",
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0c0L35aS9lUe0oJ-wG": {
+          "at": 1788451578297,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0c0LNyUXzAjdetI2nP": {
+          "at": 1788451579629,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0c0Lj-8CVmuNVUokxX": {
+          "at": 1788451581041,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 104000,
+      "total": 109000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    },
+    "-P0iWWYoWeQIgoWtAniR": {
+      "address": "calle 13 # 28-40",
+      "createdAt": 1788560677650,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerName": "julian rolon",
+      "deliveryMode": "domicilio",
+      "items": [
+        {
+          "id": "chorizo-bife",
+          "image": "images/chorizo-bife.jpg",
+          "name": "Bife de Chorizo",
+          "notes": "",
+          "price": 36000,
+          "qty": 1
+        }
+      ],
+      "phone": "123456",
+      "reference": "Apto 701c",
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0iWY_BIF0qLJ11D3Y-": {
+          "at": 1788560685534,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0iWZ7S1uI7WovUcgY_": {
+          "at": 1788560687791,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "recibido"
+        },
+        "-P0iWZlOEpu-TpRqF0nm": {
+          "at": 1788560690411,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0iW_hK4stipLMdle4X": {
+          "at": 1788560694246,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0iWaTlk0iWlqGwlZCh": {
+          "at": 1788560697413,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 36000,
+      "total": 41000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    },
+    "-P0iX09pTHkixC6J5M6p": {
+      "address": "calle 13 # 28-40",
+      "cashSettled": true,
+      "createdAt": 1788560807130,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerName": "julian rolon",
+      "deliveryMode": "domicilio",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "driverPhone": "3332218536",
+      "driverRatingSubmitted": true,
+      "etaMinutes": 30,
+      "etaSetAt": 1788560813926,
+      "items": [
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "",
+          "price": 34000,
+          "qty": 1
+        }
+      ],
+      "phone": "123456",
+      "reference": "Apto 701c",
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0iX4CA6MaGuQDMwlZ0": {
+          "at": 1788560823263,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0iX4dmnIl9hb96UjJr": {
+          "at": 1788560825092,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0iX5ESSxVSd08_Dgsj": {
+          "at": 1788560827502,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0iX8ys1rS1sLrdfGvc": {
+          "at": 1788560842824,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "en_camino"
+        },
+        "-P0iXLyDQf8DE_E2LXWU": {
+          "at": 1788560896007,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "entregado"
+        },
+        "-P0mPqHQ1cSIVIkS6rSq": {
+          "at": 1788626035997,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0mPr-GIZtQ8g6rehqn": {
+          "at": 1788626038930,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0mPrNqFOEY49mQucrI": {
+          "at": 1788626040505,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "recibido"
+        },
+        "-P0mPs4q5b3_RBfLuj79": {
+          "at": 1788626043386,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0mPsC7KsfQMH-T-FXp": {
+          "at": 1788626043848,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0mPsZMX8aOahxnrM8H": {
+          "at": 1788626045338,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 34000,
+      "tipAmount": 5000,
+      "total": 39000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    },
+    "-P0irjBOZ9xHXxsohYed": {
+      "address": "Avenida 10E, La Riviera, Comuna 2 - Centro Oriental, Perímetro Urbano Cúcuta, Cúcuta, Oriental, Norte de Santander, RAP Gran Santander, 540005, Colombia",
+      "createdAt": 1788566500289,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerLocation": {
+        "lat": 7.8897512,
+        "lng": -72.4899417
+      },
+      "customerName": "julian rolon",
+      "deliveryMode": "domicilio",
+      "items": [
+        {
+          "id": "alitas-bbq",
+          "image": "images/alitas-bbq.jpg",
+          "name": "Alitas BBQ",
+          "notes": "",
+          "price": 24000,
+          "qty": 1
+        },
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "",
+          "price": 34000,
+          "qty": 3
+        },
+        {
+          "id": "chorizo-bife",
+          "image": "images/chorizo-bife.jpg",
+          "name": "Bife de Chorizo",
+          "notes": "",
+          "price": 36000,
+          "qty": 3
+        }
+      ],
+      "phone": "30000000",
+      "reference": "Apto 701c",
+      "shipping": 5000,
+      "status": "cancelado",
+      "subtotal": 234000,
+      "total": 239000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    },
+    "-P0mQQTuMmvRbOzLMvnI": {
+      "address": "Avenida 10E, La Riviera, Comuna 2 - Centro Oriental, Perímetro Urbano Cúcuta, Cúcuta, Oriental, Norte de Santander, RAP Gran Santander, 540005, Colombia",
+      "cashSettled": true,
+      "createdAt": 1788626188356,
+      "customerEmail": "yuliniri200712@gmail.com",
+      "customerName": "julian rolon",
+      "deliveryMode": "domicilio",
+      "driverId": "tfxFFuPXvdY3umT8PXEU02fArUh2",
+      "driverName": "Julian Rolon",
+      "driverPhone": "3332218536",
+      "driverRatingSubmitted": true,
+      "items": [
+        {
+          "id": "chorizo-bife",
+          "image": "images/chorizo-bife.jpg",
+          "name": "Bife de Chorizo",
+          "notes": "",
+          "price": 36000,
+          "qty": 3
+        },
+        {
+          "id": "ancho",
+          "image": "images/ancho.jpg",
+          "name": "Bife Ancho",
+          "notes": "",
+          "price": 34000,
+          "qty": 1
+        }
+      ],
+      "phone": "30000000",
+      "reference": "Apto 701c",
+      "shipping": 5000,
+      "status": "entregado",
+      "statusHistory": {
+        "-P0mQY2ZKwPcJmhOd9mO": {
+          "at": 1788626219365,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_cocina"
+        },
+        "-P0mQbuchVdTV0KtLXJF": {
+          "at": 1788626239276,
+          "byEmail": "julianrolon200712@hotmail.com",
+          "status": "en_camino"
+        },
+        "-P0mQyuEF2XSmuVcH8M3": {
+          "at": 1788626333450,
+          "byEmail": "patriciayuretibero@gmail.com",
+          "status": "entregado"
+        }
+      },
+      "subtotal": 142000,
+      "tipAmount": 5000,
+      "total": 147000,
+      "uid": "AF5jVL2vhJUa4HNs1CP0OLePSuX2"
+    }
+  },
+  "products": {
+    "alitas-bbq": {
+      "badge": "Picante suave",
+      "categoryId": "aves",
+      "description": "Bañadas en salsa BBQ ahumada, punto crocante.",
+      "image": "images/alitas-bbq.jpg",
+      "name": "Alitas BBQ",
+      "price": 24000
+    },
+    "ancho": {
+      "categoryId": "cortes",
+      "description": "Corte jugoso con marmoleo generoso, término a elección.",
+      "image": "images/ancho.jpg",
+      "name": "Bife Ancho",
+      "price": 34000
+    },
+    "arroz-blanco": {
+      "categoryId": "acompanamientos",
+      "description": "Grano suelto, porción para compartir.",
+      "image": "images/arroz-blanco.jpg",
+      "name": "Arroz Blanco",
+      "price": 8000
+    },
+    "brigadeiro": {
+      "categoryId": "postres",
+      "description": "Trufas brasileñas de chocolate, hechas a mano.",
+      "image": "images/brigadeiro.jpg",
+      "name": "Brigadeiro (3 uds)",
+      "price": 10000
+    },
+    "chorizo-bife": {
+      "categoryId": "cortes",
+      "description": "Corte alto y tierno, sellado a la parrilla de carbón.",
+      "image": "images/chorizo-bife.jpg",
+      "name": "Bife de Chorizo",
+      "price": 36000
+    },
+    "chorizo-parrilla": {
+      "categoryId": "embutidos",
+      "description": "Receta santandereana, servido con limón.",
+      "image": "images/chorizo-parrilla.jpg",
+      "name": "Chorizo a la Parrilla",
+      "price": 15000
+    },
+    "costillas": {
+      "categoryId": "cerdo",
+      "description": "Cocción lenta de 6 horas, glaseadas antes de servir.",
+      "image": "images/costillas.jpg",
+      "name": "Costillas de Cerdo",
+      "price": 30000
+    },
+    "ensalada-casa": {
+      "categoryId": "acompanamientos",
+      "description": "Mix de hojas verdes, tomate cherry y vinagreta de maracuyá.",
+      "image": "images/ensalada-casa.jpg",
+      "name": "Ensalada de la Casa",
+      "price": 12000
+    },
+    "flan-casero": {
+      "categoryId": "postres",
+      "description": "Receta tradicional con caramelo oscuro.",
+      "image": "images/flan-casero.jpg",
+      "name": "Flan Casero",
+      "price": 11000
+    },
+    "gaseosa": {
+      "categoryId": "bebidas",
+      "description": "Variedades disponibles en caja fría.",
+      "image": "images/gaseosa.jpg",
+      "name": "Gaseosa 400ml",
+      "price": 6000
+    },
+    "jugo-natural": {
+      "categoryId": "bebidas",
+      "description": "Elige entre maracuyá, mango o lulo.",
+      "image": "images/jugo-natural.jpg",
+      "name": "Jugo Natural",
+      "price": 8000
+    },
+    "lomo-cerdo": {
+      "categoryId": "cerdo",
+      "description": "Con costra de panela y mostaza dulce.",
+      "image": "images/lomo-cerdo.jpg",
+      "name": "Lomo de Cerdo al Espeto",
+      "price": 27000
+    },
+    "morcilla": {
+      "categoryId": "embutidos",
+      "description": "Con arroz, cebolla larga y especias de la casa.",
+      "image": "images/morcilla.jpg",
+      "name": "Morcilla Criolla",
+      "price": 14000
+    },
+    "picanha": {
+      "badge": "Más pedido",
+      "categoryId": "cortes",
+      "description": "El corte insignia del rodízio, asado lento al espeto con sal gruesa.",
+      "image": "images/picanha.jpg",
+      "name": "Picanha",
+      "price": 38000
+    },
+    "pollo-parrilla": {
+      "categoryId": "aves",
+      "description": "Muslos y contramuslos marinados en hierbas de la casa.",
+      "image": "images/pollo-parrilla.jpg",
+      "name": "Pollo a la Parrilla",
+      "price": 22000
+    },
+    "yuca-frita": {
+      "categoryId": "acompanamientos",
+      "description": "Crocante por fuera, suave por dentro.",
+      "image": "images/yuca-frita.jpg",
+      "name": "Yuca Frita",
+      "price": 9000
+    }
+  },
+  "settings": {
+    "closedMessage": "Estamos cerrados en este momento. Vuelve a intentarlo más tarde.",
+    "closingTime": "14:30",
+    "coverageZones": [
+      {
+        "fee": 5000,
+        "keywords": [
+          "teatro las cascadas"
+        ],
+        "name": "Caobos"
+      }
+    ],
+    "defaultShippingFee": 5000,
+    "isOpen": true,
+    "minOrderDomicilio": 5000,
+    "restaurantPhone": "+57 3052321975",
+    "restrictToZones": false
+  },
+  "users": {
+    "2kyna7BawxQpJU4XXlxoG8t2rAN2": {
+      "fcmTokens": {
+        "cRJj_8uSoPxTeQ_IpFlYrC:APA91bE3EpLy5_womkHJ-AJnRS_JqCgu25ILlZ_K88crFAi_XQOvXtuswaaugC3yki1oyu-WYVKKBqnBftD6Xv5MvCXNSiWiqQfYvbBVvqyBlEtXDXStGZc": true
+      }
+    },
+    "5RvHI9C3LQUJe5tDlJx7CwyvbZI2": {
+      "addresses": {
+        "-P02-WkDV6YnOM7LX5Np": {
+          "address": "calle 13 # 28-40",
+          "createdAt": 1787830606998,
+          "reference": "Apto 701C"
+        }
+      },
+      "fcmTokens": {
+        "fWoTYCaA4NPmpEojyqz57J:APA91bFx37OffEaXYm6tKda6ZU02lADNMLnajfNf74jae7liJGhiyq7aamFvlj0uODIc24ojV-xwtBW9_DpFEoGY0CD2eL2kxvyfYfSn5iw4e465pwm8dcM": true
+      }
+    },
+    "AF5jVL2vhJUa4HNs1CP0OLePSuX2": {
+      "addresses": {
+        "-P0irjELNROwwv3B08rN": {
+          "address": "Avenida 10E, La Riviera, Comuna 2 - Centro Oriental, Perímetro Urbano Cúcuta, Cúcuta, Oriental, Norte de Santander, RAP Gran Santander, 540005, Colombia",
+          "createdAt": 1788566500483,
+          "label": "",
+          "reference": "Apto 701c"
+        }
+      }
+    }
+  }
+}

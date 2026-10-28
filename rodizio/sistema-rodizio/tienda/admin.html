@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Rodízio Cúcuta — Panel del restaurante</title>
+  <meta name="author" content="ParaTouch — DJG (djgv · Mxi)" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest-admin.json" />
+  <meta name="theme-color" content="#2A2D33" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/marca.css" />
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+  <!-- ============ SPLASH ============ -->
+  <div id="splash" aria-hidden="true">
+    <div class="splash-box">
+      <img class="splash-logo" src="brand/logo-white.webp" alt="Rodízio Cúcuta" />
+      <div class="spark-line"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div id="fatal-error-banner" class="fatal-error-banner" hidden>
+    <img class="brand-mark" src="icon.svg" alt="" width="48" height="48" />
+    <h3>Algo salió mal</h3>
+    <p>Tuvimos un problema inesperado en el panel. Intenta recargar la página.</p>
+    <button type="button" class="btn btn-primary">Recargar</button>
+  </div>
+
+  <div id="admin-app">
+
+    <header class="app-header">
+      <div class="brand" id="btn-brand-home" role="button" tabindex="0" aria-label="Ir a Pedidos">
+        <img class="admin-brand-logo-img" src="brand/logo-white.webp" alt="Rodízio Cúcuta" />
+        <span class="brand-name">Panel</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-danger-link" id="btn-admin-signout" hidden>Cerrar sesión</button>
+      </div>
+    </header>
+
+    <!-- ============ ESTADO: SIN SESIÓN ============ -->
+    <section class="admin-gate" id="gate-signed-out">
+      <div class="admin-gate-card">
+        <img class="admin-gate-logo" src="brand/logo-dark-trans.webp" alt="Rodízio Cúcuta" />
+        <h1 class="admin-gate-title">Panel del restaurante</h1>
+        <p class="admin-gate-text" id="admin-auth-subtitle">Inicia sesión con tu correo y contraseña de administrador.</p>
+
+        <form id="admin-auth-form">
+          <div class="field">
+            <label for="admin-email">Correo</label>
+            <input id="admin-email" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com" required />
+          </div>
+          <div class="field">
+            <label for="admin-password">Contraseña</label>
+            <input id="admin-password" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres" minlength="6" required />
+          </div>
+          <label class="checkbox-field checkbox-field-consent" id="admin-consent-row" hidden>
+            <input type="checkbox" id="admin-consent-checkbox" />
+            <span>He leído y acepto la <a href="privacidad.html#panel" target="_blank" rel="noopener noreferrer">política de tratamiento de datos personales</a>.</span>
+          </label>
+          <button type="submit" class="btn btn-primary" id="btn-admin-auth-submit">Iniciar sesión</button>
+        </form>
+
+        <div class="admin-auth-links">
+          <button type="button" class="admin-link-btn" id="btn-admin-toggle-mode">¿No tienes cuenta? Regístrate</button>
+          <button type="button" class="admin-link-btn" id="btn-admin-forgot">¿Olvidaste tu contraseña?</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ESTADO: SIN PERMISO ============ -->
+    <section class="admin-gate" id="gate-not-admin" hidden>
+      <div class="admin-gate-card">
+        <div class="admin-gate-icon admin-gate-icon-locked">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V8a4 4 0 018 0v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <h1 class="admin-gate-title">No tienes acceso</h1>
+        <p class="admin-gate-text" id="gate-not-admin-text">
+          Esta cuenta inició sesión pero no está autorizada como administradora del panel.
+        </p>
+        <button class="btn btn-ghost" id="btn-admin-signout-2">Cerrar sesión</button>
+      </div>
+    </section>
+
+    <!-- ============ PANEL (solo admins) ============ -->
+    <main id="admin-main" hidden>
+      <nav class="segmented admin-tabs" id="admin-tabs">
+        <button type="button" data-tab="pedidos" class="is-active"><svg class="admin-tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7z"/><path d="M14 2v5h6M8 13h8M8 17h5"/></svg>Pedidos<span class="admin-tab-badge" id="admin-tab-badge-pedidos" hidden>0</span></button>
+        <button type="button" data-tab="inventario"><svg class="admin-tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3.3 7.5L12 12l8.7-4.5M12 22V12"/></svg>Inventario</button>
+        <button type="button" data-tab="menu" data-role="dueno"><svg class="admin-tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h2a2 2 0 002-2V2M6 2v20M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>Menú</button>
+        <button type="button" data-tab="domiciliarios" data-role="dueno"><svg class="admin-tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h2l3 7.5M5.5 17.5L9 9h5l2.5 8.5M12 6h3"/></svg>Domiciliarios</button>
+        <button type="button" data-tab="reportes" data-role="dueno"><svg class="admin-tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 16v-4M12 16V8M16 16v-6"/></svg>Reportes</button>
+        <button type="button" data-tab="config" data-role="dueno"><svg class="admin-tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>Configuración</button>
+      </nav>
+
+      <!-- --- Pedidos --- -->
+      <section id="tab-pedidos">
+        <h1 class="admin-page-title">Pedidos</h1>
+        <div class="admin-quick-stats" id="admin-quick-stats"></div>
+        <p class="admin-filter-label">Ver pedidos de:</p>
+        <div class="admin-filter-row admin-date-filter" id="admin-date-filter">
+          <button type="button" data-date="hoy" class="is-active">Hoy</button>
+          <button type="button" data-date="ayer">Ayer</button>
+          <button type="button" data-date="todos">Todos los días</button>
+          <input type="date" id="admin-date-picker" aria-label="Elegir un día" />
+          <div class="admin-search-row admin-search-row-inline">
+            <input type="search" id="admin-order-search" placeholder="Buscar por nombre o teléfono…" />
+          </div>
+        </div>
+        <!-- En celular: pastillas que se deslizan (normal ahí). Desde
+             escritorio (ver admin.css, 1080px) esta fila de 10 nombres
+             obligaba a buscar entre ellos deslizando de lado — se
+             reemplaza por el <select> de abajo, mismo criterio que ya
+             se usó para el filtro de categoría en Menú/Inventario. -->
+        <p class="admin-filter-label">Filtrar por estado del pedido:</p>
+        <div class="admin-filter-row" id="admin-status-filter">
+          <button type="button" data-filter="todos">Todos<span class="admin-filter-count" data-count-for="todos"></span></button>
+          <button type="button" data-filter="recibido" class="is-active">Recibido<span class="admin-filter-count" data-count-for="recibido"></span></button>
+          <button type="button" data-filter="enviado">Confirmado<span class="admin-filter-count" data-count-for="enviado"></span></button>
+          <button type="button" data-filter="preparacion">En cocina<span class="admin-filter-count" data-count-for="preparacion"></span></button>
+          <button type="button" data-filter="listo">Listo<span class="admin-filter-count" data-count-for="listo"></span></button>
+          <button type="button" data-filter="en_camino">En camino<span class="admin-filter-count" data-count-for="en_camino"></span></button>
+          <button type="button" data-filter="llegado">Llegando<span class="admin-filter-count" data-count-for="llegado"></span></button>
+          <button type="button" data-filter="entregado">Entregado<span class="admin-filter-count" data-count-for="entregado"></span></button>
+          <button type="button" data-filter="no_entregado">No entregado<span class="admin-filter-count" data-count-for="no_entregado"></span></button>
+          <button type="button" data-filter="programados">Programados<span class="admin-filter-count" data-count-for="programados"></span></button>
+          <button type="button" data-filter="cancelado">Cancelado<span class="admin-filter-count" data-count-for="cancelado"></span></button>
+        </div>
+        <select class="admin-category-select admin-status-select" id="admin-status-select"></select>
+        <div id="admin-orders-list"></div>
+      </section>
+
+      <!-- --- Inventario --- -->
+      <section id="tab-inventario" hidden>
+        <h1 class="admin-page-title">Inventario</h1>
+        <p class="admin-hint">Cada producto tiene un solo estado: <strong>Disponible</strong> (se puede pedir, con o sin conteo de unidades), <strong>Agotado</strong> (se ve, pero no se puede pedir) u <strong>Oculto</strong> (no sale en la tienda).</p>
+        <div class="admin-search-row">
+          <input type="search" id="admin-stock-search" placeholder="Buscar producto…" />
+        </div>
+        <div class="admin-filter-row" id="admin-stock-category-filter"></div>
+        <div class="admin-filter-row" id="admin-stock-status-filter"></div>
+        <div id="admin-stock-list"></div>
+      </section>
+
+      <!-- --- Menú (categorías y productos) --- -->
+      <section id="tab-menu" hidden>
+        <h1 class="admin-page-title">Menú</h1>
+        <div class="admin-seed-banner" id="admin-seed-banner" hidden>
+          <p>Tu base de datos todavía no tiene menú.</p>
+          <button type="button" class="btn btn-primary" id="btn-seed-catalog">Cargar menú inicial</button>
+        </div>
+
+        <div class="admin-menu-section">
+          <div class="admin-menu-section-head">
+            <h3>Categorías</h3>
+            <button type="button" class="admin-add-btn" id="btn-add-category">+ Agregar</button>
+          </div>
+          <div id="admin-categories-list"></div>
+        </div>
+
+        <div class="admin-menu-section">
+          <div class="admin-menu-section-head">
+            <h3>Productos</h3>
+            <button type="button" class="admin-add-btn admin-add-btn-primary" id="btn-add-product">+ Agregar plato</button>
+          </div>
+          <div class="admin-search-row">
+            <input type="search" id="admin-product-search" placeholder="Buscar producto…" />
+          </div>
+          <div class="admin-filter-row" id="admin-products-category-filter"></div>
+          <div id="admin-products-list"></div>
+        </div>
+
+        <!-- Editar/crear producto: antes era un formulario largo pegado
+             al final de la página — había que bajar todo el scroll para
+             encontrarlo después de tocar "Editar". Ahora es una ventana
+             flotante (mismo patrón .modal/.overlay que ya usa la tienda
+             de clientes, ver index.html) que se abre ahí mismo. -->
+        <div class="modal" id="product-modal" hidden>
+          <div class="drawer-header">
+            <h3 id="product-modal-title">Producto</h3>
+            <button type="button" class="icon-btn" id="btn-close-product-modal" aria-label="Cerrar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+          </div>
+          <form class="admin-form drawer-body" id="product-form">
+            <input type="hidden" id="product-form-id" />
+            <div class="field">
+              <label for="product-form-name">Nombre</label>
+              <input id="product-form-name" type="text" placeholder="Ej: Picanha" />
+            </div>
+            <div class="field">
+              <label for="product-form-category">Categoría</label>
+              <select id="product-form-category"></select>
+            </div>
+            <div class="field">
+              <label for="product-form-desc">Descripción</label>
+              <textarea id="product-form-desc" rows="2" placeholder="Descripción corta para la tarjeta"></textarea>
+            </div>
+            <div class="field">
+              <label for="product-form-price">Precio (COP)</label>
+              <input id="product-form-price" type="number" min="0" step="500" placeholder="28000" />
+            </div>
+            <div class="field">
+              <label for="product-form-image">Imagen (ruta o URL)</label>
+              <input id="product-form-image" type="text" placeholder="images/nuevo-plato.jpg" />
+            </div>
+            <div class="field">
+              <label for="product-form-badge">Insignia (opcional)</label>
+              <input id="product-form-badge" type="text" placeholder="Ej: Nuevo" />
+            </div>
+            <div class="field">
+              <label for="product-form-subgroup">Sub-categoría (opcional)</label>
+              <select id="product-form-subgroup">
+                <option value="">Ninguna</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="product-form-sabores">Sabores con lista fija (separados por coma, opcional)</label>
+              <input id="product-form-sabores" type="text" placeholder="Ej: Mora, Lulo, Mango, Maracuyá" />
+            </div>
+            <label class="checkbox-field">
+              <input type="checkbox" id="product-form-pedir-sabor" />
+              <span>El cliente escribe el sabor (sin lista fija) — solo si el campo de arriba está vacío</span>
+            </label>
+            <div class="admin-form-actions">
+              <button type="button" class="btn btn-ghost" id="btn-cancel-product">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Guardar producto</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Detalle de una categoría: sus productos, buscador para sumar
+             productos que ya existen y atajo para crear un plato nuevo
+             dentro de ella. Mismo patrón .modal/.overlay que "Producto". -->
+        <div class="modal" id="category-modal" hidden>
+          <div class="drawer-header">
+            <h3 id="category-modal-title">Categoría</h3>
+            <button type="button" class="icon-btn" id="btn-close-category-modal" aria-label="Cerrar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+          </div>
+          <div class="drawer-body admin-category-detail">
+            <div class="admin-menu-section-head">
+              <h4>Productos <span id="category-modal-count"></span></h4>
+              <button type="button" class="admin-add-btn" id="btn-category-new-product">+ Nuevo plato</button>
+            </div>
+            <div id="category-modal-products"></div>
+            <div class="admin-menu-section-head">
+              <h4>Agregar un producto que ya existe</h4>
+            </div>
+            <div class="admin-search-row">
+              <input type="search" id="category-modal-search" placeholder="Buscar producto…" />
+            </div>
+            <div id="category-modal-candidates"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- --- Domiciliarios --- -->
+      <section id="tab-domiciliarios" hidden>
+        <h1 class="admin-page-title">Domiciliarios</h1>
+        <div class="admin-menu-section">
+          <div class="admin-menu-section-head">
+            <h3>Domiciliarios</h3>
+            <button type="button" class="admin-add-btn admin-add-btn-primary" id="btn-add-driver">+ Agregar domiciliario</button>
+          </div>
+          <p class="admin-hint">Crea aquí la cuenta del domiciliario — queda habilitado de una vez, ya puede entrar a su app con el correo y contraseña que le pongas.</p>
+
+          <div class="admin-search-row">
+            <input type="search" id="admin-drivers-search" placeholder="Buscar por nombre o teléfono…" />
+          </div>
+          <div class="admin-filter-row" id="admin-drivers-filter">
+            <button type="button" class="is-active" data-filter="todos">Todos</button>
+            <button type="button" data-filter="disponibles">Disponibles</button>
+            <button type="button" data-filter="no-disponibles">No disponibles</button>
+            <button type="button" data-filter="deshabilitados">Deshabilitados</button>
+          </div>
+          <div class="admin-drivers-table-wrap" id="admin-drivers-list"></div>
+        </div>
+        <div class="admin-menu-section">
+          <div class="admin-menu-section-head">
+            <h3>Cierres de turno</h3>
+          </div>
+          <p class="admin-hint">Efectivo esperado vs. entregado al cerrar turno. Por defecto se muestra solo el día de hoy: cambia las fechas para ver otros días.</p>
+          <div class="admin-cash-filters">
+            <label>Desde <input type="date" id="cash-from" /></label>
+            <label>Hasta <input type="date" id="cash-to" /></label>
+            <button type="button" class="admin-add-btn" id="cash-today">Hoy</button>
+            <select class="admin-category-select" id="cash-driver" aria-label="Domiciliario"></select>
+            <select class="admin-category-select" id="cash-status" aria-label="Estado del cierre">
+              <option value="todos">Todos los estados</option>
+              <option value="cuadrado">Cuadrados</option>
+              <option value="faltante">Con faltante</option>
+              <option value="sobrante">Con sobrante</option>
+            </select>
+          </div>
+          <div id="admin-cash-settlements-list"></div>
+          <div class="admin-pager" id="admin-cash-pager"></div>
+        </div>
+      </section>
+
+      <!-- Crear domiciliario: mismo criterio que "Producto" en Menú —
+           ventana flotante en vez de un formulario pegado en la página,
+           que antes alargaba toda la pestaña Domiciliarios aunque
+           estuviera cerrado (empujaba la lista de domiciliarios y los
+           cierres de turno más abajo). -->
+      <div class="modal" id="driver-modal" hidden>
+        <div class="drawer-header">
+          <h3 id="driver-modal-title">Nuevo domiciliario</h3>
+          <button type="button" class="icon-btn" id="btn-close-driver-modal" aria-label="Cerrar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+        </div>
+        <form class="admin-form drawer-body" id="driver-form">
+          <div class="field">
+            <label for="driver-form-name">Nombre</label>
+            <input id="driver-form-name" type="text" placeholder="Nombre completo" />
+          </div>
+          <div class="field">
+            <label for="driver-form-phone">Teléfono (para WhatsApp)</label>
+            <input id="driver-form-phone" type="tel" placeholder="300 000 0000" />
+          </div>
+          <div class="field" id="driver-form-email-field">
+            <label for="driver-form-email">Correo (para iniciar sesión)</label>
+            <input id="driver-form-email" type="email" placeholder="domiciliario@correo.com" />
+          </div>
+          <div class="field" id="driver-form-password-field">
+            <label for="driver-form-password">Contraseña</label>
+            <input id="driver-form-password" type="password" minlength="6" placeholder="Mínimo 6 caracteres" />
+          </div>
+          <label class="checkbox-field" id="driver-form-available-row">
+            <input type="checkbox" id="driver-form-available" />
+            <span>Dejarlo disponible de una vez (puede empezar a recibir pedidos sin tener que entrar primero a su app)</span>
+          </label>
+          <div class="admin-form-actions">
+            <button type="button" class="btn btn-ghost" id="btn-cancel-driver">Cancelar</button>
+            <button type="submit" class="btn btn-primary" id="btn-save-driver">Crear domiciliario</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- --- Reportes ---
+           Rediseño 2026-10-23 (referencia del usuario): título con
+           "Exportar" a la derecha, filtros en una fila, 3 indicadores
+           grandes con minigráfico por día, franja "Hoy" y tabla de
+           productos más vendidos. Mismos ids que antes. -->
+      <section id="tab-reportes" hidden>
+        <div class="report-head">
+          <div>
+            <h1 class="admin-page-title">Reportes</h1>
+            <p class="report-head-hint" id="admin-export-hint">Exporta los pedidos de hoy. Si eliges un rango de fechas, exporta ese rango en su lugar.</p>
+          </div>
+          <button type="button" class="btn btn-primary report-export-btn" id="btn-export-orders-csv">Exportar pedidos de hoy (Excel)</button>
+        </div>
+
+        <div class="admin-reports-filter-row report-filters">
+          <div class="field">
+            <label for="reports-filter-from">Desde</label>
+            <input id="reports-filter-from" type="date" />
+          </div>
+          <div class="field">
+            <label for="reports-filter-to">Hasta</label>
+            <input id="reports-filter-to" type="date" />
+          </div>
+          <div class="field">
+            <label for="reports-filter-zone">Zona</label>
+            <select id="reports-filter-zone">
+              <option value="">Todas las zonas</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn-ghost" id="btn-reports-filter-clear">Limpiar filtro</button>
+        </div>
+
+        <div id="admin-report-cards"></div>
+
+        <section class="report-top">
+          <h2 class="report-section-title" id="admin-top-products-heading">Productos más vendidos (últimos 30 días)</h2>
+          <div id="admin-report-top-products"></div>
+        </section>
+      </section>
+
+      <!-- --- Configuración ---
+           Rediseño 2026-10-23 con 4 referencias del usuario: columna
+           principal con los formularios + columna lateral con vista
+           previa, resumen y consejos. Mismos ids y la misma lógica de
+           siempre (admin.js); los bloques nuevos de la columna lateral
+           solo MUESTRAN datos reales (estado del horario, horas, zonas,
+           errores) — no hay funciones nuevas escondidas detrás. -->
+      <section id="tab-config" hidden>
+        <div class="config-top">
+          <div>
+            <h1 class="admin-page-title">Configuración</h1>
+            <p class="config-page-intro">Ajusta la información de tu restaurante y del servicio a domicilio.</p>
+          </div>
+          <button type="button" class="config-store-pill" id="config-store-pill" data-goto-config="horario" title="Ver horario y estado de la tienda">
+            <span class="config-store-pill-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6"/></svg></span>
+            <span class="config-store-pill-text">
+              <strong id="config-store-pill-title"><span class="config-dot"></span>Cargando…</strong>
+              <small id="config-store-pill-detail"></small>
+            </span>
+          </button>
+        </div>
+
+        <nav class="segmented admin-tabs admin-config-tabs" id="admin-config-tabs" aria-label="Secciones de configuración">
+          <button type="button" data-config-tab="datos" class="is-active"><svg class="config-tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5M5 9v12h14V9M10 21v-6h4v6"/></svg>Negocio</button>
+          <button type="button" data-config-tab="horario"><svg class="config-tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Horario de atención</button>
+          <button type="button" data-config-tab="zonas"><svg class="config-tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Zonas de cobertura</button>
+          <button type="button" data-config-tab="avanzado"><svg class="config-tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 00-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 005.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>Avanzado</button>
+        </nav>
+
+        <!-- ===== Negocio ===== -->
+        <div id="config-section-datos" class="config-section">
+          <div class="config-layout">
+            <form id="settings-form" class="config-stack">
+              <section class="config-card">
+                <header class="config-card-head config-card-head-icon">
+                  <span class="config-icon-tile" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6"/></svg></span>
+                  <div>
+                    <h2 class="config-card-title">Información del restaurante</h2>
+                    <p class="config-card-desc">Estos datos se muestran a tus clientes en la tienda en línea.</p>
+                  </div>
+                </header>
+                <div class="field">
+                  <label for="settings-address">Dirección</label>
+                  <div class="config-input-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                    <input id="settings-address" type="text" placeholder="Calle o avenida, número, barrio, ciudad" maxlength="200" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="settings-phone">Teléfono</label>
+                  <div class="config-input-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1.9.4 1.8.7 2.7a2 2 0 01-.5 2.1L8 9.8a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.4c.9.3 1.8.6 2.7.7a2 2 0 011.7 2z"/></svg>
+                    <input id="settings-phone" type="tel" placeholder="+57 300 000 0000" />
+                  </div>
+                  <p class="config-note">Este número aparecerá en la tienda y se usará para el botón «Llamar».</p>
+                </div>
+              </section>
+
+              <section class="config-card">
+                <header class="config-card-head config-card-head-icon">
+                  <span class="config-icon-tile" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M9 17h6M14 6h3l2.5 8M6 14l2-5h5l1.5 5"/></svg></span>
+                  <div>
+                    <h2 class="config-card-title">Pedidos a domicilio</h2>
+                    <p class="config-card-desc">Configura el costo de envío y el pedido mínimo.</p>
+                  </div>
+                </header>
+                <div class="config-grid-2">
+                  <div class="field">
+                    <label for="settings-min-order">Pedido mínimo</label>
+                    <div class="config-input-icon config-money">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 12.4a2 2 0 002 1.6h8.6a2 2 0 002-1.6L22 7H6"/></svg>
+                      <span aria-hidden="true">$</span>
+                      <input id="settings-min-order" type="number" min="0" step="1000" placeholder="0" />
+                    </div>
+                    <p class="config-help">0 = sin mínimo.</p>
+                  </div>
+                  <div class="field">
+                    <label for="settings-default-fee">Costo de envío por defecto</label>
+                    <div class="config-input-icon config-money">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 4h14v12H1zM15 9h4l3 3v4h-7"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/></svg>
+                      <span aria-hidden="true">$</span>
+                      <input id="settings-default-fee" type="number" min="0" step="500" placeholder="5000" />
+                    </div>
+                    <p class="config-help">Se cobra si la dirección no coincide con ninguna zona.</p>
+                  </div>
+                </div>
+                <label class="checkbox-field config-switch">
+                  <input type="checkbox" id="settings-restrict-zones" />
+                  <span class="config-switch-text">
+                    <strong>Solo entregar dentro de mis zonas</strong>
+                    <small>Si está activo, se rechazan los pedidos con direcciones fuera de las zonas de cobertura.</small>
+                  </span>
+                </label>
+              </section>
+            </form>
+
+            <aside class="config-aside">
+              <section class="config-card">
+                <header class="config-card-head config-card-head-icon config-card-head-split">
+                  <span class="config-icon-tile is-dark" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></span>
+                  <div>
+                    <h2 class="config-card-title">Vista previa</h2>
+                    <p class="config-card-desc">Así se verá esta información para tus clientes.</p>
+                  </div>
+                  <a class="config-link-btn" href="https://rodiziocucuta.com" target="_blank" rel="noopener noreferrer">Ver en la tienda
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                </header>
+                <div class="config-preview">
+                  <div class="config-preview-photo"><img src="brand/logo-white.webp" alt="" /></div>
+                  <div class="config-preview-body">
+                    <p class="config-preview-name">Rodízio <span class="config-status-chip" data-config-status-chip>…</span></p>
+                    <p class="config-preview-line" id="config-preview-address">—</p>
+                    <p class="config-preview-line" id="config-preview-phone">—</p>
+                    <span class="config-preview-call">Llamar al restaurante</span>
+                  </div>
+                </div>
+              </section>
+
+              <section class="config-card config-tips">
+                <header class="config-card-head config-card-head-icon">
+                  <span class="config-icon-tile is-amber" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg></span>
+                  <div>
+                    <h2 class="config-card-title">Consejos</h2>
+                    <p class="config-card-desc">Mantén tu información al día para una mejor experiencia.</p>
+                  </div>
+                </header>
+                <ul class="config-tip-list">
+                  <li><strong>Usa una dirección clara y completa</strong><span>Así tus clientes te encontrarán fácilmente.</span></li>
+                  <li><strong>Verifica que el teléfono esté correcto</strong><span>Es el que marca el botón «Llamar» de la tienda.</span></li>
+                  <li><strong>Configura tus zonas de cobertura</strong><span>Cada zona puede tener su propio costo de envío.</span></li>
+                </ul>
+              </section>
+
+              <div class="config-actions">
+                <button type="submit" form="settings-form" class="btn btn-primary">Guardar cambios</button>
+              </div>
+            </aside>
+          </div>
+        </div>
+
+        <!-- ===== Horario ===== -->
+        <div id="config-section-horario" class="config-section" hidden>
+          <div class="config-layout">
+            <div class="config-stack">
+              <!-- Estado en vivo + controles inmediatos (no esperan a "Guardar"). -->
+              <section class="config-card horario-estado" id="horario-estado" aria-live="polite">
+                <div class="horario-estado-top">
+                  <span class="horario-luz" id="horario-luz" aria-hidden="true"></span>
+                  <div>
+                    <p class="horario-estado-titulo" id="horario-estado-titulo">Cargando…</p>
+                    <p class="horario-estado-detalle" id="horario-estado-detalle"></p>
+                  </div>
+                </div>
+                <div class="horario-acciones">
+                  <button type="button" class="btn horario-btn-pausa" id="btn-pausar-domicilios" aria-pressed="false" title="Deja pedir solo para recoger en tienda">Pausar domicilios</button>
+                  <button type="button" class="btn horario-btn-detener" id="btn-detener-pedidos" title="Cierra la tienda ya, sin importar el horario">Detener pedidos</button>
+                </div>
+              </section>
+
+              <form id="schedule-form" class="config-stack">
+                <section class="config-card">
+                  <header class="config-card-head config-card-head-icon config-card-head-split">
+                    <span class="config-icon-tile" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+                    <div>
+                      <h2 class="config-card-title">Horario de la semana</h2>
+                      <p class="config-card-desc">Hora de Colombia. La tienda abre y cierra sola con este horario.</p>
+                    </div>
+                    <div class="horario-copiar">
+                      <button type="button" class="btn btn-ghost" id="btn-copiar-lun-vie">Copiar lunes a lun–vie</button>
+                      <button type="button" class="btn btn-ghost" id="btn-copiar-todos">Copiar lunes a todos</button>
+                    </div>
+                  </header>
+                  <div id="schedule-week-rows" class="schedule-week-rows"></div>
+                </section>
+
+                <section class="config-card">
+                  <header class="config-card-head config-card-head-icon">
+                    <span class="config-icon-tile is-blue" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><path d="M8 9h8M8 13h5"/></svg></span>
+                    <div>
+                      <h2 class="config-card-title">Mensaje al detener pedidos</h2>
+                      <p class="config-card-desc">Lo ve el cliente cuando usas «Detener pedidos». Fuera del horario no hace falta: ya ve a qué hora abrimos.</p>
+                    </div>
+                  </header>
+                  <div class="field">
+                    <label for="settings-closed-message" class="config-sr-only">Mensaje al detener pedidos</label>
+                    <textarea id="settings-closed-message" rows="3" placeholder="Estamos cerrados en este momento. Vuelve a intentarlo más tarde."></textarea>
+                  </div>
+                </section>
+              </form>
+            </div>
+
+            <aside class="config-aside">
+              <section class="config-card">
+                <header class="config-card-head config-card-head-icon">
+                  <span class="config-icon-tile is-dark" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></span>
+                  <div>
+                    <h2 class="config-card-title">Vista previa para clientes</h2>
+                    <p class="config-card-desc">Así verán el estado de tu tienda.</p>
+                  </div>
+                </header>
+                <div class="config-preview-hero">
+                  <img src="brand/logo-white.webp" alt="" />
+                  <span class="config-status-chip is-large" data-config-status-chip>…</span>
+                </div>
+                <p class="config-preview-caption" id="config-preview-hours"></p>
+              </section>
+
+              <section class="config-card">
+                <header class="config-card-head config-card-head-icon">
+                  <span class="config-icon-tile is-dark" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M6 16v-5M11 16V8M16 16v-8M21 16V4"/></svg></span>
+                  <div>
+                    <h2 class="config-card-title">Resumen del horario</h2>
+                    <p class="config-card-desc">Se actualiza mientras editas.</p>
+                  </div>
+                </header>
+                <ul class="config-summary" id="config-schedule-summary"></ul>
+              </section>
+
+              <section class="config-card config-tips">
+                <header class="config-card-head config-card-head-icon">
+                  <span class="config-icon-tile is-amber" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg></span>
+                  <div><h2 class="config-card-title">Consejos rápidos</h2></div>
+                </header>
+                <ul class="config-bullets">
+                  <li>Usa «Copiar lunes a todos» si tu horario es el mismo toda la semana.</li>
+                  <li>«Pausar domicilios» deja pedir solo para recoger; el cajero también puede hacerlo desde la caja.</li>
+                  <li>«Detener pedidos» cierra la tienda ya, hasta que la reanudes.</li>
+                </ul>
+              </section>
+
+              <div class="config-actions">
+                <button type="submit" form="schedule-form" class="btn btn-primary">Guardar horario</button>
+              </div>
+            </aside>
+          </div>
+        </div>
+
+        <!-- ===== Zonas ===== -->
+        <div id="config-section-zonas" class="config-section" hidden>
+          <div class="config-layout">
+            <div class="config-stack">
+              <section class="config-card">
+                <header class="config-card-head config-card-head-icon config-card-head-split config-card-head-tinted">
+                  <span class="config-icon-tile" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4h14v12H1zM15 9h4l3 3v4h-7"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/></svg></span>
+                  <div>
+                    <h2 class="config-card-title">Zonas de cobertura</h2>
+                    <p class="config-card-desc">Cada zona tiene su costo de envío. Se reconoce por palabras clave en la dirección del cliente.</p>
+                  </div>
+                  <button type="button" class="admin-add-btn admin-add-btn-primary" id="btn-add-zone">+ Agregar zona</button>
+                </header>
+                <div class="admin-search-row config-zone-search">
+                  <input type="search" id="config-zone-search" placeholder="Buscar zona o palabra clave…" aria-label="Buscar zona" />
+                </div>
+                <div id="admin-zones-list"></div>
+              </section>
+            </div>
+
+            <aside class="config-aside">
+              <form class="config-card config-zone-form" id="zone-form" hidden>
+                <input type="hidden" id="zone-form-idx" />
+                <header class="config-card-head config-card-head-icon">
+                  <span class="config-icon-tile" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0112 2.5a7 7 0 017 7C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>
+                  <div>
+                    <h2 class="config-card-title" id="zone-form-title">Agregar nueva zona</h2>
+                    <p class="config-card-desc">Completa la información de la zona.</p>
+                  </div>
+                </header>
+                <div class="field">
+                  <label for="zone-form-name">Nombre de la zona</label>
+                  <input id="zone-form-name" type="text" placeholder="Ej: Caobos" />
+                </div>
+                <div class="field">
+                  <label for="zone-form-keywords">Palabras clave</label>
+                  <input id="zone-form-keywords" type="text" placeholder="Ej: caobos, teatro, las cascadas" />
+                  <p class="config-help">Sepáralas con comas. Basta con que una aparezca en la dirección del cliente.</p>
+                </div>
+                <div class="field">
+                  <label for="zone-form-fee">Costo de envío</label>
+                  <div class="config-money">
+                    <span aria-hidden="true">$</span>
+                    <input id="zone-form-fee" type="number" min="0" step="500" placeholder="5000" />
+                  </div>
+                </div>
+                <div class="admin-form-actions">
+                  <button type="button" class="btn btn-ghost" id="btn-cancel-zone">Cancelar</button>
+                  <button type="submit" class="btn btn-primary">Guardar zona</button>
+                </div>
+              </form>
+
+              <section class="config-card config-tips">
+                <header class="config-card-head config-card-head-icon">
+                  <span class="config-icon-tile is-amber" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg></span>
+                  <div><h2 class="config-card-title">Consejos</h2></div>
+                </header>
+                <ul class="config-tip-list">
+                  <li><strong>Usa nombres claros</strong><span>Fáciles de reconocer para el equipo.</span></li>
+                  <li><strong>Agrega varias palabras clave</strong><span>Barrios, conjuntos o referencias conocidas de la zona.</span></li>
+                  <li><strong>Define un precio justo</strong><span>Considera la distancia y el tiempo de entrega.</span></li>
+                  <li><strong>Sin zona que coincida</strong><span>Se cobra el costo de envío por defecto de «Negocio».</span></li>
+                </ul>
+              </section>
+            </aside>
+          </div>
+        </div>
+
+        <!-- ===== Avanzado ===== (sección técnica, aparte a propósito) -->
+        <div id="config-section-avanzado" class="config-section" hidden>
+          <div class="config-layout">
+            <div class="config-stack">
+              <section class="config-card">
+                <header class="config-card-head config-card-head-icon config-card-head-split">
+                  <span class="config-icon-tile" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></svg></span>
+                  <div>
+                    <h2 class="config-card-title">Estado del sistema</h2>
+                    <p class="config-card-desc">Cómo está funcionando la tienda en este momento.</p>
+                  </div>
+                  <span class="config-status-chip" id="config-system-chip">…</span>
+                </header>
+                <ul class="config-system-grid">
+                  <li><span class="config-dot" id="config-sys-store-dot"></span><strong>Tienda en línea</strong><small id="config-sys-store">—</small></li>
+                  <li><span class="config-dot" id="config-sys-delivery-dot"></span><strong>Servicio de domicilios</strong><small id="config-sys-delivery">—</small></li>
+                  <li><span class="config-dot" id="config-sys-errors-dot"></span><strong>Errores de hoy</strong><small id="config-sys-errors">—</small></li>
+                  <li><span class="config-dot" id="config-sys-zones-dot"></span><strong>Zonas de cobertura</strong><small id="config-sys-zones">—</small></li>
+                </ul>
+              </section>
+
+              <section class="config-card">
+                <header class="config-card-head config-card-head-icon config-card-head-split">
+                  <span class="config-icon-tile" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0zM12 9v4M12 17h.01"/></svg></span>
+                  <div>
+                    <h2 class="config-card-title">Errores recientes</h2>
+                    <p class="config-card-desc">Útil si algo no está funcionando bien. Se muestran por día, de los últimos 30 registrados.</p>
+                  </div>
+                  <div class="admin-cash-filters config-errors-filter">
+                    <label>Día <input type="date" id="errors-day" /></label>
+                    <button type="button" class="admin-add-btn" id="errors-today">Hoy</button>
+                  </div>
+                </header>
+                <div id="admin-error-log"></div>
+                <div class="admin-pager" id="admin-errors-pager"></div>
+              </section>
+            </div>
+
+            <aside class="config-aside">
+              <section class="config-card">
+                <header class="config-card-head config-card-head-icon">
+                  <span class="config-icon-tile is-amber" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+                  <div>
+                    <h2 class="config-card-title">Acciones rápidas</h2>
+                    <p class="config-card-desc">Los mismos botones de «Horario de atención», a mano.</p>
+                  </div>
+                </header>
+                <div class="config-quick">
+                  <div class="config-quick-row is-amber">
+                    <div><strong>Pausar domicilios</strong><small>Solo se podrá pedir para recoger en tienda.</small></div>
+                    <button type="button" class="config-quick-switch" data-quick-click="btn-pausar-domicilios" id="config-quick-pausa" role="switch" aria-checked="false" aria-label="Pausar domicilios"></button>
+                  </div>
+                  <div class="config-quick-row is-red">
+                    <div><strong>Detener todos los pedidos</strong><small>La tienda se cierra hasta que la reanudes.</small></div>
+                    <button type="button" class="config-quick-switch" data-quick-click="btn-detener-pedidos" id="config-quick-detener" role="switch" aria-checked="false" aria-label="Detener todos los pedidos"></button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="config-card">
+                <header class="config-card-head config-card-head-icon">
+                  <span class="config-icon-tile is-dark" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></span>
+                  <div>
+                    <h2 class="config-card-title">Información del sistema</h2>
+                    <p class="config-card-desc">Datos técnicos del panel.</p>
+                  </div>
+                </header>
+                <dl class="config-info" id="config-system-info"></dl>
+              </section>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </main>
+
+  </div>
+
+  <!-- Plantilla de comanda de cocina — solo se ve al imprimir
+       (ver @media print en admin.css); el resto del panel se
+       oculta automáticamente en ese momento. -->
+  <div id="print-ticket"></div>
+
+  <div class="toast" id="admin-toast"></div>
+
+  <!-- Bloquea el zoom también en iOS Safari (el <meta viewport> solo alcanza en Android/desktop) -->
+  <script src="js/disable-zoom.js"></script>
+  <script type="module" src="js/admin.js"></script>
+  <p class="dev-credit">Desarrollado por <strong>ParaTouch</strong></p>
+</body>
+</html>

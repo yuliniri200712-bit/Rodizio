@@ -1,0 +1,294 @@
+{
+  // ─────────────────────────────────────────────────────────────
+  // Reglas RTDB unificadas — proyecto rodiziomarketplace (Fase 5 de
+  // la fusión). Base: las reglas del marketplace (tienda/js/firebase-config.js)
+  // + lo que necesita el sistema de mesas:
+  //   - "orders": un trabajador activo (personal de mesa) puede leer y
+  //     escribir cualquier pedido. Los pedidos de la TIENDA los crea solo
+  //     la Cloud Function crearPedido (total calculado en servidor); el
+  //     cliente solo cancela y el domiciliario solo toca logística — ver el
+  //     bloque "orders" abajo (cerrado 2026-10-05).
+  //   - "solicitudes": escritura PÚBLICA acotada — el cliente que escanea
+  //     el QR de la mesa no se autentica.
+  //   - "contadores": el correlativo P-/D-, solo personal.
+  //   - "trabajadores": lectura autenticada; escritura solo admin.
+  //   - "categories"/"products"/"sugerencias"/"settings": lectura pública
+  //     (el menú), escritura admin (dueño de la tienda o trabajador admin).
+  //   - "drivers": lo LEE también un trabajador activo (panel-caja necesita
+  //     la lista de domiciliarios para asignarlos). El sub-nodo "access"
+  //     SIGUE siendo solo-admin — nunca se auto-otorga desde ninguna app.
+  //
+  // OJO antes de aplicar: los `rolesPermitidos` de /trabajadores deben
+  // estar en forma de MAPA ({"admin": true}), no array — ver Fase 5.
+  // ─────────────────────────────────────────────────────────────
+  "rules": {
+    "orders": {
+      ".indexOn": ["uid", "driverId", "origen", "status", "createdAt"],
+      ".read": "auth != null && (root.child('admins').child(auth.uid).exists() || root.child('trabajadores').child(auth.uid).child('estado').val() === 'activo' || (query.orderByChild == 'uid' && query.equalTo == auth.uid) || (query.orderByChild == 'driverId' && query.equalTo == auth.uid))",
+      // Cerrado 2026-10-05 (docs-fusion/PLAN-MAESTRO.md, Fase 1). Antes el
+      // cliente creaba su pedido con el total que quisiera y después podía
+      // reescribirlo ENTERO (ej. pagado:true); el domiciliario también.
+      //  - Personal de mesa (trabajador activo): crea y edita, como siempre.
+      //  - Admin de la tienda (admins/{uid}): edita, no crea.
+      //  - Cliente de la tienda: NO crea — los pedidos de la tienda los crea
+      //    SOLO la Cloud Function crearPedido (Admin SDK, salta estas reglas).
+      //    Sobre su pedido solo puede cancelarlo mientras siga "recibido".
+      //  - Domiciliario asignado (con access:true): solo los campos de
+      //    logística que escribe driver.js — nunca total/pagado/items.
+      "$orderId": {
+        ".write": "auth != null && (root.child('trabajadores').child(auth.uid).child('estado').val() === 'activo' || (data.exists() && root.child('admins').child(auth.uid).exists()))",
+        "status": {
+          ".write": "auth != null && data.exists() && ((data.parent().child('uid').val() === auth.uid && data.parent().child('pagado').val() !== true && data.val() === 'recibido' && newData.val() === 'cancelado') || (data.parent().child('driverId').val() === auth.uid && root.child('drivers').child(auth.uid).child('access').val() === true && (newData.val() === 'en_camino' || newData.val() === 'llegado' || newData.val() === 'entregado' || newData.val() === 'no_entregado')))"
+        },
+        "rondaEstados": {
+          ".write": "auth != null && root.child('orders').child($orderId).child('driverId').val() === auth.uid && root.child('drivers').child(auth.uid).child('access').val() === true"
+        },
+        "tsCambio": {
+          ".write": "auth != null && root.child('orders').child($orderId).child('driverId').val() === auth.uid && root.child('drivers').child(auth.uid).child('access').val() === true && (!newData.exists() || newData.isNumber())"
+        },
+        "driverLocation": {
+          ".write": "auth != null && root.child('orders').child($orderId).child('driverId').val() === auth.uid && root.child('drivers').child(auth.uid).child('access').val() === true"
+        },
+        "driverTrail": {
+          ".write": "auth != null && root.child('orders').child($orderId).child('driverId').val() === auth.uid && root.child('drivers').child(auth.uid).child('access').val() === true"
+        },
+        "tipAmount": {
+          ".write": "auth != null && root.child('orders').child($orderId).child('driverId').val() === auth.uid && root.child('drivers').child(auth.uid).child('access').val() === true && (!newData.exists() || (newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000))"
+        },
+        "deliveryFailureReason": {
+          ".write": "auth != null && root.child('orders').child($orderId).child('driverId').val() === auth.uid && root.child('drivers').child(auth.uid).child('access').val() === true && (!newData.exists() || (newData.isString() && newData.val().length <= 200))"
+        },
+        "deliveryFailureAt": {
+          ".write": "auth != null && root.child('orders').child($orderId).child('driverId').val() === auth.uid && root.child('drivers').child(auth.uid).child('access').val() === true"
+        },
+        // El domiciliario solo puede DEVOLVER la asignación (null), nunca
+        // asignarse un pedido a sí mismo ni a otro.
+        "driverId": {
+          ".write": "auth != null && data.val() === auth.uid && !newData.exists()"
+        },
+        "driverName": {
+          ".write": "auth != null && root.child('orders').child($orderId).child('driverId').val() === auth.uid && (!newData.exists() || (newData.isString() && newData.val().length <= 80))"
+        },
+        "driverPhone": {
+          ".write": "auth != null && root.child('orders').child($orderId).child('driverId').val() === auth.uid && (!newData.exists() || (newData.isString() && newData.val().length <= 30))"
+        },
+        "cashSettled": {
+          ".write": "auth != null && root.child('orders').child($orderId).child('driverId').val() === auth.uid && root.child('drivers').child(auth.uid).child('access').val() === true && newData.val() === true"
+        },
+        "statusHistory": {
+          "$entryId": {
+            ".write": "auth != null && !data.exists() && root.child('orders').child($orderId).child('driverId').val() === auth.uid && root.child('drivers').child(auth.uid).child('access').val() === true"
+          }
+        }
+      }
+    },
+
+    "solicitudes": {
+      // ".read" también a este nivel (no solo en "$mesaId" de abajo): en RTDB
+      // los permisos NO se heredan hacia arriba — mesero-app escucha el nodo
+      // completo (`onValue(ref(db,'solicitudes'), ...)`) para ver en vivo qué
+      // mesas tienen carrito pendiente, así que sin esto la app entera fallaba
+      // con "permission_denied at /solicitudes" (encontrado en la prueba de
+      // punta a punta de la ronda de hardening 2026-09-19). No agrega
+      // exposición nueva: cada "$mesaId" individual ya era de lectura pública
+      // sin auth, esto solo permite leer todas a la vez.
+      // Cerrado 2026-10-13: la lista completa la lee solo el personal (es
+      // mesero-app, con login). Antes cualquiera en internet leía todas las
+      // mesas con el nombre de cada cliente. Cada mesa sigue pública abajo:
+      // panel-cliente no tiene login y solo toca la suya.
+      ".read": "auth != null && (root.child('trabajadores').child(auth.uid).child('estado').val() === 'activo' || root.child('admins').child(auth.uid).exists())",
+      "$mesaId": {
+        ".read": true,
+        ".write": "!newData.exists() || (newData.hasChildren(['lineas', 'actualizado']) && newData.child('actualizado').isNumber())",
+        // Escritura pública → forma y tamaño acotados (2026-10-13): antes se
+        // podía escribir cualquier cosa de cualquier tamaño, inventar mesas
+        // con ids raros o mandar líneas que rompían la pantalla del mesero.
+        // Hasta 100 líneas, cada una con un producto que exista en la carta.
+        ".validate": "$mesaId.matches(/^[a-zA-Z0-9_-]{1,60}$/) && newData.child('mesa').isString() && newData.child('mesa').val().length <= 60",
+        "lineas": {
+          ".validate": "newData.hasChildren()",
+          "$i": {
+            ".validate": "$i.matches(/^[0-9]{1,2}$/) && newData.hasChildren(['id', 'qty']) && root.child('productsMesa').child(newData.child('id').val()).exists()",
+            "id": { ".validate": "newData.isString() && newData.val().length <= 30" },
+            "qty": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 99" },
+            "nombre": { ".validate": "newData.isString() && newData.val().length <= 150" },
+            "cat": { ".validate": "newData.isString() && newData.val().length <= 60" },
+            "precio": { ".validate": "newData.isNumber()" },
+            "nota": { ".validate": "newData.isString() && newData.val().length <= 500" },
+            "$otro": { ".validate": false }
+          }
+        },
+        "mesa": { ".validate": "newData.isString()" },
+        "cliente": { ".validate": "newData.isString() && newData.val().length <= 80" },
+        "actualizado": { ".validate": "newData.isNumber()" },
+        "$otro": { ".validate": false }
+      }
+    },
+
+    // Solo el personal (cerrado 2026-10-05): antes cualquier cliente con
+    // login de Google podía reescribir el correlativo P-/D-.
+    // Lectura también solo personal (2026-10-13): la única que la lee es la
+    // transacción de siguienteCodigo (shared/firebase.js) en sus paneles.
+    "contadores": {
+      ".read": "auth != null && (root.child('trabajadores').child(auth.uid).child('estado').val() === 'activo' || root.child('admins').child(auth.uid).exists())",
+      ".write": "auth != null && (root.child('trabajadores').child(auth.uid).child('estado').val() === 'activo' || root.child('admins').child(auth.uid).exists())"
+    },
+
+    // Cerrado 2026-10-13: antes ".read": "auth != null" dejaba a cualquier
+    // cliente con login de Google ver la lista del personal (nombres,
+    // usuarios y quién es admin). La lista completa solo la lee un
+    // trabajador admin (panel-admin); cada uno lee su propio perfil (el
+    // guard de login, shared/roles.js).
+    "trabajadores": {
+      ".read": "auth != null && root.child('trabajadores').child(auth.uid).child('rolesPermitidos').child('admin').val() === true",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && root.child('trabajadores').child(auth.uid).child('rolesPermitidos').child('admin').val() === true"
+      }
+    },
+
+    "categories": {
+      ".read": true,
+      ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno' || root.child('trabajadores').child(auth.uid).child('rolesPermitidos').child('admin').val() === true)"
+    },
+    "products": {
+      ".read": true,
+      ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno' || root.child('trabajadores').child(auth.uid).child('rolesPermitidos').child('admin').val() === true)"
+    },
+    // Carta de MESA — separada del menú de domicilios (categories/products
+    // de arriba) el 2026-09-21: compartían nodo y borrar en el admin de
+    // domicilios borraba también de la carta del cliente. Mismas reglas:
+    // lectura pública (el menú es público, panel-cliente no tiene login),
+    // escritura solo admin/dueño o trabajador con rol admin.
+    "categoriesMesa": {
+      ".read": true,
+      ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno' || root.child('trabajadores').child(auth.uid).child('rolesPermitidos').child('admin').val() === true)"
+    },
+    "productsMesa": {
+      ".read": true,
+      ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno' || root.child('trabajadores').child(auth.uid).child('rolesPermitidos').child('admin').val() === true)"
+    },
+
+    "sugerencias": {
+      ".read": true,
+      ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno' || root.child('trabajadores').child(auth.uid).child('rolesPermitidos').child('admin').val() === true)"
+    },
+    "sugerenciasPorProducto": {
+      ".read": true,
+      ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno' || root.child('trabajadores').child(auth.uid).child('rolesPermitidos').child('admin').val() === true)"
+    },
+    "settings": {
+      ".read": true,
+      ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno' || root.child('trabajadores').child(auth.uid).child('rolesPermitidos').child('admin').val() === true)",
+      // Pausar/reanudar SOLO los domicilios: además del dueño, cualquier
+      // admin de la tienda (cajero incluido) y el personal activo del
+      // restaurante (panel-caja). Solo true/false; nada más de settings.
+      "domiciliosPausados": {
+        ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || root.child('trabajadores').child(auth.uid).child('estado').val() === 'activo')",
+        ".validate": "newData.isBoolean()"
+      }
+    },
+
+    "drivers": {
+      ".read": "auth != null && (root.child('admins').child(auth.uid).exists() || root.child('trabajadores').child(auth.uid).child('estado').val() === 'activo')",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists() || root.child('trabajadores').child(auth.uid).child('estado').val() === 'activo')",
+        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno')",
+        "access": {
+          ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno')"
+        },
+        "name": { ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno')" },
+        "phone": { ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno')" },
+        "email": { ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno')" },
+        "available": { ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno')" },
+        "createdAt": { ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno')" },
+        "fcmTokens": {
+          "$token": { ".write": "auth != null && auth.uid === $uid" }
+        }
+      }
+    },
+
+    "consents": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    "users": {
+      "$uid": {
+        "fcmTokens": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "addresses": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    "outOfStock": {
+      ".read": true,
+      // Solo admins (2026-10-05): el descuento por venta ahora lo hace la
+      // Cloud Function crearPedido, ya no el navegador del cliente.
+      "$productId": {
+        ".write": "auth != null && root.child('admins').child(auth.uid).exists()"
+      }
+    },
+
+    "errorLogs": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).exists()",
+      // Solo agregar, nunca borrar ni pisar (2026-10-05): antes ".write": true
+      // a nivel de colección dejaba a cualquiera, sin login, borrar TODOS los
+      // registros de una vez. Sigue siendo público a propósito — errors.js
+      // registra fallos también de visitantes sin sesión.
+      // Solo los campos que manda errors.js, cada uno con tope (2026-10-13):
+      // antes se validaban message y context, pero cualquiera podía colgar
+      // otros campos de cualquier tamaño en un registro.
+      "$logId": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['message', 'context'])",
+        "message": { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "context": { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "stack": { ".validate": "newData.isString() && newData.val().length <= 600" },
+        "url": { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "userAgent": { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "at": { ".validate": "newData.val() === now" },
+        "$otro": { ".validate": false }
+      }
+    },
+
+    // Pagos en línea esperando confirmación de AAvance. Solo los escriben
+    // las Cloud Functions (Admin SDK); el cliente lee únicamente el suyo.
+    "pagosPendientes": {
+      "$orderNumber": {
+        ".read": "auth != null && data.child('uid').val() === auth.uid"
+      }
+    },
+
+    "customerFlags": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).exists()",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())",
+        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno')"
+      }
+    },
+
+    "cashSettlements": {
+      ".indexOn": ["driverId", "closedAt"],
+      ".read": "auth != null && (root.child('admins').child(auth.uid).exists() || (query.orderByChild == 'driverId' && query.equalTo == auth.uid))",
+      // Solo un domiciliario con acceso (2026-10-13): antes cualquier cliente
+      // con login podía crear cierres a su nombre.
+      "$settlementId": {
+        ".write": "auth != null && !data.exists() && newData.child('driverId').val() === auth.uid && root.child('drivers').child(auth.uid).child('access').val() === true"
+      }
+    }
+  }
+}

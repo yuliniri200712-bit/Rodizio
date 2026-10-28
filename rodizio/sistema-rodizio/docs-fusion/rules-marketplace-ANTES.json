@@ -1,0 +1,95 @@
+{
+  "rules": {
+    "orders": {
+      ".indexOn": ["uid", "driverId"],
+      ".read": "auth != null && (root.child('admins').child(auth.uid).exists() || (query.orderByChild == 'uid' && query.equalTo == auth.uid) || (query.orderByChild == 'driverId' && query.equalTo == auth.uid))",
+      "$orderId": {
+        ".write": "auth != null && (data.exists() ? (data.child('uid').val() === auth.uid || data.child('driverId').val() === auth.uid || root.child('admins').child(auth.uid).exists()) : newData.child('uid').val() === auth.uid)"
+      }
+    },
+    "drivers": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).exists()",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())",
+        "access": {
+          ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno')"
+        },
+        "name": { ".write": "auth != null && auth.uid === $uid" },
+        "phone": { ".write": "auth != null && auth.uid === $uid" },
+        "available": { ".write": "auth != null && auth.uid === $uid" },
+        "fcmTokens": {
+          "$token": { ".write": "auth != null && auth.uid === $uid" }
+        }
+      }
+    },
+    "consents": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "users": {
+      "$uid": {
+        "fcmTokens": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "addresses": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+    "outOfStock": {
+      ".read": true,
+      "$productId": {
+        ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || (data.isNumber() && newData.isNumber() && newData.val() >= 0 && newData.val() < data.val()))"
+      }
+    },
+    "errorLogs": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).exists()",
+      ".write": true,
+      "$logId": {
+        ".validate": "newData.hasChildren(['message', 'context'])"
+      }
+    },
+    "customerFlags": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).exists()",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())",
+        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno')"
+      }
+    },
+    "categories": {
+      ".read": true,
+      ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno')"
+    },
+    "products": {
+      ".read": true,
+      ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno')"
+    },
+    "settings": {
+      ".read": true,
+      ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno')"
+    },
+    "cashSettlements": {
+      ".indexOn": ["driverId"],
+      ".read": "auth != null && (root.child('admins').child(auth.uid).exists() || (query.orderByChild == 'driverId' && query.equalTo == auth.uid))",
+      "$settlementId": {
+        ".write": "auth != null && !data.exists() && newData.child('driverId').val() === auth.uid"
+      }
+    },
+    "driverRatings": {
+      ".indexOn": ["driverId"],
+      ".read": "auth != null && (root.child('admins').child(auth.uid).exists() || (query.orderByChild == 'driverId' && query.equalTo == auth.uid))",
+      "$orderId": {
+        ".write": "auth != null && !data.exists() && root.child('orders').child($orderId).child('uid').val() === auth.uid && newData.child('rating').isNumber() && newData.child('rating').val() >= 1 && newData.child('rating').val() <= 5"
+      }
+    }
+  }
+}

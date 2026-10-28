@@ -1,0 +1,227 @@
+/* =========================================================
+   Carta QR (panel-cliente) — sistema visual "Rodízio Brasa", el mismo de
+   los paneles: encabezado carbón, rojo solo para la acción principal,
+   esquinas de 4px. Firma: djgv · 0808 · 0724
+   ========================================================= */
+/* Sin paleta propia: los colores salen de shared/marca.css (vía los alias
+   de shared/theme.css), igual que los paneles del personal. */
+
+h1,h2,h3,h4{font-family:var(--font-heading);font-weight:500;letter-spacing:-0.01em;font-optical-sizing:auto;margin:0}
+input{font-family:inherit}
+button{cursor:pointer}
+@keyframes rzUp{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes rzFadeIn{0%{opacity:0;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes rzCartBump{0%{transform:translateX(-50%) scale(1)}35%{transform:translateX(-50%) scale(1.05)}100%{transform:translateX(-50%) scale(1)}}
+@keyframes rzFloatPlus{0%{opacity:0;transform:translate(-50%,-40%) scale(.6)}18%{opacity:1;transform:translate(-50%,-70%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-160%) scale(1)}}
+@keyframes rzDrawerIn{0%{transform:translateY(100%)}100%{transform:translateY(0)}}
+@keyframes rzDrawerOut{0%{transform:translateY(0)}100%{transform:translateY(100%)}}
+@keyframes rzSidebarIn{0%{transform:translateX(-100%)}100%{transform:translateX(0)}}
+@keyframes rzSidebarOut{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+@keyframes rzBackdropIn{0%{opacity:0}100%{opacity:1}}
+@keyframes rzBackdropOut{0%{opacity:1}100%{opacity:0}}
+@keyframes rzPop{0%{opacity:0;transform:scale(.5)}60%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+@keyframes rzPulse{0%,100%{opacity:1}50%{opacity:.6}}
+body{overflow-x:hidden}
+#app{max-width:520px;margin:0 auto;min-height:100dvh;position:relative;display:flex;flex-direction:column}
+
+/* ── Aviso de tratamiento de datos (banner superior, una sola vez) ── */
+.aviso-datos{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;background:var(--color-neutral-900);color:var(--color-bg);padding:9px 16px;font-size:11.5px;line-height:1.35;box-shadow:var(--shadow-sm);animation:rzFadeIn .25s ease both}
+.aviso-datos p{margin:0;max-width:440px}
+.aviso-datos a{color:inherit;font-weight:700;text-decoration:underline}
+.aviso-datos button{flex:none;border:1px solid var(--color-bg);background:transparent;color:var(--color-bg);border-radius:var(--radio-sm);padding:5px 13px;font-size:11px;font-weight:700}
+
+/* ── Página de política de tratamiento de datos (privacidad.html) ── */
+.legal-page{max-width:640px;margin:0 auto;padding:24px 20px 60px;color:var(--color-neutral-800);line-height:1.55;font-size:14px}
+.legal-volver{display:inline-block;margin-bottom:18px;color:var(--color-accent-700);font-weight:700;font-size:13px;text-decoration:none}
+.legal-borrador{background:var(--color-accent-100);border:1px solid var(--color-accent-300);color:var(--color-accent-700);border-radius:var(--radio-sm);padding:14px 16px;font-size:12.5px;margin-bottom:22px}
+.legal-page h1{font-size:24px;margin-bottom:6px}
+.legal-meta{color:var(--color-neutral-500);font-size:12px;margin-bottom:22px}
+.legal-page h2{font-size:16px;margin:26px 0 8px}
+.legal-page ul{margin:0 0 12px;padding-left:20px}
+.legal-page li{margin-bottom:6px}
+.legal-page p{margin:0 0 12px}
+
+/* ── Encabezado de marca + mesa ── */
+.hero{position:relative;padding:22px 18px 46px;background:linear-gradient(160deg, var(--color-accent) 0%, var(--color-accent-600) 100%);color:var(--color-bg);overflow:hidden}
+.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:28px;background:var(--color-bg);border-radius:var(--radio-sm)}
+.hero-row{position:relative;z-index:1;display:flex;align-items:center;gap:12px}
+.hero-logo{width:52px;height:52px;border-radius:var(--radio-sm);box-shadow:var(--shadow-md);overflow:hidden;flex:none;border:1px solid var(--sobre-carbon-borde)}
+.hero-logo img{width:100%;height:100%;display:block}
+.hero-text{line-height:1.25}
+.hero-text .brand{font-family:var(--font-heading);font-size:20px;display:block;letter-spacing:.01em}
+.hero-right{display:flex;align-items:center;gap:12px;margin-left:auto}
+.hero-right .mesa{font-size:12.5px;opacity:.92;display:flex;align-items:center;gap:4px}
+.hero-right .mesa .material-symbols-outlined{font-size:14px}
+.lang-btn{flex:none;min-height:32px;background:transparent;color:var(--sobre-carbon);border:1px solid var(--sobre-carbon-borde);border-radius:var(--radio-sm);padding:4px 8px;font-size:11px;font-weight:700;letter-spacing:0.02em;transition:background 0.2s}
+.lang-btn:hover{border-color:var(--sobre-carbon-suave)}
+.hero-sub{position:relative;z-index:1;margin-top:14px;font-size:12.5px;opacity:.9;max-width:340px;line-height:1.4}
+
+main{flex:1;padding:0 18px 110px;margin-top:-24px;position:relative;z-index:1}
+
+/* ── Menú ── */
+.search-row{display:flex;align-items:center;gap:10px;padding-top:14px;margin-bottom:14px}
+.hamburger-btn{flex:none;width:48px;height:48px;border-radius:var(--radio-sm);border:1px solid var(--color-divider);background:var(--color-neutral-100);color:var(--color-text);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm)}
+.hamburger-btn .material-symbols-outlined{font-size:22px}
+.menu-search-wrap{position:relative;flex:1}
+.menu-search{width:100%;box-sizing:border-box;min-height:48px;padding:0 16px 0 44px;border-radius:var(--radio-sm);border:1px solid var(--color-divider);background:var(--color-neutral-100);font-size:14px;font-family:inherit;color:var(--color-text);outline:none;transition:border-color .2s, box-shadow .2s;box-shadow:var(--shadow-sm)}
+.menu-search:focus{border-color:var(--color-accent);box-shadow:0 0 0 3px color-mix(in srgb, var(--color-accent) 16%, transparent)}
+.menu-search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--color-neutral-500);pointer-events:none}
+.menu-search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:var(--radio-sm);border:none;background:var(--color-neutral-300);color:var(--color-neutral-700);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.plato-cat{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--color-accent-700);background:var(--color-accent-100);border-radius:var(--radio-sm);padding:3px 10px;margin-bottom:5px}
+.plato{display:flex;align-items:center;gap:13px;border-radius:var(--radio-sm);padding:11px 14px 11px 11px;margin-bottom:11px;border:1px solid var(--color-divider);background:var(--color-neutral-100);box-shadow:var(--shadow-sm);animation:rzFadeIn .25s ease both;transition:border-color .15s, background .15s}
+.plato.in{border-color:var(--color-accent-300);background:var(--color-accent-100)}
+.plato-img{width:84px;height:84px;border-radius:var(--radio-sm);flex:none;overflow:hidden;background:var(--color-neutral-200);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px color-mix(in srgb, #000 6%, transparent)}
+.plato-foto{width:100%;height:100%;object-fit:contain;padding:4px;box-sizing:border-box;display:block;opacity:0;transition:opacity .3s ease}
+.plato-foto.cargada{opacity:1}
+.icon-fallback{display:none;color:var(--color-neutral-500);font-size:28px}
+.plato-img.sin-foto .icon-fallback{display:flex}
+.plato-info{flex:1;min-width:0}
+.plato-info b{font-size:14.5px;display:block;line-height:1.3}
+.plato-info small{color:var(--color-neutral-600);font-size:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:3px 0 6px;line-height:1.35}
+.plato-info .precio{font-weight:800;font-size:13.5px;color:var(--color-accent-700)}
+.plato[data-detalle]{cursor:pointer;transition:transform .12s ease,box-shadow .15s ease}
+.plato[data-detalle]:active{transform:scale(.985)}
+.plato[data-detalle]:focus-visible{outline:2px solid var(--marca);outline-offset:2px}
+.stepper{display:flex;align-items:center;gap:9px;flex:none}
+.stepper button{width:32px;height:32px;border-radius:var(--radio-sm);border:1px solid var(--color-divider);background:var(--color-bg);font-size:16px;font-weight:700;line-height:1;transition:transform .1s}
+.stepper button:active{transform:scale(.9)}
+.stepper button.add{border-color:var(--color-accent);background:var(--color-accent);color:var(--color-bg)}
+.stepper .qty{min-width:16px;text-align:center;font-weight:800}
+
+.cart-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;width:calc(100% - 36px);max-width:484px;background:var(--color-accent);color:var(--color-bg);border-radius:var(--radio-sm);padding:13px 20px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-lg);z-index:15;border:0;animation:rzUp .22s ease both}
+.cart-bar.bump{animation:rzCartBump .32s cubic-bezier(.34,1.56,.64,1)}
+.cart-bar b{font-family:var(--font-heading);font-weight:400;font-size:14px}
+.cart-bar span{font-size:12px;opacity:.9}
+.cart-bar .cta-mini{margin-left:auto;background:var(--color-bg);color:var(--color-accent-700);border-radius:var(--radio-sm);padding:9px 16px;font-size:13px;font-weight:700}
+
+.float-plus{position:fixed;z-index:60;pointer-events:none;font-family:var(--font-heading);font-size:16px;color:var(--color-accent-700);text-shadow:0 1px 0 var(--color-bg);animation:rzFloatPlus .7s ease-out forwards}
+
+/* ── Carrito (drawer) ── */
+.backdrop{position:fixed;inset:0;background:rgba(32,30,29,.42);z-index:30;opacity:0;pointer-events:none}
+.backdrop.show{opacity:1;pointer-events:auto}
+.backdrop.anim-in{animation:rzBackdropIn .28s ease}
+.backdrop.anim-out{animation:rzBackdropOut .22s ease}
+.drawer{position:fixed;left:0;right:0;bottom:0;z-index:31;background:var(--color-bg);border-radius:var(--radio-sm);max-height:86dvh;display:flex;flex-direction:column;transform:translateY(100%);box-shadow:var(--shadow-lg)}
+.drawer.show{transform:translateY(0)}
+.drawer.anim-in{animation:rzDrawerIn .28s cubic-bezier(.32,.72,0,1)}
+.drawer.anim-out{animation:rzDrawerOut .22s ease}
+.drawer-head{padding:16px 20px 10px;border-bottom:1px solid var(--color-divider);display:flex;align-items:center}
+.drawer-head h3{font-size:19px}
+.drawer-close{margin-left:auto;width:32px;height:32px;border-radius:var(--radio-sm);border:1px solid var(--color-divider);background:var(--color-neutral-100);display:flex;align-items:center;justify-content:center;color:var(--color-neutral-700)}
+.drawer-close .material-symbols-outlined{font-size:18px}
+.drawer-body{overflow-y:auto;padding:14px 20px}
+.nombre-input{width:100%;box-sizing:border-box;border:1px solid var(--color-divider);background:var(--color-neutral-100);border-radius:var(--radio-sm);padding:11px 14px;font-size:14px;font-weight:600;margin-bottom:14px}
+.linea-row{padding:12px 0;border-bottom:1px solid var(--color-divider)}
+.linea-top{display:flex;align-items:center;gap:10px}
+.linea-top b{flex:1;font-size:14px}
+.linea-top .sub{font-weight:700;font-size:13px;color:var(--color-accent-700)}
+.nota-input{width:100%;box-sizing:border-box;border:1px solid var(--color-divider);background:var(--color-neutral-100);border-radius:var(--radio-sm);padding:8px 12px;font-size:12.5px;margin-top:8px}
+.sug{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.sug button{border-radius:var(--radio-sm);padding:6px 12px;font-size:11.5px;cursor:pointer;border:1px solid var(--color-neutral-300);background:transparent;color:var(--color-neutral-700)}
+.sug button.on{border-color:var(--carbon);background:var(--carbon);color:var(--sobre-carbon)}
+.drawer-foot{padding:14px 20px 20px;border-top:1px solid var(--color-divider);display:flex;flex-direction:column;gap:10px}
+.drawer-total{display:flex;justify-content:space-between;font-size:15px;font-weight:700}
+.drawer-actions{display:flex;gap:10px}
+.btn-ghost{flex:1;min-height:50px;border-radius:var(--radio-sm);border:1px solid var(--color-divider);background:transparent;color:var(--color-neutral-700);font-weight:600;font-size:14px}
+.btn-send{flex:2;min-height:50px;border-radius:var(--radio-sm);border:0;background:var(--color-accent);color:var(--color-bg);font-family:var(--font-heading);font-size:15.5px}
+.btn-send:disabled{animation:rzPulse 1s ease-in-out infinite}
+
+/* ── Categorías — panel lateral deslizable (hamburguesa) ── */
+.category-sidebar{position:fixed;top:0;left:0;bottom:0;z-index:31;width:min(82%,320px);background:var(--color-bg);display:flex;flex-direction:column;transform:translateX(-100%);box-shadow:var(--shadow-lg)}
+.category-sidebar.show{transform:translateX(0)}
+.category-sidebar.anim-in{animation:rzSidebarIn .28s cubic-bezier(.32,.72,0,1)}
+.category-sidebar.anim-out{animation:rzSidebarOut .22s ease}
+.category-list{overflow-y:auto;padding:8px 10px}
+.category-row{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 10px;border:0;border-radius:var(--radio-sm);background:transparent;color:var(--color-neutral-700);font-size:14px;font-weight:600;text-align:left}
+.category-row .cat-icon{width:19px;height:19px;flex:none;color:var(--color-neutral-500)}
+/* Categoría activa = mismo tratamiento que el marketplace (rojo suave + texto
+   e ícono en rojo de marca), a juego con el farol de vidrios rojos. */
+.category-row.on{background:var(--marca-tinte);color:var(--marca-texto);font-weight:800}
+.category-row.on .cat-icon{color:var(--marca-texto)}
+
+/* ── Detalle legible de producto ── */
+.detalle-backdrop{position:fixed;inset:0;background:rgba(32,30,29,.48);z-index:40;animation:rzBackdropIn .2s ease}
+.detalle-sheet{position:fixed;left:50%;bottom:0;z-index:41;width:min(100%,520px);max-height:92dvh;box-sizing:border-box;overflow-y:auto;transform:translateX(-50%);padding:22px 22px 30px;background:var(--color-bg);border-radius:var(--radio-sm);box-shadow:var(--shadow-lg);animation:rzDrawerIn .28s cubic-bezier(.32,.72,0,1)}
+/* Detalle: foto HD (icons/menu/hd/, 800 px) cuadrada a todo el ancho — las
+   fotos del menú son cuadradas, así no se recorta ningún plato. Tope de alto
+   para que nombre y precio se vean sin desplazar. El ancho va explícito: con
+   aspect-ratio + max-height y ancho automático, el navegador achica también
+   el ancho (quedaba un hueco a la derecha). El botón de cerrar flota sobre la
+   foto; sin foto vuelve al estilo claro. */
+.detalle-close{position:absolute;top:12px;right:12px;width:40px;height:40px;border:0;border-radius:var(--radio-sm);background:rgba(42,45,51,.72);color:var(--sobre-carbon);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:2}
+.detalle-sheet.sin-foto .detalle-close{border:1px solid var(--color-divider);background:var(--superficie);color:var(--color-neutral-700);-webkit-backdrop-filter:none;backdrop-filter:none}
+.detalle-img{width:calc(100% + 44px);aspect-ratio:1/1;max-height:44dvh;margin:-22px -22px 18px;background:var(--superficie-hundida);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.detalle-img img{width:100%;height:100%;object-fit:cover;display:block}
+.detalle-img.sin-foto{aspect-ratio:auto;height:120px}
+.detalle-img .icon-fallback{display:none;color:var(--color-neutral-500);font-size:48px}
+.detalle-img.sin-foto .icon-fallback{display:flex}
+.detalle-cat{display:inline-block;color:var(--color-accent-700);font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.detalle-sheet h2{font-size:25px;line-height:1.15;margin:6px 44px 10px 0}
+.detalle-desc{color:var(--color-neutral-700);font-size:15px;line-height:1.55;margin:0 0 10px}
+.detalle-precio{display:block;color:var(--color-accent-700);font-size:17px;margin-bottom:22px}
+.detalle-nota{border-top:1px solid var(--color-divider);padding-top:16px}
+.detalle-nota h3{font-family:inherit;font-size:14px;margin:0 0 8px}
+.detalle-sug{margin:0 0 10px}
+.detalle-sug button{font-size:12px;padding:8px 13px}
+.detalle-actions{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:18px;font-size:17px;font-weight:800}
+.detalle-qty{width:42px;height:42px;border:1px solid var(--color-divider);border-radius:var(--radio-sm);background:var(--color-bg);font-size:21px;line-height:1}
+.detalle-qty.add{border-color:var(--color-accent);background:var(--color-accent);color:var(--color-bg)}
+.detalle-qty:disabled{opacity:.45}
+
+/* ── Pantalla de carga — fondo oscuro de marca (local a este archivo,
+     shared/ui.css define .cargando-wrap/.cargando-logo/.spinner/.cargando-texto
+     para las 4 apps de mesa también — no tocar ese archivo, solo pisar acá) ── */
+.cargando-wrap{background:var(--carbon);flex:1;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.cargando-wrap .cargando-texto{color:var(--sobre-carbon-suave)}
+.cargando-logo,.confirm-logo{width:180px;height:48px;border-radius:var(--radio-sm);box-shadow:none;overflow:hidden;margin:0 auto 18px}
+.cargando-logo img,.confirm-logo img{width:100%;height:100%;object-fit:contain;display:block}
+
+/* ── Pantalla de confirmación tras enviar ── */
+.confirm-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 24px;text-align:center;animation:rzUp .3s ease}
+.confirm-icon{width:72px;height:72px;border-radius:var(--radio-sm);background:var(--color-accent-100);color:var(--color-accent-700);display:flex;align-items:center;justify-content:center;margin-bottom:18px;animation:rzPop .5s cubic-bezier(.34,1.56,.64,1) .1s both}
+.confirm-icon .material-symbols-outlined{font-size:38px}
+.confirm-wrap h2{font-size:22px;margin-bottom:8px}
+.confirm-wrap p{color:var(--color-neutral-600);font-size:14px;max-width:340px;line-height:1.5}
+.btn-volver-menu{margin-top:26px;min-height:48px;padding:0 24px;border-radius:var(--radio-sm);border:1px solid var(--color-divider);background:var(--color-neutral-100);color:var(--color-text);font-weight:700;font-size:14px}
+
+.error-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 24px;text-align:center}
+.error-wrap p{color:var(--color-neutral-600);font-size:14px;max-width:320px}
+
+@media (min-width:700px){
+	.detalle-sheet{bottom:50%;max-height:min(760px,92dvh);border-radius:var(--radio-sm);transform:translate(-50%,50%)}
+	.detalle-img{max-height:380px}
+}
+
+/* =========================================================
+   BRAND — overrides de componentes (van al final, después de las
+   reglas originales, para ganar por orden de cascada).
+   ========================================================= */
+/* Encabezado carbón plano, como los paneles (sin degradé ni brillo) */
+.hero{background:var(--carbon);color:var(--sobre-carbon);padding:28px 18px 38px}
+.hero-row{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+.hero-wordmark{width:130px;height:40px;object-fit:contain;object-position:left center;display:block}
+.hero .mesa{font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:6px;color:var(--sobre-carbon);background:transparent;border:1px solid var(--sobre-carbon-borde);padding:6px 14px;border-radius:var(--radio-sm);opacity:1}
+.hero .mesa .material-symbols-outlined{font-size:16px}
+.hero-sub{color:var(--sobre-carbon-suave);font-size:13px;margin-top:10px;line-height:1.4;opacity:1}
+/* Platos: superficie mate sobre el fondo cálido */
+.plato-card{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio-sm);box-shadow:var(--sombra-tarjeta)}
+.plato-cat{background:var(--marca);color:var(--sobre-marca);font-weight:800;border-radius:var(--radio-sm);box-shadow:none}
+/* Rojo plano solo en la acción principal: enviar, carrito, "+" */
+.btn-send{background:var(--marca);box-shadow:none;color:var(--sobre-marca);font-weight:700;border-radius:var(--radio-sm)}
+.btn-send:hover{background:var(--marca-hover)}
+.cart-bar{background:var(--marca);color:var(--sobre-marca);box-shadow:var(--sombra-flotante);border-radius:var(--radio-sm)}
+/* Fondo Y color juntos: antes esta regla pisaba solo el color a blanco y
+   dejaba el fondo casi blanco de la regla base -> el botón "Ver pedido"
+   quedaba blanco sobre blanco, invisible. */
+.cart-bar .cta-mini{background:var(--superficie);color:var(--marca-texto);font-weight:700}
+.stepper button.add,.detalle-qty.add{background:var(--marca);border-color:var(--marca);color:var(--sobre-marca)}
+/* Barra de scroll */
+html{scrollbar-width:thin;scrollbar-color:var(--borde-control) var(--fondo)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--fondo)}
+::-webkit-scrollbar-thumb{background:var(--borde-control);border-radius:var(--radio-sm)}
+
+/* El crédito vive fuera de <main> (a nivel de <body>), así que el
+   padding-bottom de main no lo protege de la barra flotante del carrito
+   (.cart-bar, position:fixed) — se le reserva su propio espacio. */
+.dev-credit{padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px))}

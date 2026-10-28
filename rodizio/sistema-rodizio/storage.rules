@@ -1,0 +1,19 @@
+rules_version = '2';
+
+// Storage de rodiziomarketplace (2026-10-07).
+// - menu/**: fotos de los platos (lista 320 px en menu/, detalle en
+//   menu/hd/). Las ven todos: la tienda y la carta del QR no tienen login.
+// - Nada se escribe desde las apps por ahora: las fotos las sube el dueño
+//   desde la consola de Firebase, que no pasa por estas reglas.
+// - Todo lo demás (logos, fotos del local en la raíz) queda privado.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /menu/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

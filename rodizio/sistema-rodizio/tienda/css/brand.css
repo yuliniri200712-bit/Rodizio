@@ -1,0 +1,2054 @@
+/* Rodizio Cucuta - ParaTouch (DJG . djgv . Mxi . 0808 . 0724 . uwu) */
+/* =========================================================
+   RODÍZIO CÚCUTA — Identidad y Diseño Delivery Profesional
+   Inspirado en la parrilla auténtica: carbón noble, fuego vivo,
+   brasa ardiente y detalles en oro.
+   CERO colores pasteles: contraste nítido, elegancia y vida.
+   Scope: body:has(#app) / html:has(#app)
+   ========================================================= */
+
+html:has(#app) {
+  scrollbar-color: var(--borde-control) var(--fondo);
+  background: var(--fondo);
+}
+
+body:has(#app) {
+  /* --- Lienzo de Marca: Contraste Puro y Alta Fidelidad --- */
+  --color-bg: var(--fondo);
+  --color-surface: var(--superficie);
+  --color-surface-raised: var(--superficie);
+  --color-border: var(--borde);
+  --color-divider: var(--borde);
+
+  /* --- Rojo Fuego Rodízio (Vibrante, apetitoso, NUNCA pastel) --- */
+  --color-flame: var(--marca);
+  --color-flame-hover: var(--marca-hover);
+  --color-flame-deep: var(--marca-texto);
+  --color-ember: var(--marca-hover);
+  --color-flame-glow: transparent;
+
+  /* --- Carbón Noble / Obsidiana (Parrilla de hierro, uniformes) --- */
+  --color-charcoal-900: var(--carbon);
+  --color-charcoal-800: var(--carbon);
+  --color-charcoal-700: var(--carbon);
+  --color-charcoal-600: color-mix(in srgb, var(--carbon) 85%, var(--sobre-carbon));
+
+  /* --- Ámbar & Oro Brasa (Certificación Angus, valoraciones) --- */
+  --color-gold: var(--aviso);
+  --color-gold-bright: var(--aviso);
+  --color-gold-dark: var(--aviso);
+
+  /* --- Tipografía y Lectura de Alto Contraste --- */
+  --color-text: var(--tinta);
+  --color-text-muted: var(--tinta-suave);
+  --color-text-faint: var(--tinta-suave);
+
+  --color-success: var(--exito);
+  --color-danger: var(--marca-texto);
+
+  /* Sin redondeo, a pedido del usuario ("más elegancia") — mismo
+     criterio que ya se aplicó al panel de admin (body:has(#admin-app)
+     en admin.css), esquinas casi rectas en vez de tarjetas/píldoras muy
+     curvas. Solo toca radios, no colores/tipografía (esos siguen siendo
+     los de marca, a diferencia del panel que además cambia a paleta gris). */
+  --radius-sm: var(--radio-sm);
+  --radius-md: var(--radio-sm);
+  --radius-lg: var(--radio-sm);
+  --radius-pill: var(--radio-sm);
+
+  /* --- Fuentes Geométricas Elegantes --- */
+  --font-display: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  /* --- Elevación y Sombras --- */
+  --shadow-card: var(--sombra-tarjeta);
+  --shadow-card-hover: var(--sombra-flotante);
+  --shadow-glow-flame: none;
+  --shadow-float-cart: var(--sombra-flotante);
+}
+
+/* =========================================================
+   RESET & TIPOGRAFÍA DE TÍTULOS
+   ========================================================= */
+body:has(#app) h1,
+body:has(#app) h2,
+body:has(#app) h3,
+body:has(#app) h4 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  text-transform: none;
+  color: var(--color-text);
+}
+
+/* =========================================================
+   TOP HEADER — CARBÓN PLANO, SIN LÍNEA ROJA (sistema Rodízio Brasa)
+   ========================================================= */
+body:has(#app) .app-header {
+  background: var(--carbon);
+  border-bottom: 0;
+  box-shadow: none;
+  padding: env(safe-area-inset-top, 0px) var(--sp-4) 0;
+  min-height: 64px;
+}
+
+body:has(#app) .app-header .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+body:has(#app) .brand-logo-img {
+  height: 38px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
+  display: block;
+}
+
+body:has(#app) .brand-titles {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+body:has(#app) .brand-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sobre-carbon-suave);
+  background: transparent;
+  border: 1px solid var(--sobre-carbon-borde);
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  line-height: 1;
+}
+
+body:has(#app) .brand-location svg {
+  color: var(--sobre-carbon-marca);
+  flex-shrink: 0;
+}
+
+/* En celular angosto el logo + la píldora de ubicación + los botones
+   de acción del header no caben — se oculta la ubicación (el logo
+   sigue identificando la marca), mismo criterio que el viejo
+   .brand-name en layout.css. */
+@media (max-width: 480px) {
+  body:has(#app) .brand-location {
+    display: none;
+  }
+  body:has(#app) .brand-logo-img {
+    height: 34px;
+  }
+}
+
+/* Botones de acción en header (Vidrio Oscuro + Acento Fuego) */
+body:has(#app) .app-header .icon-btn,
+body:has(#app) .app-header .avatar-btn {
+  background: transparent;
+  border: 1px solid var(--sobre-carbon-borde);
+  color: var(--sobre-carbon);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radio-sm);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+body:has(#app) .app-header .icon-btn:hover {
+  background: transparent;
+  border-color: var(--sobre-carbon-suave);
+  color: var(--sobre-carbon);
+  box-shadow: none;
+}
+
+body:has(#app) .app-header .icon-btn:active,
+body:has(#app) .app-header .avatar-btn:active {
+  transform: scale(0.90);
+}
+
+/* =========================================================
+   BARRA DE BÚSQUEDA INTELIGENTE (Estilo Marketplace Moderno)
+   ========================================================= */
+body:has(#app) .search-row {
+  margin: var(--sp-3) var(--sp-4);
+  gap: 8px;
+  /* Bug real corregido: el botón ☰ de categorías (y el buscador/carrito
+     de esta misma fila) se perdían al hacer scroll porque esta fila
+     nunca quedó "sticky" de verdad al reorganizar el header en la ronda
+     del rediseño de navegación — solo el <header> (.app-header) se
+     queda fijo, esta fila se iba con el resto de la página. */
+  position: sticky;
+  top: var(--header-height);
+  z-index: calc(var(--z-header) - 1);
+  background: var(--color-bg);
+  padding-top: var(--sp-2);
+  /* Con la palabra "Categorías" al lado del ícono, en pantallas
+     angostas ya no cabían las 3 cosas en una sola fila (el texto se
+     salía) — ahora es 2 filas: botón categorías + carrito arriba,
+     buscador completo abajo. */
+  flex-direction: column;
+  align-items: stretch;
+}
+
+body:has(#app) .search-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+body:has(#app) .search-row-menu-btn,
+body:has(#app) .search-row-cart-btn {
+  height: 40px;
+  background: var(--superficie);
+  border: 1.5px solid var(--borde);
+  color: var(--tinta);
+  box-shadow: 0 3px 12px rgba(12, 14, 18, 0.04);
+}
+body:has(#app) .search-row-cart-btn {
+  width: 40px;
+  border-radius: 50%;
+}
+/* El botón de categorías llevaba solo el ícono ☰ — a pedido del
+   usuario, un ícono sin texto no se entendía como "acá está el menú
+   de categorías". Se ensancha para llevar la palabra al lado, en vez
+   de mudarse junto a los botones de WhatsApp/Instagram del header
+   (esos son para contactar al restaurante, mezclar navegación con
+   contacto confunde más de lo que aclara). */
+body:has(#app) .search-row-menu-btn {
+  width: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px 0 12px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+.search-row-menu-label {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+body:has(#app) .search-bar {
+  margin: 0;
+  /* Ya no comparte fila con los botones (ver .search-row de arriba,
+     ahora en 2 filas) — con flex-direction:column no hacía falta
+     "flex:1" para repartir ancho, solo ocupa su fila completa sola. */
+  width: 100%;
+  background: var(--superficie);
+  border: 1.5px solid var(--borde);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  box-shadow: 0 3px 12px rgba(12, 14, 18, 0.04);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+body:has(#app) .search-bar:focus-within {
+  border-color: var(--foco);
+  box-shadow: 0 0 0 4px transparent, 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+body:has(#app) .search-bar-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--tinta-suave);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+body:has(#app) .search-bar:focus-within .search-bar-icon {
+  color: var(--color-flame);
+}
+
+body:has(#app) .search-bar input {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--tinta);
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 6px 0;
+}
+
+body:has(#app) .search-bar input::placeholder {
+  color: var(--tinta-suave);
+  font-weight: 500;
+}
+
+/* Botón para limpiar búsqueda */
+.search-clear-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--borde);
+  border: none;
+  color: var(--tinta-suave);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.search-clear-btn:hover {
+  background: var(--color-flame);
+  color: var(--sobre-marca);
+  transform: scale(1.08);
+}
+
+.search-clear-btn[hidden] {
+  display: none;
+}
+
+/* =========================================================
+   CARRUSEL DE FOTOS DE REFERENCIA (Hero Slider Profesional)
+   ========================================================= */
+.marketplace-hero {
+  margin: 0 var(--sp-4) var(--sp-3);
+  position: relative;
+}
+
+.hero-banners-container {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.12);
+  background: var(--carbon);
+}
+
+@media (min-width: 720px) {
+  .hero-banners-container {
+    height: 270px;
+    border-radius: var(--radius-lg);
+  }
+}
+
+.hero-banners-slider {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  will-change: transform;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.hero-banners-slider.is-dragging {
+  cursor: grabbing;
+}
+
+.hero-banner-card {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.hero-banner-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 45%;
+  /* Las fotos vienen algo apagadas para un hero — un leve empujón de
+     brillo/contraste hace que la comida "apetezca" sin quemar el texto
+     (que además tiene su propio degradado + text-shadow). */
+  filter: brightness(1.1) contrast(1.05) saturate(1.06);
+  transform: scale(1);
+  transition: transform 6s cubic-bezier(0.25, 1, 0.5, 1);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* En este hero tan ancho y bajo, object-fit:cover solo recorta en
+   vertical (la foto 4:3 ya cubre el ancho) — así que aquí lo único que
+   manda es la banda vertical (segundo valor). */
+.hero-banner-card[data-index="0"] .hero-banner-bg { object-position: center 45%; }
+.hero-banner-card[data-index="1"] .hero-banner-bg { object-position: center 50%; }
+.hero-banner-card[data-index="2"] .hero-banner-bg { object-position: center 52%; }
+.hero-banner-card[data-index="3"] .hero-banner-bg { object-position: center 42%; }
+.hero-banner-card[data-index="4"] .hero-banner-bg { object-position: center 40%; }
+
+.hero-banner-card.is-active .hero-banner-bg {
+  transform: scale(1.05);
+}
+
+/* Degradado: caída más marcada para que la mitad derecha respire y se
+   vea la foto, manteniendo la izquierda oscura para el texto blanco.
+   La 2ª capa (vertical) da profundidad y asienta los dots / chips. */
+.hero-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      96deg,
+      rgba(8, 9, 12, 0.88) 0%,
+      rgba(8, 9, 12, 0.68) 32%,
+      rgba(8, 9, 12, 0.28) 64%,
+      rgba(8, 9, 12, 0) 90%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(8, 9, 12, 0.32) 0%,
+      rgba(8, 9, 12, 0) 42%
+    );
+  pointer-events: none;
+}
+
+.hero-banner-content {
+  position: relative;
+  z-index: 3;
+  padding: var(--sp-4) var(--sp-5);
+  max-width: 340px;
+}
+
+/* Cuando las flechas están visibles (>480px) el texto necesita más
+   sangría a la izquierda para no quedar tapado por la flecha "anterior". */
+@media (min-width: 481px) {
+  .hero-banner-content {
+    padding-left: 56px;
+  }
+}
+
+@media (min-width: 720px) {
+  .hero-banner-content {
+    max-width: 480px;
+    padding: var(--sp-6);
+    padding-left: 62px;
+  }
+}
+
+/* Entrada escalonada del contenido de la diapositiva activa — 100% CSS.
+   from{} usa opacidad 0.55 a propósito: si la animación no llega a
+   correr (pestaña en 2º plano, dispositivo lento) el texto se ve algo
+   tenue pero SIEMPRE legible, nunca invisible. */
+@keyframes heroContentIn {
+  from { opacity: 0.55; transform: translateY(10px); }
+  to   { opacity: 1;    transform: translateY(0); }
+}
+
+.hero-banner-card.is-active .hero-banner-badge,
+.hero-banner-card.is-active .hero-banner-title,
+.hero-banner-card.is-active .hero-banner-desc,
+.hero-banner-card.is-active .hero-banner-footer {
+  animation: heroContentIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hero-banner-card.is-active .hero-banner-title { animation-delay: 0.05s; }
+.hero-banner-card.is-active .hero-banner-desc { animation-delay: 0.1s; }
+.hero-banner-card.is-active .hero-banner-footer { animation-delay: 0.15s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-banner-card.is-active .hero-banner-badge,
+  .hero-banner-card.is-active .hero-banner-title,
+  .hero-banner-card.is-active .hero-banner-desc,
+  .hero-banner-card.is-active .hero-banner-footer {
+    animation: none;
+  }
+}
+
+/* Badges del Hero — VIVOS Y ELEGANTES (NO pasteles) */
+.hero-banner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--sobre-marca);
+  background: var(--color-flame);
+  box-shadow: 0 2px 10px transparent;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  margin-bottom: 8px;
+}
+
+.hero-banner-badge.hero-badge-gold {
+  background: var(--carbon);
+  color: var(--sobre-carbon);
+  border: 1px solid var(--sobre-carbon-borde);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* Scope con body:has(#app) para ganarle a la regla genérica
+   `body:has(#app) h2` (color: var(--color-text), casi negro) — sin
+   esto el título del banner sale negro sobre la foto oscura y no se
+   lee. Mismo motivo para .hero-banner-desc. */
+body:has(#app) .hero-banner-title {
+  color: var(--sobre-marca);
+  font-size: clamp(1.45rem, 5vw, 2.2rem);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  margin: 0 0 6px 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.hero-banner-desc {
+  color: rgba(255, 255, 255, 0.90);
+  font-size: clamp(12.5px, 2.7vw, 14px);
+  line-height: 1.35;
+  margin: 0 0 12px 0;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.hero-banner-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.hero-banner-cta {
+  background: var(--marca);
+  color: var(--sobre-marca);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  padding: 7px 16px;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 4px 14px transparent;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hero-banner-cta:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 18px transparent;
+}
+
+.hero-banner-cta:active {
+  transform: scale(0.95);
+}
+
+.hero-banner-meta {
+  color: var(--sobre-carbon-suave);
+  font-size: 11.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Flechas de navegación del Carrusel */
+.hero-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(12, 14, 18, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: var(--sobre-marca);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  padding: 0;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.hero-arrow:hover {
+  background: var(--color-flame);
+  border-color: var(--color-flame);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 0 14px transparent;
+}
+
+.hero-arrow:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+.hero-arrow-prev {
+  left: 10px;
+}
+
+.hero-arrow-next {
+  right: 10px;
+}
+
+@media (max-width: 480px) {
+  .hero-arrow {
+    display: none; /* En pantallas pequeñas se prioriza el swipe táctil */
+  }
+}
+
+/* Indicadores de diapositiva (dots) */
+.hero-banner-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.banner-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--borde);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.banner-dot.is-active {
+  width: 24px;
+  background: var(--color-flame);
+  box-shadow: 0 1px 6px transparent;
+}
+
+/* =========================================================
+   STATS BAR DE LA TIENDA (Iconos Vectoriales Animados)
+   ========================================================= */
+.store-stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 2px 4px 0;
+  margin: 0 var(--sp-4) var(--sp-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.store-stats-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.store-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--tinta-suave);
+  white-space: nowrap;
+}
+
+.store-stat-item strong {
+  color: var(--tinta);
+  font-weight: 800;
+}
+
+.stat-sub {
+  color: var(--tinta-suave);
+  font-size: 11.5px;
+}
+
+.store-stat-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--borde);
+  flex-shrink: 0;
+}
+
+/* Iconos de Stats */
+.stat-anim-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon-star svg {
+  color: var(--aviso);
+  animation: animStarGlow 2.5s infinite ease-in-out;
+}
+
+.stat-icon-clock svg {
+  color: var(--color-flame);
+}
+
+.stat-icon-clock svg polyline {
+  transform-origin: 12px 12px;
+  animation: animClockHand 6s infinite linear;
+}
+
+.stat-icon-moto svg,
+.hero-banner-meta .stat-icon-moto {
+  color: var(--color-flame);
+  animation: animMoto 1.4s infinite ease-in-out;
+}
+
+/* Íconos de entrega (moto = domicilio, bolsa = recoger/pedir). Vienen de
+   PNG trazados a vector (scripts/vectorizar-icono.py) y pesan ~11 KB cada
+   uno, así que van como máscara desde archivo en vez de inline: toman el
+   color del texto igual que un SVG con currentColor. */
+.ico-entrega {
+  display: inline-block;
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+  background-color: currentColor;
+  -webkit-mask: var(--ico) center / contain no-repeat;
+  mask: var(--ico) center / contain no-repeat;
+  vertical-align: -0.25em;
+}
+.ico-moto { --ico: url('../icons/entrega/moto.svg'); }
+.ico-bolsa { --ico: url('../icons/entrega/bolsa.svg'); }
+.segmented button:has(.ico-entrega) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-banner-meta .stat-icon-moto { animation: none; }
+}
+
+.stat-icon-grill svg {
+  color: var(--color-flame);
+}
+
+/* Keyframes de animación de iconos vectoriales */
+@keyframes animMoto {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2.5px);
+  }
+}
+
+@keyframes animClockHand {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes animStarGlow {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px transparent);
+  }
+  50% {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 6px transparent);
+  }
+}
+
+@keyframes animPinFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+.anim-pin {
+  animation: animPinFloat 2s infinite ease-in-out;
+}
+
+body:has(#app) .qty-stepper {
+  background: var(--superficie-hundida);
+  border: 1px solid var(--borde);
+  border-radius: var(--radius-pill);
+  padding: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+body:has(#app) .qty-stepper button {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  color: var(--tinta);
+  font-weight: 800;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+body:has(#app) .qty-stepper button:hover {
+  background: var(--color-flame);
+  border-color: var(--color-flame);
+  color: var(--sobre-marca);
+}
+
+body:has(#app) .qty-stepper button:active {
+  transform: scale(0.9);
+}
+
+body:has(#app) .qty-stepper span {
+  font-weight: 800;
+  color: var(--tinta);
+  min-width: 26px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* =========================================================
+   NAVEGACIÓN DE CATEGORÍAS (Sticky Pill Navigation)
+   ========================================================= */
+/* Barra lateral de categorías — se abre con el ícono hamburguesa junto
+   al buscador (.search-row-menu-btn), lista vertical en vez de pastillas
+   horizontales, mismo patrón visual que la referencia del usuario. */
+body:has(#app) .category-sidebar {
+  background: var(--superficie);
+}
+body:has(#app) .category-nav {
+  padding: 10px;
+  gap: 2px;
+}
+
+body:has(#app) .category-tab {
+  background: transparent;
+  border: none;
+  color: var(--tinta-suave);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  transition: background 0.15s ease, color 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+}
+
+body:has(#app) .category-tab .cat-tab-icon {
+  flex-shrink: 0;
+  color: inherit;
+  width: 18px;
+  height: 18px;
+  /* Uniforma el trazo de los 15 íconos de categoría (varios se dibujaron
+     sin esto, con esquinas duras que desentonaban con el resto del
+     lenguaje visual "vidrio/redondeado" del header) sin tener que tocar
+     cada <path> uno por uno — se hereda a los hijos del SVG. */
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body:has(#app) .category-tab:hover {
+  background: var(--superficie-hundida);
+  color: var(--tinta);
+}
+
+body:has(#app) .category-tab.is-active {
+  background: var(--marca-tinte);
+  color: var(--marca-texto);
+  font-weight: 800;
+}
+
+/* =========================================================
+   LO MÁS PEDIDO (Featured Horizontal Cards)
+   ========================================================= */
+body:has(#app) .featured-card {
+  width: 165px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  padding-bottom: 12px;
+  cursor: pointer;
+}
+
+body:has(#app) .featured-card:hover {
+  border-color: color-mix(in srgb, var(--marca) 40%, transparent);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+body:has(#app) .featured-card:active {
+  transform: scale(0.97);
+}
+
+body:has(#app) .featured-thumb {
+  width: 165px;
+  height: 120px;
+  border-radius: 0;
+  background: var(--superficie-hundida);
+  position: relative;
+}
+
+body:has(#app) .featured-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+body:has(#app) .featured-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--color-flame);
+  color: var(--sobre-marca);
+  padding: 3px 8px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px transparent;
+}
+
+body:has(#app) .featured-name {
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--tinta);
+  margin-top: 8px;
+}
+
+body:has(#app) .featured-price {
+  padding: 0 12px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--color-flame);
+}
+
+/* =========================================================
+   TARJETAS DE PRODUCTO (Delivery Cards Profesionales)
+   ========================================================= */
+body:has(#app) .menu-section {
+  margin-bottom: var(--sp-6);
+  padding: 0 var(--sp-4);
+}
+
+body:has(#app) .menu-section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--borde);
+}
+
+body:has(#app) .menu-section-title h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--tinta);
+}
+
+body:has(#app) .menu-section-title span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tinta-suave);
+}
+
+body:has(#app) .product-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  body:has(#app) .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+/* Escritorio: este scope (body:has(#app) .product-grid) le gana en
+   especificidad a los breakpoints de layout.css, así que las columnas
+   de más hay que declararlas también acá o la grilla se queda en 2
+   columnas hasta en un monitor de 1920px (tarjetas gigantes). */
+@media (min-width: 1120px) {
+  body:has(#app) .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  body:has(#app) .menu-section,
+  body:has(#app) .category-nav {
+    padding-left: var(--sp-6);
+    padding-right: var(--sp-6);
+  }
+}
+
+@media (min-width: 1500px) {
+  body:has(#app) .product-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+body:has(#app) .product-card {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+body:has(#app) .product-card:hover {
+  border-color: color-mix(in srgb, var(--marca) 40%, transparent);
+  box-shadow: 0 8px 24px transparent;
+  transform: translateY(-2px);
+}
+
+body:has(#app) .product-card:active {
+  transform: scale(0.98);
+}
+
+/* Orden: información a la izquierda, foto y botón '+' a la derecha */
+body:has(#app) .product-info {
+  order: 1;
+  flex: 1;
+  min-width: 0;
+}
+
+body:has(#app) .product-thumb {
+  order: 2;
+  position: relative;
+  /* Antes 96x96 en círculo (border-radius: 50%) — recortaba las
+     esquinas de la foto (cuadrada, 150x150 real) y perdía parte del
+     plato. A pedido del usuario: foto completa, sin recortar, a un
+     tamaño menor en vez de más grande y cortada. */
+  width: 76px;
+  height: 76px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--superficie-hundida);
+  flex-shrink: 0;
+  border: 1px solid var(--borde);
+}
+
+body:has(#app) .product-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+body:has(#app) .product-card:hover .product-thumb img {
+  transform: scale(1.06);
+}
+
+body:has(#app) .product-name {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--tinta);
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+body:has(#app) .product-desc {
+  font-size: 12.5px;
+  color: var(--tinta-suave);
+  line-height: 1.4;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+body:has(#app) .price {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: var(--color-flame);
+  letter-spacing: -0.01em;
+}
+
+/* Badges de producto — VIVOS (NO pasteles rosados) */
+body:has(#app) .product-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--sobre-marca);
+  background: var(--color-flame);
+  border-radius: 6px;
+  padding: 2.5px 8px;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 6px transparent;
+}
+
+body:has(#app) .product-badge-out {
+  background: var(--tinta-suave);
+  box-shadow: none;
+}
+
+body:has(#app) .fav-toggle {
+  background: rgba(12, 14, 18, 0.65);
+  backdrop-filter: blur(4px);
+  color: var(--sobre-marca);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+body:has(#app) .fav-toggle.is-active {
+  color: var(--marca-texto);
+  background: var(--superficie);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Botón "+" de añadir rápido */
+body:has(#app) .add-btn {
+  order: 3;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-flame);
+  color: var(--sobre-marca);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  border: none;
+  box-shadow: 0 4px 12px transparent;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+body:has(#app) .add-btn:hover {
+  background: var(--color-flame-hover);
+  transform: scale(1.1);
+}
+
+body:has(#app) .add-btn:active {
+  transform: scale(0.85);
+}
+
+/* El selector body:has(#app) .add-btn le gana en especificidad a la
+   regla [hidden]{display:none} del navegador — sin esto, el botón "+"
+   de un producto agotado queda visible aunque el HTML lo marque
+   hidden (gotcha recurrente, ver CLAUDE.md). */
+body:has(#app) .add-btn[hidden] {
+  display: none;
+}
+
+/* =========================================================
+   BOTÓN FLOTANTE DE CARRITO (círculo simple)
+   ========================================================= */
+/* Antes era una franja roja ancha (izq/der del todo) con texto "Ver
+   canasta" + subtotal — a pedido del usuario, "se chocaba con la
+   vista". Ahora es solo un círculo flotante con el ícono de carrito y
+   la cantidad, abajo a la derecha, mismo espíritu que un FAB. */
+.floating-cart-bar[hidden],
+.floating-cart-bar.is-hidden {
+  display: none !important;
+}
+
+.floating-cart-bar {
+  position: fixed;
+  right: var(--sp-4);
+  bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+  z-index: 180;
+  width: 52px;
+  height: 52px;
+  background: var(--marca);
+  color: var(--sobre-marca);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 28px transparent, 0 2px 6px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
+  animation: rzFloatUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes rzFloatUp {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Si además hay un pedido en curso, el botón flotante de carrito sube
+   para no encimarse con .active-order-bar. */
+body:has(#active-order-bar:not([hidden])) .floating-cart-bar {
+  bottom: calc(122px + env(safe-area-inset-bottom, 0px));
+}
+
+.floating-cart-bar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 32px transparent;
+}
+
+.floating-cart-bar:active {
+  transform: scale(0.94);
+}
+
+.floating-cart-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--superficie);
+  color: var(--color-flame);
+  font-size: 11.5px;
+  font-weight: 800;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--color-ember);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =========================================================
+   BOTTOM NAVIGATION (Barra Inferior con Estados Vivos)
+   ========================================================= */
+body:has(#app) .bottom-nav {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--borde);
+  box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.04);
+}
+
+body:has(#app) .bottom-nav-item {
+  color: var(--tinta-suave);
+  font-weight: 600;
+  font-size: 11px;
+  transition: color 0.15s ease, transform 0.15s ease;
+  position: relative;
+}
+
+body:has(#app) .bottom-nav-item.is-active {
+  color: var(--color-flame);
+  font-weight: 800;
+}
+
+body:has(#app) .bottom-nav-item.is-active::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  width: 16px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-flame);
+}
+
+body:has(#app) .bottom-nav-badge {
+  background: var(--color-flame);
+  color: var(--sobre-marca);
+  box-shadow: 0 0 0 2px #ffffff;
+  font-weight: 800;
+}
+
+/* .bottom-nav-badge trae display:flex de layout.css, que le gana a
+   [hidden]{display:none} del navegador — sin esto el badge del carrito
+   muestra "0" aunque el carrito esté vacío. */
+body:has(#app) .bottom-nav-badge[hidden] {
+  display: none;
+}
+
+/* =========================================================
+   DRAWERS, MODALES Y CHECKOUT
+   ========================================================= */
+body:has(#app) .drawer,
+body:has(#app) .modal {
+  background: var(--superficie);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: 0 -8px 36px rgba(0, 0, 0, 0.2);
+}
+
+body:has(#app) .drawer-header {
+  border-bottom: 1px solid var(--superficie-hundida);
+  padding: 16px 20px;
+}
+
+body:has(#app) .drawer-header h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--tinta);
+}
+
+body:has(#app) .drawer-footer {
+  border-top: 1px solid var(--superficie-hundida);
+  padding: 16px 20px;
+  /* iPhone instalado: que el botón no quede pegado a la barra de inicio */
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+
+/* Producto sin foto (lista y destacados): el ícono de su categoría centrado
+   sobre el fondo de carga, en vez de una imagen rota. */
+body:has(#app) .thumb-sin-foto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: var(--superficie-hundida);
+  color: var(--tinta-suave);
+}
+
+/* --- Detalle de producto (hoja inferior) ---
+   Foto HD cuadrada a todo el ancho, dentro del área que se desplaza; el
+   botón de cerrar flota encima. Cuadrada a propósito: las fotos del menú
+   son cuadradas y así no se recorta ningún plato ni bebida. El tope de
+   alto (44vh) deja ver nombre y precio sin desplazar en celulares bajos. */
+body:has(#app) .product-sheet {
+  max-height: 92vh;
+  max-height: 92dvh;
+}
+body:has(#app) .product-sheet-body {
+  padding: 0;
+}
+body:has(#app) .product-sheet-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 44vh;
+  max-height: 44dvh;
+  overflow: hidden;
+  background: var(--superficie-hundida);
+}
+body:has(#app) .product-sheet-media[hidden] {
+  display: none;
+}
+body:has(#app) .product-sheet-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+body:has(#app) .product-sheet-photo.is-loaded {
+  opacity: 1;
+}
+body:has(#app) .product-sheet-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  background: rgba(42, 45, 51, 0.72);
+  color: var(--sobre-carbon);
+  border: 0;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+body:has(#app) .product-sheet-close:hover {
+  background: var(--carbon);
+}
+/* Sin foto, el botón queda sobre el texto: fondo claro y lugar reservado. */
+body:has(#app) .product-sheet.sin-foto .product-sheet-close {
+  background: var(--superficie-hundida);
+  color: var(--tinta);
+  backdrop-filter: none;
+}
+body:has(#app) .product-sheet.sin-foto .product-sheet-title {
+  padding-right: 52px;
+}
+body:has(#app) .product-sheet-content {
+  padding: 18px 20px 8px;
+}
+body:has(#app) .product-sheet-eyebrow {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--marca-texto);
+}
+body:has(#app) .product-sheet-eyebrow:empty {
+  display: none;
+}
+body:has(#app) .product-sheet-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--tinta);
+}
+body:has(#app) .product-sheet-price {
+  margin: 6px 0 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--marca-texto);
+}
+body:has(#app) .product-sheet-desc {
+  margin: 12px 0 18px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--tinta-suave);
+  white-space: pre-line;
+}
+body:has(#app) .product-sheet-desc:empty {
+  display: none;
+}
+
+body:has(#app) .cart-item {
+  border-bottom: 1px solid var(--superficie-hundida);
+  padding: 12px 0;
+}
+
+body:has(#app) .cart-item-name {
+  font-weight: 800;
+  color: var(--tinta);
+  font-size: 14.5px;
+}
+
+body:has(#app) .btn-primary {
+  background: var(--marca);
+  color: var(--sobre-marca);
+  font-weight: 800;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 4px 14px transparent;
+  border: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+body:has(#app) .btn-primary:hover {
+  box-shadow: 0 6px 18px transparent;
+  transform: translateY(-1px);
+}
+
+body:has(#app) .btn-primary:active {
+  transform: scale(0.97);
+}
+
+/* =========================================================
+   ESTADO VACÍO DE BÚSQUEDA
+   ========================================================= */
+.empty-state {
+  text-align: center;
+  padding: var(--sp-7) var(--sp-4);
+}
+
+.empty-state-icon {
+  margin-bottom: var(--sp-3);
+  color: var(--color-flame);
+}
+
+.empty-state h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--tinta);
+  margin-bottom: 6px;
+}
+
+.empty-state p {
+  color: var(--tinta-suave);
+  font-size: 14px;
+  max-width: 320px;
+  margin: 0 auto var(--sp-4);
+}
+
+.btn-clear-search {
+  display: inline-block;
+  padding: 10px 24px;
+}
+
+/* =========================================================
+   SCROLLBAR FINA
+   ========================================================= */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--borde);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--tinta-suave);
+}
+
+/* =========================================================
+   PANTALLA DE CARGA (SPLASH SCREEN) — IDENTIDAD AUTÉNTICA
+   ========================================================= */
+#splash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--carbon);
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+#splash.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  padding: 24px;
+}
+
+.splash-logo {
+  width: min(230px, 72vw);
+  height: auto;
+  max-height: 85px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 22px transparent);
+  animation: splash-breathe 2s ease-in-out infinite alternate;
+}
+
+@keyframes splash-breathe {
+  0% { transform: scale(0.98); opacity: 0.92; filter: drop-shadow(0 4px 18px transparent); }
+  100% { transform: scale(1.02); opacity: 1; filter: drop-shadow(0 4px 30px transparent); }
+}
+
+#splash .spark-line {
+  width: 130px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  position: relative;
+}
+
+#splash .spark-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, var(--marca), var(--aviso), transparent);
+  animation: spark-travel 1.1s ease-in-out infinite;
+}
+
+/* Mismo caso que en panel-cliente: el crédito va a nivel de <body> y la
+   barra flotante del carrito (.floating-cart-bar) / la franja de pedido
+   en curso (#active-order-bar) son fixed — reservarle espacio propio. */
+.dev-credit{padding-bottom:calc(104px + env(safe-area-inset-bottom, 0px))}
+
+/* =========================================================
+   Portada por categorías + vista de una categoría (2026-10-07)
+   Navegación tipo app de comida rápida, pensada para el celular:
+   portada = tarjetas grandes de categoría; al tocar una se entra a
+   esa categoría sola con una barra fija de categorías arriba.
+   body[data-vista] lo pone ui.renderMenu: inicio | categoria | busqueda.
+   ========================================================= */
+body[data-vista="categoria"] .hero-banners-container,
+body[data-vista="categoria"] .store-stats-bar,
+body[data-vista="categoria"] #featured-section,
+body[data-vista="busqueda"] .store-stats-bar,
+body[data-vista="busqueda"] #featured-section {
+  display: none !important;
+}
+#menu-content {
+  scroll-margin-top: calc(var(--header-height) + 120px);
+}
+
+/* --- Portada --- */
+.cat-home {
+  padding: var(--sp-5) var(--sp-4) var(--sp-6);
+  display: grid;
+  gap: var(--sp-5);
+}
+body:has(#app) .cat-home-cabecera h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 5.2vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  text-wrap: balance;
+  margin: 0;
+}
+.cat-home-cabecera p {
+  margin: 4px 0 0;
+  color: var(--tinta-suave);
+  font-size: var(--fs-sm);
+}
+.cat-home-grupo {
+  display: grid;
+  gap: var(--sp-3);
+}
+body:has(#app) .cat-home-grupo-titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--marca-texto);
+}
+.cat-home-grupo-titulo::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--borde);
+}
+.cat-home-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* --- Tarjeta de categoría (el ícono y el velo los reusa la cabecera) --- */
+.cat-tile {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--carbon);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(23, 25, 28, 0.16);
+  isolation: isolate;
+  transition: transform 0.18s cubic-bezier(.2, .8, .2, 1), box-shadow 0.18s ease;
+  animation: catTileIn 0.45s cubic-bezier(.2, .8, .2, 1) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+.cat-tile:active {
+  transform: scale(0.97);
+}
+.cat-tile:focus-visible {
+  outline: 3px solid var(--marca);
+  outline-offset: 3px;
+}
+@media (hover: hover) {
+  .cat-tile:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px rgba(23, 25, 28, 0.24);
+  }
+  .cat-tile:hover .cat-tile-foto {
+    transform: scale(1.06);
+  }
+}
+.cat-tile-estrella {
+  grid-column: 1 / -1;
+  aspect-ratio: 16 / 9;
+}
+.cat-tile-foto,
+.cat-cabecera-foto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+  opacity: 0;
+  transition: opacity 0.35s ease, transform 0.5s cubic-bezier(.2, .8, .2, 1);
+}
+.cat-tile-foto.is-loaded,
+.cat-cabecera-foto.is-loaded {
+  opacity: 1;
+}
+/* Velo: oscurece abajo para que el texto blanco se lea sobre cualquier foto. */
+.cat-tile-velo {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(15, 17, 20, 0.04) 30%, rgba(15, 17, 20, 0.84) 100%);
+}
+.cat-tile.sin-foto .cat-tile-velo,
+.cat-cabecera.sin-foto .cat-tile-velo {
+  background: radial-gradient(circle at 70% 20%, rgba(255, 210, 122, 0.22), transparent 60%);
+}
+.cat-tile-icono {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(15, 17, 20, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: #FFD27A;
+}
+.cat-tile-sello {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--marca);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.cat-tile-texto {
+  position: absolute;
+  left: 12px;
+  right: 46px;
+  bottom: 12px;
+  display: grid;
+  gap: 2px;
+}
+.cat-tile-nombre {
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+  text-wrap: balance;
+}
+.cat-tile-estrella .cat-tile-nombre {
+  font-size: clamp(1.3rem, 5.4vw, 1.7rem);
+}
+.cat-tile-cuenta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+}
+.cat-tile-flecha {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--marca);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(181, 42, 32, 0.45);
+}
+@keyframes catTileIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --- Barra fija de categorías (dentro de .search-row, que ya es sticky) --- */
+.category-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 10px 0 8px;
+}
+.category-strip::-webkit-scrollbar {
+  display: none;
+}
+.category-strip[hidden] {
+  display: none;
+}
+.strip-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--tinta);
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.strip-chip svg {
+  color: var(--marca-texto);
+  flex: none;
+}
+.strip-chip.is-active {
+  background: var(--marca);
+  border-color: var(--marca);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(181, 42, 32, 0.3);
+}
+.strip-chip.is-active svg {
+  color: #fff;
+}
+.strip-chip-menu {
+  background: var(--carbon);
+  border-color: var(--carbon);
+  color: var(--sobre-carbon);
+}
+.strip-chip-menu svg {
+  color: var(--sobre-carbon);
+}
+
+/* --- Cabecera de una categoría --- */
+.cat-cabecera {
+  position: relative;
+  margin: var(--sp-3) var(--sp-4) 0;
+  min-height: 132px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--carbon);
+  color: #fff;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  animation: catTileIn 0.4s cubic-bezier(.2, .8, .2, 1) both;
+}
+.cat-cabecera-texto {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 12px;
+  align-items: center;
+  padding: 16px;
+}
+.cat-cabecera .cat-tile-icono {
+  position: static;
+  grid-row: 1 / span 2;
+  width: 44px;
+  height: 44px;
+}
+body:has(#app) .cat-cabecera h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 5.6vw, 1.8rem);
+  font-weight: 800;
+  line-height: 1.1;
+  color: #fff;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* --- Tarjetas de producto: miniatura cuadrada redondeada (más "app") --- */
+body:has(#app) .product-thumb {
+  width: 96px;
+  height: 96px;
+  border-radius: 14px;
+}
+
+/* Tarjetas "cargando" de la primera visita (ui.renderCategoryHome). */
+.cat-tile-cargando {
+  cursor: default;
+  box-shadow: none;
+  background: linear-gradient(100deg, var(--borde) 30%, rgba(255, 255, 255, 0.55) 50%, var(--borde) 70%) var(--borde);
+  background-size: 300% 100%;
+  animation: catTileIn 0.45s cubic-bezier(.2, .8, .2, 1) both, catCargando 1.3s ease-in-out infinite;
+}
+@keyframes catCargando {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cat-tile-cargando { animation: none; }
+}
+
+/* Tablet / escritorio: más columnas en la portada y tarjetas 4:3 (más
+   bajas que en el celular). La app sigue ocupando el 100 % del ancho (ver
+   docs/historial-cambios.md, "Responsivo — sin ancho tope"); lo que
+   cambia es cuántas tarjetas caben, no un tope de ancho. */
+@media (min-width: 720px) {
+  .cat-home-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .cat-tile {
+    aspect-ratio: 4 / 3;
+  }
+  .cat-tile-estrella {
+    grid-column: span 2;
+    aspect-ratio: auto;
+  }
+  .cat-cabecera {
+    min-height: 180px;
+  }
+}
+@media (min-width: 1120px) {
+  .cat-home {
+    padding-left: var(--sp-6);
+    padding-right: var(--sp-6);
+  }
+  .cat-cabecera {
+    margin-left: var(--sp-6);
+    margin-right: var(--sp-6);
+  }
+  /* Antes: 4 columnas fijas → en un monitor de 1920 px cada tarjeta medía
+     ~450 px y la destacada ~900 px. Ahora caben tantas como entren de
+     ~230 px (5 en un portátil, 7-8 en un monitor grande). */
+  .cat-home-grid {
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cat-tile,
+  .cat-cabecera {
+    animation: none;
+  }
+  .cat-tile,
+  .cat-tile-foto {
+    transition: none;
+  }
+}
+
+/* Dentro de una categoría: los subgrupos (Jugos, Gaseosas…) van como
+   pestañas bajo la cabecera, con el mismo margen lateral que el resto, y
+   la fila "Categorías + carrito" se esconde (la barra fija ya cumple ese
+   papel y el carrito está en la barra inferior): así lo fijo arriba ocupa
+   menos alto en el celular. */
+body:has(#app) .cat-cabecera + .subgroup-nav {
+  margin: var(--sp-3) 0 0;
+  padding: 2px var(--sp-4) 4px;
+}
+body:has(#app) .cat-cabecera + .subgroup-nav .subgroup-tab {
+  border-radius: 999px;
+  font-weight: 700;
+}
+body:has(#app)[data-vista="categoria"] .search-row-top {
+  display: none;
+}
+@media (min-width: 1120px) {
+  body:has(#app) .cat-cabecera + .subgroup-nav {
+    padding-left: var(--sp-6);
+    padding-right: var(--sp-6);
+  }
+}
+
+/* Foto de la cuenta de Google en el encabezado: el marco era un cuadrado
+   redondeado y la foto un círculo, así que no calzaban. Ahora marco y
+   foto son el mismo círculo, con un aro cálido (la luz del farol). */
+body:has(#app) .app-header .avatar-btn {
+  border-radius: 50%;
+  padding: 2px;
+  border: 1.5px solid rgba(255, 210, 122, 0.75);
+  background: var(--carbon);
+}
+body:has(#app) .app-header .avatar-btn img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* =========================================================
+   Rojo Rodízio #C4100E en el marketplace (prueba 2026-10-07)
+   Encabezado rojo con un degradado leve (más vivo arriba) y botones
+   blancos translúcidos; el mismo rojo pasa a ser el de acción (--marca)
+   solo en la tienda — los paneles del restaurante siguen con marca.css.
+   ========================================================= */
+body:has(#app) {
+  --rojo-rodizio: #C4100E;
+  --rojo-rodizio-hondo: #A20C0A;
+  --marca: var(--rojo-rodizio);
+  --marca-hover: var(--rojo-rodizio-hondo);
+  --marca-texto: #A20C0A;
+  --color-flame: var(--rojo-rodizio);
+  --color-flame-hover: var(--rojo-rodizio-hondo);
+}
+/* Encabezado: opción A elegida (2026-10-07) — carbón con filo rojo.
+   Sobre rojo el logo se perdía (su círculo del farol es transparente y
+   "Desde 1986" es muy fino); sobre carbón se lee completo, y el rojo
+   queda en el filo de abajo, los botones de acción y los sellos. */
+body:has(#app) .app-header {
+  background: var(--carbon);
+  border-bottom: 3px solid var(--rojo-rodizio);
+  box-shadow: 0 6px 18px rgba(23, 25, 28, 0.25);
+}
+body:has(#app) .brand-logo-img {
+  height: 42px;
+}
+body:has(#app) .app-header .icon-btn {
+  background: transparent;
+  border-color: var(--sobre-carbon-borde);
+  color: var(--sobre-carbon);
+}
+body:has(#app) .app-header .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--sobre-carbon-suave);
+  color: var(--sobre-carbon);
+}
+body:has(#app) .app-header #header-lang-btn {
+  background: transparent;
+  border-color: transparent;
+  color: var(--sobre-carbon);
+}
+body:has(#app) .app-header .avatar-btn {
+  background: #17191C;
+  border-color: rgba(255, 210, 122, 0.8);
+}
+body:has(#app) .cat-cabecera + .menu-section {
+  padding-top: var(--sp-4);
+}
+
+/* Domicilios en pausa: mismo aviso, en dorado (solo cambia cómo pedir). */
+.domicilios-banner {
+  background: var(--aviso-tinte);
+  border-bottom: 1px solid color-mix(in srgb, var(--aviso) 40%, transparent);
+  color: var(--aviso);
+}
+/* Tienda cerrada: los "+" se ven apagados (al tocarlos sale el aviso de cerrado). */
+body[data-tienda="cerrada"] .add-btn {
+  background: var(--superficie-hundida) !important;
+  color: var(--tinta-suave) !important;
+  box-shadow: none !important;
+}
+#delivery-mode button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

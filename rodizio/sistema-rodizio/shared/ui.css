@@ -1,0 +1,338 @@
+/* Rodizio Cucuta - ParaTouch (DJG . djgv . Mxi . 0808 . 0724 . uwu) */
+/* shared/ui.css - Estilos compartidos de interfaz de usuario para todos los paneles */
+
+/* ── Íconos (Google Fonts · Material Symbols Outlined) ──
+   El HTML de cada app carga la fuente vía <link> (solo donde se usa, para
+   no pagar peso de más). Esta clase base ajusta tamaño/alineado; el nombre
+   del ícono va como texto dentro del <span> (ej. "notifications"), tal
+   como lo pide la fuente — no es innerHTML ni un emoji. */
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 20;
+  font-size: 18px;
+  line-height: 1;
+  vertical-align: middle;
+  user-select: none;
+}
+
+.toast-icon {
+  font-size: 16px;
+  margin-right: 6px;
+  vertical-align: -3px;
+}
+
+/* ── Toasts (Notificaciones) ── */
+@keyframes rzToast {
+  0% { opacity: 0; transform: translate(-50%, 10px); }
+  10%, 90% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, 10px); }
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  background: var(--carbon);
+  color: var(--sobre-carbon);
+  padding: 12px 20px;
+  border-radius:var(--radio-sm);
+  font-size: 13px;
+  z-index: 9999;
+  box-shadow: var(--shadow-lg);
+  animation: rzToast 2.6s ease forwards;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ── Botones principales (CTA) ── */
+.cta {
+  width: 100%;
+  min-height: 54px;
+  border: 0;
+  border-radius:var(--radio-sm);
+  font-family: var(--font-heading);
+  font-size: 17px;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.cta:active {
+  opacity: 0.8;
+}
+
+.cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Encabezado común (sistema Rodízio Brasa) ─────────────────────
+   El MISMO encabezado en caja, cocina, admin, mesero y acceso: carbón,
+   logo blanco, nombre del panel y acciones. Antes cada panel tenía su
+   copia (claro con el cuadro "R"); ya no definir header/.headwrap/.brand
+   en los styles.css de cada app.
+   El <header> de caja/cocina/admin vive dentro de #app (que el guard
+   muestra tras validar la sesión), por eso los dos selectores. */
+body > header,
+#app > header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--carbon);
+  color: var(--sobre-carbon);
+  border-bottom: 0;
+}
+.headwrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: var(--alto-encabezado);
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: auto;
+  min-width: 0;
+}
+.brand-logo {
+  height: 28px;
+  width: auto;
+  display: block;
+}
+.brand small {
+  font: 700 12px/16px var(--font-texto);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sobre-carbon-suave);
+  border-left: 1px solid var(--sobre-carbon-borde);
+  padding-left: 12px;
+  white-space: nowrap;
+}
+.headwrap .status,
+.headwrap .clock {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--sobre-carbon-borde);
+  border-radius: var(--radio-sm);
+  background: transparent;
+  color: var(--sobre-carbon-suave);
+  font-size: 13px;
+  font-weight: 600;
+}
+.headwrap .clock {
+  color: var(--sobre-carbon);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.headwrap .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radio-redondo);
+  background: var(--sobre-carbon-exito);
+  flex: none;
+}
+.headwrap .dot.off { background: var(--sobre-carbon-suave); }
+.headwrap .dot.live { animation: rzLatido 1.8s ease-in-out infinite; }
+.headwrap .sound-btn,
+.headwrap .logout,
+header .btn-instalar-pwa {
+  min-height: 36px;
+  border: 1px solid var(--sobre-carbon-borde);
+  border-radius: var(--radio-sm);
+  background: transparent;
+  color: var(--sobre-carbon);
+  cursor: pointer;
+  box-shadow: none;
+}
+.headwrap .sound-btn {
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.headwrap .sound-btn[data-on="0"] { color: var(--sobre-carbon-suave); }
+.headwrap .sound-btn svg { width: 18px; height: 18px; }
+.headwrap .logout {
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.headwrap .sound-btn:hover,
+.headwrap .logout:hover,
+header .btn-instalar-pwa:hover {
+  border-color: var(--sobre-carbon-suave);
+}
+@keyframes rzLatido { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .headwrap .dot.live { animation: none; } }
+
+/* ── Botón de instalación PWA ──
+   Fuera del encabezado es un botón secundario; dentro, va con borde
+   sobre carbón (regla de arriba). Nunca rojo: el rojo es para la acción
+   principal de la pantalla. */
+.btn-instalar-pwa {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  background: var(--superficie);
+  color: var(--tinta);
+  border: 1px solid var(--borde-control);
+  padding: 6px 14px;
+  border-radius: var(--radio-sm);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-instalar-pwa svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+.btn-instalar-pwa:hover {
+  opacity: 0.9;
+}
+
+.btn-instalar-pwa:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Ícono de descarga/instalación, reutilizado en instalar PWA y exportar ── */
+.icon-download {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+/* ── Spinner de carga ── */
+@keyframes rzSpin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--color-accent) 22%, transparent);
+  border-top-color: var(--color-accent);
+  animation: rzSpin 0.75s linear infinite;
+  margin: 14px auto 0;
+}
+
+/* ── Pantalla de "verificando sesión" con logo + spinner ── */
+.cargando-wrap {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.cargando-logo {
+  width: 56px;
+  height: 56px;
+  border-radius:var(--radio-sm);
+  margin: 0 auto;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.cargando-logo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.cargando-texto {
+  color: var(--color-neutral-600);
+  font-size: 13.5px;
+  margin-top: 14px;
+}
+
+/* ── Empty States ── */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--color-neutral-500);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state svg {
+  width: 48px;
+  height: 48px;
+  opacity: 0.5;
+  margin-bottom: 10px;
+}
+
+/* ── Modo observación (solo lectura) — ver activarModoObservador() en ui.js ── */
+#obs-badge {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radio-sm);
+  background: var(--aviso-tinte);
+  color: var(--aviso);
+  border: 1px solid var(--aviso);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  box-shadow: var(--sombra-flotante);
+  pointer-events: none;
+  max-width: calc(100vw - 24px);
+}
+#obs-badge .material-symbols-outlined { font-size: 18px; }
+
+/* ── Crédito de desarrollo ──────────────────────────────────────────
+   Línea discreta al final del contenido (sistema Rodízio Brasa: sin
+   franja negra de pie). Este archivo solo lo cargan los paneles del
+   restaurante, donde el <html> tiene el mismo fondo que el <body>; la
+   tienda tiene su propio crédito. En cocina (oscuro) los mismos tokens
+   dan texto claro. */
+.dev-credit {
+  margin: 0;
+  padding: 18px 12px calc(18px + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  background: transparent;
+  color: var(--tinta-suave);
+}
+
+.dev-credit strong {
+  font-weight: 700;
+  color: var(--tinta);
+}
+
+/* Texto solo para lectores de pantalla (ej. el <h1> del encabezado, que
+   visualmente es el logo). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -1,0 +1,30 @@
+.firebaserc
+.firebase/
+
+# Config local de otras herramientas de IA / artefactos sueltos
+.gemini/
+.geminiecho/
+accept-edits}/
+
+# tienda/ (marketplace fusionado)
+tienda/node_modules/
+tienda/functions/node_modules/
+tienda/.firebase/
+tienda/firebase-debug*.log
+
+# Credenciales de la pasarela de pago (docs-fusion/PLAN-PASARELA-PAGO.md) —
+# NUNCA deben subirse a git, ni siquiera de prueba/sandbox.
+tienda/functions/.env
+tienda/functions/.env.*
+
+# Logs de los emuladores de Firebase (npm test en tienda/functions)
+*-debug.log
+tienda/functions/.secret.local
+
+# Exportaciones de la base (datos personales): nunca al repo.
+# Viven en ../respaldos-rtdb/, fuera de git.
+*-rtdb-export.json
+
+# Reportes de caída de Java (emulador de Firebase)
+hs_err_pid*.log
+replay_pid*.log

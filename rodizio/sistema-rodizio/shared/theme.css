@@ -1,0 +1,93 @@
+/* Rodizio Cucuta - ParaTouch (DJG . djgv . Mxi . 0808 . 0724 . uwu) */
+/* Rodizio — reset base y NOMBRES DE COMPATIBILIDAD de las apps del
+   restaurante (mesero-app, panel-caja, panel-cocina, panel-cliente,
+   panel-admin, acceso).
+
+   Desde 2026-10-05 este archivo NO define colores: los valores viven en
+   shared/marca.css (sistema "Rodízio Brasa"), que se carga antes. Acá los
+   nombres viejos --color-* solo apuntan a los nuevos, para que los
+   estilos existentes cambien de paleta sin reescribirlos. Código nuevo:
+   usar directamente los nombres de marca.css (--fondo, --tinta, --marca…).
+
+   Mapeo por SIGNIFICADO, no por tono:
+     - grises de texto (500/600/700) → --tinta-suave: los 500 eran #9ca3af
+       (2,3:1, no se leían); ninguno queda por debajo de 4,5:1.
+     - dorado/ámbar (accent-2) → --aviso: era #f59e0b (2,1:1).
+     - radios → --radio-sm (4px); sombras → las del sistema.
+   En cocina (data-theme="oscuro") los mismos nombres dan la versión
+   oscura: ya no hace falta la rampa invertida propia. */
+:root,
+[data-theme] {
+  --color-bg: var(--fondo);
+  --color-surface: var(--superficie);
+  --color-text: var(--tinta);
+  --color-accent: var(--marca);
+  --color-accent-2: var(--aviso);
+  --color-divider: var(--borde);
+  --color-neutral-100: var(--superficie);
+  --color-neutral-200: var(--superficie-hundida);
+  --color-neutral-300: var(--borde);
+  --color-neutral-400: var(--borde-control);
+  --color-neutral-500: var(--tinta-suave);
+  --color-neutral-600: var(--tinta-suave);
+  --color-neutral-700: var(--tinta-suave);
+  --color-neutral-800: var(--tinta);
+  --color-neutral-900: var(--carbon);
+  --color-accent-100: var(--marca-tinte);
+  --color-accent-200: var(--marca-tinte);
+  --color-accent-300: var(--marca-borde);
+  --color-accent-500: var(--marca);
+  --color-accent-600: var(--marca-hover);
+  --color-accent-700: var(--marca-texto);
+  --color-accent-2-100: var(--aviso-tinte);
+  --color-accent-2-300: var(--aviso-tinte);
+  --color-accent-2-500: var(--aviso);
+  --color-accent-2-600: var(--aviso);
+  --color-accent-2-700: var(--aviso);
+  --font-heading: var(--font-display);
+  --font-body: var(--font-texto);
+  --radius-sm: var(--radio-sm);
+  --radius-md: var(--radio-sm);
+  --radius-lg: var(--radio-sm);
+  --shadow-sm: var(--sombra-tarjeta);
+  --shadow-md: var(--sombra-tarjeta);
+  --shadow-lg: var(--sombra-flotante);
+}
+
+/* Tratamiento de encabezados — mismo que tienda/css/admin.css le da a
+   admin/driver. Sin esto, Plus Jakarta Sans (ancha) heredaría el
+   uppercase + tracking suelto que servían para Caprasimo y los títulos
+   se verían enormes y desproporcionados (pasó en la ronda de driver,
+   documentado en tienda/CLAUDE.md). */
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  text-transform: none;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent
+}
+
+html,
+body {
+  height: 100%;
+  min-height: 100dvh;
+  overscroll-behavior: none
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased
+}
+
+button {
+  font-family: inherit
+}

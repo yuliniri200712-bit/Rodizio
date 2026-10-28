@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es-CO" data-theme="oscuro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0F1114">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rodizio Cocina">
+<title>Rodizio · Panel de cocina</title>
+<meta name="author" content="ParaTouch — DJG (djgv · Mxi)" />
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="../icons/favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="../icons/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../shared/marca.css">
+<link rel="stylesheet" href="../shared/theme.css">
+<link rel="stylesheet" href="../shared/ui.css">
+<link rel="stylesheet" href="../shared/pwa.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="vistaCargando" class="cargando cargando-wrap">
+  <div class="cargando-logo"><img src="../icons/icon-192.png" alt="Rodizio"></div>
+  <div class="spinner"></div>
+  <p class="cargando-texto">Verificando sesión…</p>
+</div>
+
+<div id="app" style="display:none">
+<header>
+  <div class="headwrap">
+    <div class="brand">
+      <img class="brand-logo" src="../icons/logo-blanco.webp" alt="Rodízio" height="28">
+      <h1 class="sr-only">Rodízio · Cocina</h1>
+      <small aria-hidden="true">Cocina</small>
+    </div>
+    <div class="status"><span class="dot off" id="dot"></span><span id="statusTxt">Conectando…</span></div>
+    <div class="clock" id="clock">--:--</div>
+    <button class="sound-btn" id="soundBtn" data-on="1" title="Silenciar aviso de nuevo pedido">
+      <svg id="soundIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+    </button>
+    <button class="btn-instalar-pwa" id="btnInstalarApp"><svg class="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Instalar App</button>
+    <button class="logout" id="btnLogout">Salir</button>
+  </div>
+</header>
+
+<main>
+  <div class="banner" id="banner">Sin conexión con Firebase — mostrando la última comanda recibida.</div>
+
+  <div class="board">
+    <section class="col">
+      <div class="col-head"><span class="swatch" style="background:var(--color-accent)"></span><h2>Nuevos</h2><span class="col-count" id="cEnviado">0</span></div>
+      <div class="cards" id="colEnviado"></div>
+    </section>
+    <section class="col">
+      <div class="col-head"><span class="swatch" style="background:var(--color-accent-700)"></span><h2>En preparación</h2><span class="col-count" id="cPrep">0</span></div>
+      <div class="cards" id="colPrep"></div>
+    </section>
+    <section class="col">
+      <div class="col-head"><span class="swatch" style="background:var(--color-accent-2-600)"></span><h2>Listos</h2><span class="col-count" id="cListo">0</span></div>
+      <div class="cards" id="colListo"></div>
+    </section>
+  </div>
+</main>
+
+<div class="entregados-strip">
+  <h3>Recién entregados</h3>
+  <div class="entregados-chips" id="entregadosChips"></div>
+</div>
+</div>
+
+<script type="module" src="../shared/firebase.js"></script>
+<script src="../shared/util.js"></script>
+<script src="../shared/ui.js"></script>
+<script src="../shared/pwa.js"></script>
+<script src="../shared/roles.js"></script>
+<script type="module" src="../shared/auth.js"></script>
+<script src="app.js"></script>
+  <p class="dev-credit">Desarrollado por <strong>ParaTouch</strong></p>
+</body>
+</html>

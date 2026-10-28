@@ -1,0 +1,19 @@
+{
+  "name": "Rodizio – Meseros",
+  "short_name": "Rodizio",
+  "description": "Toma de pedidos para meseros — Rodizio, Cúcuta",
+  "id": "/mesero-app/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#f5ead8",
+  "theme_color": "#b10101",
+  "lang": "es-CO",
+  "icons": [
+    { "src": "../icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "../icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "../icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,1323 @@
+/* Rodizio Cucuta - ParaTouch (DJG . djgv . Mxi . 0808 . 0724 . uwu) */
+/* =========================================================
+   App de domiciliarios — estilos propios
+   =========================================================
+   Reutiliza variables.css, base.css, layout.css, components.css
+   y admin.css (gate de acceso, pestañas tipo segmented, badges,
+   toasts); esto es solo lo específico de esta app. Pensada para
+   usarse desde el celular del domiciliario mientras se mueve, así
+   que prioriza botones grandes y poca lectura por pantalla.
+   ========================================================= */
+
+#driver-app {
+  /* Sin max-width/margin:auto — mismo criterio que #app/#admin-app:
+     antes topaba en 480px fijo incluso en celulares grandes o
+     tablets, dejando franjas vacías y el header "cortado". Ahora
+     ocupa el 100% real; ver más abajo cómo la grilla de pedidos
+     suma columnas en vez de depender de un tope de ancho. */
+  width: 100%;
+  min-height: 100%;
+  background: var(--color-bg);
+}
+
+/* --- "Modo carretera" ---
+   El domiciliario mira esto con el celular montado en la moto,
+   manejando — necesita leer de un vistazo, no acercarse ni forzar
+   la vista. Se sube la escala de letra bastante más que en el panel
+   (esto sí es un caso de seguridad vial, no solo de comodidad) y se
+   aclaran los colores de texto secundario, que por defecto son
+   apagados a propósito para el resto del sitio. Con :has() para que
+   también alcance a los diálogos de confirm.js (se insertan como
+   hijos de <body>, fuera de #driver-app) y no solo a esta tarjeta. */
+body:has(#driver-app) {
+  --fs-xs: 0.9375rem;   /* 15px, era 12px */
+  --fs-sm: 1.0625rem;   /* 17px, era 14px */
+  --fs-base: 1.125rem;  /* 18px, era 16px */
+  --fs-md: 1.375rem;    /* 22px, era 18px */
+  --fs-lg: 1.75rem;     /* 28px, era 22px */
+}
+/* Mismo criterio de "más contraste para leer en la calle" que antes,
+   pero en la familia fría de la paleta nueva (ver admin.css, paleta
+   igual a la del marketplace) — los tonos café cálido de antes se
+   verían sucios/desentonados sobre el fondo blanco/gris frío nuevo. */
+body:has(#driver-app) {
+  --color-text-faint: var(--tinta-suave);  /* bastante más contraste que el default (#6b7280) */
+  --color-text-muted: var(--tinta-suave);  /* idem (default #4b5563) */
+}
+
+.admin-gate #driver-auth-form {
+  text-align: left;
+}
+
+/* --- Saludo + estado de disponibilidad --- */
+.driver-greeting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-5) var(--sp-4) var(--sp-3);
+}
+.driver-greeting-hi {
+  font-size: var(--fs-xs);
+  color: var(--color-text-faint);
+}
+.driver-greeting-name {
+  font-size: var(--fs-lg);
+  line-height: 1.1;
+}
+.driver-rating-summary {
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-gold);
+}
+.driver-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.driver-status-pill:active {
+  transform: scale(0.96);
+}
+.driver-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-text-faint);
+}
+.driver-status-pill.is-available {
+  color: var(--exito);
+  background: var(--exito-tinte);
+  border-color: color-mix(in srgb, var(--exito) 35%, transparent);
+}
+.driver-status-pill.is-available .driver-status-dot {
+  background: var(--exito);
+  box-shadow: 0 0 0 3px transparent;
+}
+
+/* --- Números de hoy --- */
+.driver-quick-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
+  margin: 0 var(--sp-4) var(--sp-4);
+}
+.driver-quick-stat {
+  padding: var(--sp-3);
+  text-align: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.driver-quick-stat-value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  color: var(--tinta);
+}
+.driver-quick-stat-label {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-text-faint);
+  text-transform: uppercase;
+}
+
+/* --- Cajón de cuenta: perfil / seguridad / cierre de turno ---
+   Antes "Mi perfil" y "Cierre de turno" eran tarjetas sueltas en la
+   página principal, mezcladas con los pedidos — ahora viven las tres
+   secciones dentro de #account-drawer (driver.html), con
+   `.drawer-body` ya aportando el padding general. Cada sección es
+   solo un bloque con título + separador; la de cierre de turno
+   conserva además `.driver-cash-card` (ver abajo) para su propio
+   fondo/borde de tarjeta, porque es la que más se revisa durante el
+   turno y conviene que resalte un poco más que las otras dos. */
+.driver-account-section {
+  padding-bottom: var(--sp-4);
+  margin-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.driver-account-section:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+.driver-profile-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+/* Antes esta grilla vivía en una sección de ancho completo — nunca se
+   notaba, pero un <input> tiene un ancho mínimo de contenido propio
+   (no depende de `width: 100%`) que una columna `1fr` respeta por
+   defecto, y adentro del cajón de cuenta (ancho fijo, ver `.drawer`)
+   eso alcanzaba a desbordar la fila hacia afuera del cajón. */
+.driver-profile-row .field {
+  min-width: 0;
+}
+.driver-account-section .btn {
+  width: 100%;
+  margin-top: var(--sp-3);
+}
+
+/* --- Rendición de efectivo ---
+   Como todos los pedidos hoy se pagan contra-entrega (no hay
+   pasarela de pago activa), lo que el domiciliario entrega es
+   exactamente la suma de los pedidos que marcó "Entregado" y aún
+   no ha rendido — este bloque le muestra cuánto debería llevar
+   encima y le deja registrar cuánto entrega de verdad. Al ser la
+   última sección del cajón, `:last-child` de arriba ya le quita el
+   separador/margen inferior — esta tarjeta se basta sola. */
+.driver-cash-card {
+  padding: var(--sp-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.driver-cash-title {
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  margin-bottom: var(--sp-2);
+}
+.driver-cash-summary {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--sp-3);
+}
+.driver-cash-summary strong {
+  color: var(--color-flame);
+}
+.driver-cash-card .btn {
+  width: 100%;
+  margin-top: var(--sp-3);
+}
+.driver-cash-history {
+  margin-top: var(--sp-3);
+}
+.driver-cash-history summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--color-text-faint);
+  font-size: var(--fs-xs);
+}
+.driver-cash-history-row {
+  margin-top: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+.driver-cash-history-row strong {
+  color: var(--color-text);
+}
+
+.driver-tabs {
+  margin: 0 var(--sp-4) var(--sp-4);
+}
+
+/* --- Tarjeta de pedido --- */
+.driver-order {
+  margin: 0 var(--sp-4) var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.driver-order.is-tracking {
+  border-color: var(--color-flame);
+  box-shadow: 0 0 0 1px var(--color-flame);
+}
+.driver-order-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--sp-2);
+}
+.driver-order-customer {
+  font-weight: 800;
+  font-size: var(--fs-md);
+}
+.driver-order-address {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--sp-2);
+  line-height: 1.5;
+}
+.driver-precise-badge {
+  display: inline-block;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--exito);
+  background: var(--exito-tinte);
+  border: 1px solid color-mix(in srgb, var(--exito) 35%, transparent);
+  border-radius: var(--radius-pill);
+  padding: 2px 7px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.driver-multi-hint {
+  margin: 0 var(--sp-4) var(--sp-3);
+  padding: var(--sp-3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-flame);
+  background: var(--marca-tinte);
+  border: 1px solid color-mix(in srgb, var(--marca) 30%, transparent);
+  border-radius: var(--radius-md);
+}
+.driver-order-items {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--sp-3);
+  line-height: 1.6;
+}
+.driver-order-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+}
+.driver-order-item-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+.driver-order-item-thumb-empty {
+  display: inline-block;
+}
+.driver-order-note {
+  font-size: var(--fs-xs);
+  color: var(--color-gold);
+  background: var(--aviso-tinte);
+  border: 1px solid color-mix(in srgb, var(--aviso) 35%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  margin-bottom: var(--sp-3);
+}
+.driver-order-actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+.driver-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 10px;
+  min-height: 48px; /* objetivo de toque cómodo con guantes/en movimiento */
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+.driver-action-btn:active {
+  transform: scale(0.97);
+}
+.driver-action-btn.driver-call-btn {
+  color: var(--info);
+  background: var(--info-tinte);
+  border-color: color-mix(in srgb, var(--info) 35%, transparent);
+}
+.driver-action-btn.driver-map-btn {
+  color: var(--exito);
+  background: var(--exito-tinte);
+  border-color: color-mix(in srgb, var(--exito) 35%, transparent);
+}
+.driver-primary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-3);
+  min-height: 52px;
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  color: var(--color-bg);
+  background: var(--color-flame);
+  border-radius: var(--radius-sm);
+}
+.driver-primary-btn:active {
+  transform: scale(0.98);
+}
+.driver-primary-btn:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+/* Mismo spinner de carga que `.btn.is-loading` (components.css) —
+   estos botones no usan la clase `.btn` (tienen su propio tamaño de
+   toque más grande, pensado para tocar en la calle), así que se
+   repite la regla acá con las mismas keyframes compartidas
+   (`btn-spin`) en vez de forzarles la clase `.btn`. Recorre menos
+   pantalla que el "Confirmar pedido" del cliente: la tarjeta de este
+   pedido sale de la lista apenas Firebase confirma, así que solo
+   vale la pena el spinner (evita el doble toque), no un check de
+   éxito que nunca llegaría a verse completo. */
+.driver-primary-btn.is-loading,
+.driver-secondary-btn.is-loading {
+  pointer-events: none;
+  opacity: 0.85;
+}
+.driver-primary-btn.is-loading::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(42, 45, 51, 0.3);
+  border-top-color: var(--color-bg);
+  animation: btn-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+.driver-secondary-btn.is-loading::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(107, 90, 76, 0.3);
+  border-top-color: var(--color-text-muted);
+  animation: btn-spin 0.7s linear infinite;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+/* Acción secundaria bajo el botón principal — "no pude tomar este
+   pedido" / "no se pudo entregar". A propósito discreta (no es un
+   botón rojo llamativo): son acciones que sí hay que dejar hacer,
+   pero no queremos que compitan visualmente con la acción normal
+   del flujo (recoger / entregar). */
+.driver-secondary-btn {
+  width: 100%;
+  margin-top: var(--sp-2);
+  padding: 10px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background: none;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.driver-secondary-btn:active {
+  transform: scale(0.98);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+.driver-tracking-indicator {
+  margin-top: var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-flame);
+}
+.driver-tracking-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-flame);
+  animation: driver-pulse-dot 1.4s ease-in-out infinite;
+}
+@keyframes driver-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+.driver-order-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-faint);
+  margin-bottom: var(--sp-2);
+}
+
+/* En celular es una sola columna de arriba a abajo (por defecto,
+   pensado para usarse mientras se conduce). Desde tablet se
+   aprovecha el ancho extra: la lista de pedidos pasa a grilla y el
+   saludo/números de hoy quedan en una franja horizontal más ancha,
+   igual que en el panel de administración. */
+.driver-multi-hint {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 720px) {
+  #driver-orders-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--sp-3);
+    padding: 0 var(--sp-4);
+  }
+  .driver-order {
+    margin: 0;
+  }
+  .driver-quick-stats {
+    max-width: 460px;
+  }
+}
+
+@media (min-width: 1080px) {
+  .app-header {
+    padding-left: var(--sp-6);
+    padding-right: var(--sp-6);
+  }
+  .driver-greeting {
+    padding: var(--sp-6) var(--sp-6) var(--sp-3);
+  }
+  .driver-tabs,
+  #driver-orders-list {
+    margin-left: var(--sp-6);
+    margin-right: var(--sp-6);
+  }
+  .driver-quick-stats {
+    margin-left: var(--sp-6);
+    margin-right: var(--sp-6);
+  }
+  #driver-orders-list {
+    grid-template-columns: repeat(3, 1fr);
+    padding: 0;
+  }
+}
+
+/* --- Monitor de escritorio grande --- una columna más en la lista
+   de pedidos, mismo criterio que admin.css. Un domiciliario
+   normalmente usa el celular, pero si algún día alguien la abre en
+   un monitor grande (ej. para revisar cierres desde un computador),
+   que se vea igual de aprovechada que las otras dos apps. */
+@media (min-width: 1440px) {
+  #driver-orders-list {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* =========================================================
+   Rediseño de la app de domiciliarios (2026-10-24, con 3
+   referencias del usuario) — misma paleta y logos, mismo
+   funcionamiento. Tarjetas blancas redondeadas con sombra suave,
+   pestañas grandes con conteo, números con ícono y línea de
+   tiempo en las entregas en curso. Todo va con #driver-app (o
+   body:has(#driver-app)) para ganarle a las reglas de arriba y a
+   las de admin.css sin tocarlas. Se mantiene el "modo carretera"
+   (letra grande, botones de 48px+).
+   ========================================================= */
+body:has(#driver-app) {
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
+  --radius-pill: 10px;
+  --color-surface: var(--campo);
+  --color-surface-raised: var(--campo);
+  --driver-card-shadow: 0 1px 2px rgba(36, 38, 43, 0.05), 0 4px 14px rgba(36, 38, 43, 0.06);
+}
+#driver-main:not([hidden]) {
+  display: block;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 0 var(--sp-7);
+}
+
+/* --- Header: botones ícono cuadrados redondeados --- */
+body:has(#driver-app) .app-header .icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+/* --- Saludo + disponibilidad --- */
+#driver-app .driver-greeting {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--sp-3) var(--sp-4);
+  padding: var(--sp-5) var(--sp-4) var(--sp-4);
+}
+.driver-greeting-text {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+#driver-app .driver-greeting-hi {
+  margin: 0;
+  color: var(--tinta-suave);
+}
+#driver-app .driver-greeting-name {
+  margin: 2px 0 0;
+  font-size: clamp(1.6rem, 5vw, 2.1rem);
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+.driver-greeting-sub {
+  margin: 6px 0 0;
+  font-size: var(--fs-xs);
+  color: var(--tinta-suave);
+}
+/* Tarjeta "Disponible": el mismo botón de siempre, con interruptor. */
+#driver-app .driver-status-pill {
+  flex: 0 1 340px;
+  min-width: 260px;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-lg);
+  background: var(--campo);
+  border: 1px solid var(--borde);
+  box-shadow: var(--driver-card-shadow);
+  text-align: left;
+  color: var(--tinta);
+}
+#driver-app .driver-status-dot {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  background: var(--borde-control);
+  box-shadow: 0 0 0 4px var(--superficie);
+}
+.driver-status-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.driver-status-text strong {
+  font-size: var(--fs-sm);
+  color: var(--tinta);
+}
+.driver-status-text small {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+.driver-status-sub-on {
+  display: none;
+}
+.driver-status-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 52px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--borde-control);
+  transition: background-color 0.18s ease;
+}
+.driver-status-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.18s ease;
+}
+#driver-app .driver-status-pill.is-available {
+  background: var(--exito-tinte);
+  border-color: color-mix(in srgb, var(--exito) 40%, transparent);
+  color: var(--tinta);
+}
+#driver-app .driver-status-pill.is-available .driver-status-dot {
+  background: #22a35a;
+  box-shadow: 0 0 0 4px color-mix(in srgb, #22a35a 20%, transparent);
+}
+#driver-app .driver-status-pill.is-available .driver-status-text strong {
+  color: var(--exito);
+}
+.driver-status-pill.is-available .driver-status-sub-on {
+  display: block;
+}
+.driver-status-pill.is-available .driver-status-sub-off {
+  display: none;
+}
+.driver-status-pill.is-available .driver-status-switch {
+  background: #22a35a;
+}
+.driver-status-pill.is-available .driver-status-switch::after {
+  transform: translateX(22px);
+}
+
+/* --- Números con ícono --- */
+#driver-app .driver-quick-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3);
+  max-width: none;
+  margin: 0 var(--sp-4) var(--sp-5);
+}
+#driver-app .driver-quick-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  text-align: left;
+  background: var(--campo);
+  border: 1px solid var(--borde);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--driver-card-shadow);
+  min-width: 0;
+}
+#driver-app .driver-quick-stat > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.driver-stat-icon {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+}
+.is-red .driver-stat-icon { background: var(--marca-tinte); color: var(--marca); }
+.is-amber .driver-stat-icon { background: #fdf0c4; color: #b7791f; }
+.is-green .driver-stat-icon { background: var(--exito-tinte); color: var(--exito); }
+.is-blue .driver-stat-icon { background: var(--info-tinte); color: var(--info); }
+#driver-app .driver-quick-stat-value {
+  font-size: clamp(1.25rem, 4vw, 1.6rem);
+  font-weight: 800;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+#driver-app .driver-quick-stat-label {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: none;
+  color: var(--tinta);
+}
+.driver-stat-trend {
+  font-size: 12.5px;
+  color: var(--tinta-suave);
+}
+.driver-stat-trend.is-up {
+  color: var(--exito);
+  font-weight: 700;
+}
+
+/* --- Pestañas grandes con conteo --- */
+#driver-app .driver-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 var(--sp-4) var(--sp-3);
+  padding: 0;
+  background: var(--campo);
+  border: 1px solid var(--borde);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--driver-card-shadow);
+}
+#driver-app .driver-tabs button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 8px 6px;
+  border-radius: 0;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--tinta);
+  background: transparent;
+}
+#driver-app .driver-tabs button + button {
+  border-left: 1px solid var(--borde);
+}
+#driver-app .driver-tabs button.is-active {
+  background: var(--marca);
+  color: var(--sobre-marca);
+}
+.driver-tab-icon {
+  flex-shrink: 0;
+}
+.driver-tab-count {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--superficie-hundida);
+  color: var(--tinta);
+  font-size: 13px;
+  font-weight: 800;
+}
+.driver-tab-count[hidden] {
+  display: none;
+}
+#driver-app .driver-tabs button.is-active .driver-tab-count {
+  background: var(--sobre-marca);
+  color: var(--marca);
+}
+#driver-app .driver-tabs .admin-tab-badge {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  margin: 0;
+  background: #f59e0b;
+  color: #fff;
+}
+#driver-app .driver-search-row {
+  padding: 0 var(--sp-4) var(--sp-4);
+}
+#driver-app .driver-search-row input {
+  min-height: 48px;
+  padding: 10px 14px 10px 42px;
+  border-radius: var(--radius-sm);
+  background: var(--campo) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2356595F' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 14px center;
+  box-shadow: var(--sombra-tarjeta);
+}
+
+/* --- Lista y tarjeta de pedido --- */
+#driver-app #driver-orders-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-3);
+  padding: 0 var(--sp-4);
+  margin: 0;
+}
+#driver-app .driver-multi-hint {
+  margin: 0;
+}
+.driver-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--sp-6) var(--sp-4);
+  text-align: center;
+  border: 1px dashed var(--borde-control);
+  border-radius: var(--radius-lg);
+  color: var(--tinta-suave);
+  font-size: var(--fs-xs);
+}
+.driver-empty strong {
+  font-size: var(--fs-sm);
+  color: var(--tinta);
+}
+#driver-app .driver-order {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin: 0;
+  padding: var(--sp-4);
+  background: var(--campo);
+  border: 1px solid var(--borde);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--driver-card-shadow);
+  min-width: 0;
+}
+#driver-app .driver-order.is-tracking {
+  border-color: var(--marca-borde);
+  box-shadow: inset 0 3px 0 var(--marca), var(--driver-card-shadow);
+}
+.driver-order-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+#driver-app .driver-order-chip {
+  position: static;
+  display: inline-flex;
+  margin: 0;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 0;
+}
+#driver-app .driver-order-chip.is-new { background: var(--marca-tinte); color: var(--marca-texto); }
+#driver-app .driver-order-chip.is-warn { background: #fdf0c4; color: #8a5a00; }
+#driver-app .driver-order-chip.is-old { background: var(--superficie-hundida); color: var(--tinta-suave); }
+#driver-app .driver-order-chip.is-scheduled { background: var(--info-tinte); color: var(--info); }
+.driver-order-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--info-tinte);
+  color: var(--info);
+  font-size: 13px;
+  font-weight: 800;
+}
+.driver-order-status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.driver-order-code {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tinta-suave);
+}
+.driver-order-age {
+  font-size: 14px;
+  color: var(--tinta-suave);
+}
+.driver-order-total {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+#driver-app .driver-order-total .price {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 800;
+  color: var(--marca);
+}
+.driver-paid-chip {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--exito-tinte);
+  color: var(--exito);
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.driver-order-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.driver-order-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+#driver-app .driver-order-customer {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  color: var(--tinta);
+  overflow-wrap: anywhere;
+}
+.driver-order-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-xs);
+  color: var(--tinta);
+}
+.driver-order-phone svg,
+#driver-app .driver-order-address svg {
+  flex-shrink: 0;
+  color: var(--tinta-suave);
+}
+#driver-app .driver-order-address {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--tinta-suave);
+}
+#driver-app .driver-order-address svg {
+  margin-top: 3px;
+}
+#driver-app .driver-order-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 2px 0 0;
+  color: var(--tinta);
+}
+#driver-app .driver-order-item-row {
+  gap: 10px;
+  padding: 0;
+}
+#driver-app .driver-order-item-row em {
+  display: block;
+  font-style: normal;
+  font-size: 13px;
+  color: var(--tinta-suave);
+}
+#driver-app .driver-order-item-thumb {
+  width: 36px;
+  height: 36px;
+}
+#driver-app .driver-order-note {
+  margin: 0;
+  border-radius: var(--radius-sm);
+}
+#driver-app .driver-order-actions {
+  margin: auto 0 0;
+}
+#driver-app .driver-action-btn {
+  gap: 8px;
+  border-radius: var(--radius-sm);
+}
+#driver-app .driver-primary-btn,
+#driver-app .driver-secondary-btn {
+  border-radius: var(--radius-sm);
+}
+#driver-app .driver-primary-btn {
+  color: var(--sobre-marca);
+  background: var(--marca);
+  box-shadow: 0 4px 12px rgba(181, 42, 32, 0.22);
+}
+.driver-secondary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.driver-secondary-row .driver-secondary-btn {
+  flex: 1 1 160px;
+}
+#driver-app .driver-tracking-indicator.is-off {
+  color: var(--tinta-suave);
+}
+
+/* --- Línea de tiempo de la entrega --- */
+.driver-timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+.driver-timeline li {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding-bottom: 12px;
+}
+.driver-timeline li:last-child {
+  padding-bottom: 0;
+}
+.driver-timeline li:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 22px;
+  bottom: 0;
+  width: 2px;
+  background: var(--borde);
+}
+.driver-timeline li.is-done:not(:last-child)::before {
+  background: #22a35a;
+}
+.driver-timeline-dot {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--borde-control);
+  background: var(--campo);
+}
+.driver-timeline li.is-done .driver-timeline-dot {
+  border-color: #22a35a;
+  background: #22a35a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E") center / 12px no-repeat;
+}
+.driver-timeline li.is-current .driver-timeline-dot {
+  border-color: var(--marca);
+  background: var(--campo);
+  box-shadow: inset 0 0 0 4px var(--campo), inset 0 0 0 10px var(--marca);
+}
+.driver-timeline li > span:last-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.driver-timeline strong {
+  font-size: 14px;
+  color: var(--tinta);
+}
+.driver-timeline small {
+  font-size: 13px;
+  color: var(--tinta-suave);
+}
+
+/* --- Historial: filas tipo tabla que se despliegan --- */
+#driver-app #driver-orders-list[data-view='historial'] {
+  display: block;
+}
+.driver-history {
+  overflow: hidden;
+  background: var(--campo);
+  border: 1px solid var(--borde);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--driver-card-shadow);
+}
+.driver-hist-head {
+  display: none;
+}
+.driver-hist-item {
+  border-bottom: 1px solid var(--borde);
+}
+.driver-hist-item:last-child {
+  border-bottom: 0;
+}
+.driver-hist-item > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.driver-hist-item > summary::-webkit-details-marker {
+  display: none;
+}
+.driver-hist-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'customer total'
+    'code status'
+    'date date';
+  align-items: center;
+  gap: 4px var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: 14px;
+  color: var(--tinta);
+}
+.driver-hist-item[open] > .driver-hist-row {
+  background: var(--superficie);
+}
+.driver-hist-code { grid-area: code; font-weight: 700; color: var(--tinta-suave); }
+.driver-hist-customer {
+  grid-area: customer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  overflow-wrap: anywhere;
+}
+.driver-hist-avatar {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--marca-tinte);
+  color: var(--marca-texto);
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.driver-hist-address {
+  display: none;
+  color: var(--tinta-suave);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.driver-hist-total { grid-area: total; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.driver-hist-date { grid-area: date; font-size: 13px; color: var(--tinta-suave); }
+.driver-hist-status {
+  grid-area: status;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.driver-hist-status::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.driver-hist-status.is-ok { background: var(--exito-tinte); color: var(--exito); }
+.driver-hist-status.is-bad { background: var(--marca-tinte); color: var(--marca-texto); }
+.driver-hist-status.is-warn { background: #fdf0c4; color: #8a5a00; }
+.driver-hist-detail {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  background: var(--superficie);
+  font-size: 14px;
+}
+.driver-hist-reason {
+  margin: 0;
+  color: #8a5a00;
+  font-weight: 700;
+}
+.driver-hist-products {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--sp-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radius-sm);
+  background: var(--campo);
+}
+.driver-hist-products > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.driver-hist-products .is-tip {
+  padding-top: 4px;
+  border-top: 1px dashed var(--borde);
+  color: var(--exito);
+  font-weight: 700;
+}
+.driver-hist-full-address {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  color: var(--tinta-suave);
+}
+.driver-hist-full-address svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+/* --- Celular angosto: pestañas con ícono arriba --- */
+@media (max-width: 479px) {
+  #driver-app .driver-tabs button {
+    flex-direction: column;
+    gap: 2px;
+    min-height: 64px;
+    font-size: 13.5px;
+  }
+  #driver-app .driver-tabs .driver-tab-count {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    min-width: 22px;
+    height: 22px;
+    font-size: 12px;
+  }
+  #driver-app .driver-status-pill {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+  .driver-stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
+  .driver-stat-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  #driver-app .driver-quick-stat {
+    padding: var(--sp-3);
+    gap: 10px;
+  }
+}
+
+@media (min-width: 720px) {
+  #driver-app #driver-orders-list[data-view='recoger'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* En curso: línea de tiempo a la izquierda, datos a la derecha. */
+  #driver-app .driver-order.is-en-curso .driver-order-main {
+    display: grid;
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: var(--sp-5);
+  }
+  #driver-app .driver-order.is-en-curso .driver-timeline {
+    padding-right: var(--sp-4);
+    border-right: 1px solid var(--borde);
+  }
+  #driver-app .driver-order.is-en-curso .driver-order-actions,
+  #driver-app .driver-order.is-en-curso > .driver-primary-btn,
+  #driver-app .driver-order.is-en-curso > .driver-secondary-row {
+    max-width: none;
+  }
+  .driver-hist-row,
+  .driver-hist-head {
+    grid-template-columns: 90px minmax(0, 1.2fr) minmax(0, 1.6fr) 110px 130px 120px;
+    grid-template-areas: none;
+  }
+  .driver-hist-row > * {
+    grid-area: auto !important;
+  }
+  .driver-hist-head {
+    display: grid;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    background: var(--superficie);
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--tinta-suave);
+  }
+  .driver-hist-address {
+    display: block;
+  }
+  .driver-hist-status {
+    justify-self: start;
+  }
+  .driver-hist-detail {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+  .driver-hist-full-address {
+    grid-column: 1 / -1;
+  }
+}
+@media (min-width: 900px) {
+  #driver-app .driver-quick-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1080px) {
+  #driver-app .driver-greeting {
+    padding: var(--sp-6) var(--sp-6) var(--sp-4);
+  }
+  #driver-app .driver-quick-stats,
+  #driver-app .driver-tabs {
+    margin-left: var(--sp-6);
+    margin-right: var(--sp-6);
+  }
+  #driver-app .driver-search-row,
+  #driver-app #driver-orders-list {
+    padding-left: var(--sp-6);
+    padding-right: var(--sp-6);
+  }
+  #driver-app #driver-orders-list[data-view='recoger'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1440px) {
+  #driver-app #driver-orders-list[data-view='recoger'] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  #driver-app #driver-orders-list[data-view='camino'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* Celular acostado / pantallas bajas: el header no se queda fijo. */
+@media (max-height: 520px) {
+  body:has(#driver-app) .app-header {
+    position: relative;
+  }
+}

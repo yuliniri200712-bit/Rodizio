@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2A2D33">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rodizio Admin">
+<title>Rodizio · Administración</title>
+<meta name="author" content="ParaTouch — DJG (djgv · Mxi)" />
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="../icons/favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="../icons/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/marca.css">
+<link rel="stylesheet" href="../shared/theme.css">
+<link rel="stylesheet" href="../shared/ui.css">
+<link rel="stylesheet" href="../shared/pwa.css">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="dashboard.css">
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js" defer></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>
+<script src="dashboard.js" defer></script>
+<script src="reporte-excel.js" defer></script>
+</head>
+<body>
+
+<div id="vistaCargando" class="cargando cargando-wrap">
+  <div class="cargando-logo"><img src="../icons/icon-192.png" alt="Rodizio"></div>
+  <div class="spinner"></div>
+  <p class="cargando-texto">Verificando sesión…</p>
+</div>
+
+<div id="app" style="display:none">
+<header>
+  <div class="headwrap">
+    <div class="brand">
+      <img class="brand-logo" src="../icons/logo-blanco.webp" alt="Rodízio" height="28">
+      <h1 class="sr-only">Rodízio · Administración</h1>
+      <small aria-hidden="true">Administración</small>
+    </div>
+    <button class="btn-instalar-pwa" id="btnInstalarApp"><svg class="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Instalar App</button>
+    <button class="logout" id="btnLogout">Salir</button>
+  </div>
+  <div class="tabs">
+    <button class="tab on" id="tabTrabajadores">Trabajadores</button>
+    <button class="tab" id="tabCarta">Carta</button>
+    <button class="tab" id="tabDashboard">Reportes</button>
+  </div>
+</header>
+
+<main>
+<div id="vistaTrabajadores">
+  <section class="card">
+    <h2>Acceso a paneles</h2>
+    <p class="sub">Como admin puedes entrar a cualquier panel sin necesitar el rol específico asignado.</p>
+    <div class="panel-links">
+      <a class="panel-link" data-panel="mesero" href="../mesero-app/" target="_blank" rel="noopener">Mesero</a>
+      <a class="panel-link" data-panel="caja" href="../panel-caja/" target="_blank" rel="noopener">Caja</a>
+      <a class="panel-link" data-panel="cocina" href="../panel-cocina/" target="_blank" rel="noopener">Cocina</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <details id="qrDetails">
+      <summary><h2 style="display:inline">Códigos QR de mesas</h2></summary>
+      <p class="sub">Cada QR abre el menú de <a data-panel="cliente" href="../panel-cliente/" target="_blank" rel="noopener">panel-cliente</a> para esa mesa. El cliente arma su pedido, pero no entra a cocina hasta que el mesero lo confirme desde <em>mesero-app</em>. Descarga e imprime el que corresponda a cada mesa.</p>
+      <div class="qr-custom">
+        <input id="fMesaCustom" placeholder="Nombre de mesa especial (ej. Terraza 1)">
+        <button class="cta" id="btnGenerarQrCustom" type="button" style="width:auto;padding:0 20px">Generar</button>
+      </div>
+      <div id="qrGrid" class="qr-grid"></div>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2 id="formTitulo">Crear trabajador</h2>
+    <p class="sub" id="formSub">Se crea la cuenta en Firebase Authentication y su perfil en /trabajadores. Cualquier trabajador activo puede operar mesero, caja o cocina — el panel que use depende del dispositivo, no hace falta asignárselo aquí.</p>
+    <form id="formCrear">
+      <div class="field"><label>Nombre completo</label><input id="fNombre" placeholder="Ej. Juan Pérez"></div>
+      <div class="field"><label>Usuario</label><input id="fUsuario" placeholder="Ej. juanp" autocomplete="off"></div>
+      <div class="field" id="campoPassword"><label>Contraseña</label><input id="fPassword" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password"></div>
+      <label class="estado-toggle"><input type="checkbox" id="fEsAdmin"> Acceso de administrador (gestionar trabajadores)</label>
+      <label class="estado-toggle"><input type="checkbox" id="fActivo" checked> Cuenta activa</label>
+      <button class="cta" id="btnCrear" type="submit">Crear trabajador</button>
+      <button class="logout-link hidden" id="btnCancelarEdicion" type="button">Cancelar edición</button>
+      <p class="err hidden" id="errCrear"></p>
+      <p class="ok hidden" id="okCrear"></p>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Trabajadores</h2>
+    <p class="sub">Activar/desactivar quita o da acceso de inmediato. Eliminar borra su perfil — no puede volver a entrar, aunque su cuenta de acceso queda registrada en Firebase Authentication (no hay forma de borrarla desde aquí, solo desde la consola de Firebase).</p>
+    <div id="tablaWrap">
+      <table>
+        <thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody id="tbodyTrabajadores"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<div id="vistaCarta" class="hidden">
+  <section class="card">
+    <h2>Carta de mesa</h2>
+    <p class="sub">Esta es la carta que ven los clientes al escanear el QR de la mesa. <strong>Es independiente del menú de domicilios</strong>: lo que cambies acá no afecta a la tienda de domicilios, y al revés tampoco. Los precios se escriben sin puntos ni comas (ej. 45000).</p>
+  </section>
+
+  <section class="card">
+    <h2 id="cartaFormTitulo">Agregar plato</h2>
+    <form id="formPlato">
+      <div class="field"><label>Nombre</label><input id="pNombre" placeholder="Ej. Picanha al Espeto"></div>
+      <div class="field"><label>Descripción</label><input id="pDesc" placeholder="Breve, como se la lees a un cliente"></div>
+      <div class="field"><label>Precio</label><input id="pPrecio" type="number" min="0" step="100" placeholder="45000"></div>
+      <div class="field"><label>Categoría</label><select id="pCategoria"></select></div>
+      <div class="field"><label>Orden dentro de la categoría</label><input id="pOrden" type="number" min="0" step="1" placeholder="0"></div>
+      <button class="cta" id="btnGuardarPlato" type="submit">Agregar plato</button>
+      <button class="logout-link hidden" id="btnCancelarPlato" type="button">Cancelar edición</button>
+      <p class="err hidden" id="errPlato"></p>
+      <p class="ok hidden" id="okPlato"></p>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Platos de la carta</h2>
+    <p class="sub" id="cartaConteo">Cargando…</p>
+    <div class="carta-toolbar">
+      <input id="cartaBuscar" type="search" placeholder="Buscar plato por nombre o descripción…" autocomplete="off">
+      <select id="cartaFiltroCat" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
+      <button type="button" class="carta-btn" id="cartaToggleTodas">Abrir todas</button>
+    </div>
+    <div id="cartaLista"></div>
+  </section>
+</div>
+
+<div id="vistaDashboard" class="hidden">
+  <section class="card">
+    <p class="sub">Cargando reportes…</p>
+  </section>
+</div>
+
+</main>
+</div>
+
+<script type="module" src="../shared/firebase.js"></script>
+<script src="../shared/util.js"></script>
+<script src="../shared/ui.js"></script>
+<script src="../shared/pwa.js"></script>
+<script src="../shared/roles.js"></script>
+<script type="module" src="../shared/auth.js"></script>
+<script src="app.js"></script>
+  <p class="dev-credit">Desarrollado por <strong>ParaTouch</strong></p>
+</body>
+</html>

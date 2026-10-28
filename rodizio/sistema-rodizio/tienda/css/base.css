@@ -1,0 +1,274 @@
+/* Rodizio Cucuta - ParaTouch (DJG . djgv . Mxi . 0808 . 0724 . uwu) */
+/* =========================================================
+   Reset & fundamentos tipográficos
+   ========================================================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* El recuadro azul (Android Chrome) al tocar un botón o hacer scroll
+     — reportado en un Motorola, pero es el resaltado táctil por
+     defecto del navegador, sale en cualquier Android. Se quita acá,
+     una sola vez para las 3 apps (base.css es compartido). */
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: contain;
+  -webkit-tap-highlight-color: transparent;
+  /* Selección de texto accidental al arrastrar/hacer scroll rápido
+     (se ve como el mismo tipo de "bloque azul") — se desactiva en
+     general, como en una app instalada, y se reactiva puntualmente
+     donde sí tiene sentido copiar texto (campos de formulario). */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea,
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Aviso de error fatal — pantalla de respaldo con el diseño del
+   sistema en vez de dejar la app congelada/en blanco sin explicación
+   si un error de JS no capturado rompe algo. Lo dispara errors.js
+   (watchGlobalErrors) solo ante errores reales (no promesas
+   rechazadas, que suelen ser fallas menores no fatales). Por encima
+   de absolutamente todo — incluso de confirm.js — porque puede
+   necesitar mostrarse aunque haya un diálogo o modal abierto. */
+.fatal-error-banner {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  text-align: center;
+  background: var(--color-bg);
+}
+.fatal-error-banner[hidden] {
+  display: none;
+}
+/* Aviso de cookies (js/cookies.js): abajo, sobre la barra inferior y el
+   carrito flotante, pero debajo de cajones y modales. */
+.cookie-banner:not([hidden]) {
+  position: fixed;
+  left: var(--sp-3);
+  right: var(--sp-3);
+  bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
+  z-index: calc(var(--z-drawer) - 1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-width: 520px;
+  margin: 0 auto;
+  padding: var(--sp-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-float);
+  color: var(--color-text);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+.cookie-banner a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.cookie-banner-acciones {
+  display: flex;
+  gap: var(--sp-2);
+}
+.cookie-banner-acciones .btn {
+  padding: 10px 16px;
+}
+
+.fatal-error-banner p {
+  color: var(--color-text-muted);
+  max-width: 320px;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1, h2, h3, h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+p {
+  margin: 0;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* --- Utilidades --- */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.price {
+  font-family: var(--font-body);
+  font-weight: 800;
+  /* Tinta en admin y domiciliario (como los paneles); el marketplace lo
+     pone en rojo de marca en brand.css. */
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Accesibilidad: foco visible siempre --- */
+:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* --- Respeta reduce-motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- Scrollbar a juego con la marca (navegadores webkit) ---
+   El "track" (el riel de fondo) es la parte que importa para que no
+   se vea una franja gris/negra por defecto del navegador pegada al
+   borde derecho de TODA la página (mucho más notorio en modo claro,
+   contra el fondo crema) — el "thumb" (la barra que se arrastra) usa
+   el rojo de marca (`--color-flame`) pleno (a pedido del usuario; se
+   probó un tono atenuado con color-mix() pero se veía más café/dorado
+   que rojo). Comparte esta regla `js/base.css` con las 3 apps
+   (marketplace, panel, domiciliarios) — un solo lugar para las tres. */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--borde-control);
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--color-bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--tinta-suave);
+}
+
+/* Firefox no soporta ::-webkit-scrollbar-* — usa esta propiedad
+   aparte para el mismo resultado (thumb y track, en ese orden). */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--borde-control) var(--color-bg);
+}
+
+/* ── Crédito de desarrollo ──────────────────────────────────────────
+   Línea discreta al pie de cada página (tienda, admin, driver,
+   privacidad). currentColor para que sirva igual sobre el lienzo claro
+   del marketplace y sobre los paneles. */
+.dev-credit {
+  margin: 0;
+  padding: 18px 12px calc(18px + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  /* Igual que en los paneles (shared/ui.css): sin franja, texto suave.
+     Antes era una franja negra porque el <html> de estas apps se pintaba
+     negro; desde el sistema "Rodízio Brasa" el <html> usa el fondo claro
+     (brand.css / admin.css), así que el texto heredado ya se lee. */
+  background: transparent;
+  color: var(--tinta-suave);
+}
+
+.dev-credit strong {
+  font-weight: 700;
+  color: var(--tinta);
+}
+
+/* Mientras hay una hoja abierta (producto, carrito…) el fondo no hace scroll. */
+body.sheet-open {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+.drawer-body {
+  overscroll-behavior: contain;
+}
+
+/* iOS Safari hace zoom al enfocar un campo con letra menor a 16 px y,
+   como aquí el pellizco está bloqueado a propósito (disable-zoom.js), el
+   cliente no podía volver a alejar. En pantallas táctiles todos los
+   campos de texto van a 16 px. */
+@media (pointer: coarse) {
+  html input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+  html textarea,
+  html select {
+    font-size: 16px !important;
+  }
+}
+
+/* Sin doble-tap-para-zoom en botones y campos, sin tener que cancelar
+   toques por JS (ver disable-zoom.js). */
+html {
+  touch-action: manipulation;
+}

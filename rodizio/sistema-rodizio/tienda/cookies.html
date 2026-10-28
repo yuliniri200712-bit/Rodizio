@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Rodízio Cúcuta — Política de cookies</title>
+  <meta name="author" content="ParaTouch — DJG (djgv · Mxi)" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/marca.css" />
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+
+  <style>
+    /* Sin esto, el "scroll anchoring" nativo del navegador (pensar
+       que el usuario prefiere mantener la posición visual cuando el
+       contenido de arriba cambia de tamaño) compensa el scroll cada
+       vez que las fuentes async (Anton/Manrope) terminan de cargar y
+       el texto se reacomoda — moviendo el scroll lejos del ancla
+       (#cliente/#panel/#domiciliario) a la que el navegador acababa
+       de saltar al abrir el enlace, y dejando al usuario viendo el
+       mensaje general del inicio de la página en vez de su sección.
+       Desactivarlo en toda la página es lo correcto acá: no hay
+       ningún otro contenido que cargue de forma diferida después del
+       salto inicial que se beneficie de esa compensación. */
+    html, body {
+      overflow-anchor: none;
+    }
+    /* Solo esta página: es texto largo, no necesita layout de app. */
+    .policy-page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: var(--sp-6) var(--sp-5) var(--sp-8);
+    }
+    .policy-page h1 {
+      font-size: var(--fs-2xl);
+      margin-bottom: var(--sp-2);
+      /* Detalle rojo a juego con el resto del sistema (a pedido del
+         usuario) — una franja corta bajo el título, en vez de un
+         subrayado completo, para que se sienta como un acento de
+         marca y no como un link. */
+      border-bottom: 3px solid var(--color-flame);
+      display: inline-block;
+      padding-bottom: var(--sp-2);
+    }
+    .policy-intro {
+      color: var(--color-text-muted);
+      font-size: var(--fs-sm);
+      line-height: 1.7;
+      margin-bottom: var(--sp-5);
+    }
+    /* Índice para saltar directo a "tu" sección — la mayoría de
+       quien abre este enlace viene de un solo formulario (cliente,
+       panel o domiciliario) y solo le interesa esa parte. */
+    .policy-jump {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--sp-2);
+      margin-bottom: var(--sp-6);
+    }
+    .policy-jump a {
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+      font-size: var(--fs-xs);
+      font-weight: 700;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    /* Detalle rojo al pasar el mouse/tocar — mismo criterio que el
+       resto del sistema (tarjetas y tabs ya resaltan en rojo al
+       interactuar). */
+    .policy-jump a:hover,
+    .policy-jump a:focus-visible {
+      border-color: var(--color-flame);
+      color: var(--color-flame);
+    }
+    .policy-section {
+      margin-top: var(--sp-7);
+      padding-top: var(--sp-6);
+      border-top: 1px solid var(--color-border);
+      scroll-margin-top: var(--sp-5);
+    }
+    .policy-section:first-of-type {
+      border-top: none;
+      padding-top: 0;
+      margin-top: var(--sp-6);
+    }
+    .policy-section-eyebrow {
+      display: inline-block;
+      font-size: var(--fs-xs);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-flame);
+      margin-bottom: var(--sp-2);
+    }
+    .policy-page h2 {
+      font-size: var(--fs-xl);
+      margin-bottom: var(--sp-4);
+      position: relative;
+      padding-left: var(--sp-4);
+    }
+    /* Marcador rojo al lado de cada título de sección — refuerza el
+       mismo acento que ya usa .policy-section-eyebrow justo arriba. */
+    .policy-page h2::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 4px;
+      bottom: 4px;
+      width: 4px;
+      border-radius: var(--radius-pill);
+      background: var(--color-flame);
+    }
+    .policy-page h3 {
+      font-size: var(--fs-md);
+      margin-top: var(--sp-5);
+      margin-bottom: var(--sp-2);
+      color: var(--color-flame);
+    }
+    .policy-page p,
+    .policy-page li {
+      color: var(--color-text-muted);
+      font-size: var(--fs-sm);
+      line-height: 1.7;
+      margin-bottom: var(--sp-3);
+    }
+    .policy-page ul {
+      padding-left: var(--sp-5);
+    }
+    .policy-page strong {
+      color: var(--color-text);
+    }
+    .policy-back {
+      display: inline-block;
+      margin-top: var(--sp-7);
+      color: var(--color-flame);
+      font-weight: 700;
+      font-size: var(--fs-sm);
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.15s ease;
+    }
+    .policy-back:hover {
+      border-bottom-color: var(--color-flame);
+    }
+    .policy-table { width: 100%; border-collapse: collapse; font-size: var(--fs-xs); }
+    .policy-table th, .policy-table td { padding: var(--sp-2) var(--sp-3); text-align: left; vertical-align: top; border-bottom: 1px solid var(--color-border); }
+    .policy-table th { color: var(--color-text-muted); font-weight: 800; }
+    .policy-note { margin-top: var(--sp-6); font-size: var(--fs-xs); color: var(--color-text-faint); }
+    .policy-draft {
+      margin: 0 0 var(--sp-5);
+      padding: var(--sp-3) var(--sp-4);
+      border: 1px solid var(--color-flame);
+      border-radius: var(--radius-md);
+      font-size: var(--fs-sm);
+      line-height: 1.6;
+    }
+    .policy-pending {
+      background: color-mix(in srgb, var(--aviso) 25%, transparent);
+      border-radius: var(--radius-sm);
+      padding: 0 4px;
+    }
+    .policy-cookies-btn {
+      display: inline;
+      padding: 0;
+      background: none;
+      border: 0;
+      color: var(--color-flame);
+      font: inherit;
+      font-weight: 700;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <main class="policy-page">
+    <h1>Política de cookies</h1>
+
+
+    <p class="policy-intro">
+      Esta página explica qué guardamos en tu navegador cuando usas
+      la tienda de Rodízio Cúcuta, para qué sirve y cómo cambiar tu
+      decisión. Complementa la <a href="privacidad.html">política de
+      tratamiento de datos personales</a>. Responsable: Sociedad
+      Gastronómica S.A.S., NIT 901.941.245-3,
+      <a href="mailto:sociedadgastronomicasas@gmail.com">sociedadgastronomicasas@gmail.com</a>.
+    </p>
+
+    <section class="policy-section">
+      <h2>Qué son las cookies y el almacenamiento local</h2>
+      <p>
+        Son pequeños archivos o datos que el navegador guarda en tu
+        dispositivo. Las usamos para recordar tu carrito, mantener tu
+        sesión y, solo si lo aceptas, medir el uso de la app. No usamos
+        cookies de publicidad.
+      </p>
+    </section>
+
+    <section class="policy-section">
+      <h2>Qué guardamos</h2>
+      <div style="overflow-x:auto">
+        <table class="policy-table">
+          <thead><tr><th>Nombre</th><th>Tipo</th><th>Para qué sirve</th><th>Cuánto dura</th><th>Necesaria u opcional</th></tr></thead>
+          <tbody>
+          <tr><td data-label="Nombre">rodizio-cucuta-cart</td><td>Almacenamiento local</td><td>Guarda tu carrito en este dispositivo.</td><td>Hasta que hagas el pedido o lo borres</td><td>Necesaria</td></tr>
+          <tr><td data-label="Nombre">rodizio-cucuta-favorites</td><td>Almacenamiento local</td><td>Guarda tus productos favoritos.</td><td>Hasta que los quites o borres los datos del navegador</td><td>Necesaria</td></tr>
+          <tr><td data-label="Nombre">rodizio_catalogo_v1</td><td>Almacenamiento local</td><td>Copia del último menú, para que la tienda abra más rápido.</td><td>Se actualiza en cada visita</td><td>Necesaria</td></tr>
+          <tr><td data-label="Nombre">rodizio_last_phone</td><td>Almacenamiento local</td><td>Recuerda tu teléfono para no escribirlo de nuevo en el siguiente pedido.</td><td>Hasta que borres los datos del navegador</td><td>Necesaria</td></tr>
+          <tr><td data-label="Nombre">rodizio_pago_pendiente</td><td>Almacenamiento local</td><td>Guarda el número de tu orden mientras pagas en la página de la pasarela, para confirmarla al volver.</td><td>Hasta confirmar el pago</td><td>Necesaria</td></tr>
+          <tr><td data-label="Nombre">rodizio_consent_accepted</td><td>Almacenamiento local</td><td>Recuerda que aceptaste la política de datos.</td><td>Hasta que borres los datos del navegador</td><td>Necesaria</td></tr>
+          <tr><td data-label="Nombre">rodizio_cookies</td><td>Almacenamiento local</td><td>Guarda tu decisión sobre las cookies de Analytics.</td><td>Hasta que cambies la decisión</td><td>Necesaria</td></tr>
+          <tr><td data-label="Nombre">rodizio-cucuta-v149 (Cache Storage)</td><td>Caché del navegador</td><td>Archivos de la app (páginas, estilos, imágenes) para que cargue más rápido y funcione con mala señal.</td><td>Se renueva con cada versión de la tienda</td><td>Necesaria</td></tr>
+          <tr><td data-label="Nombre">Sesión de Firebase Authentication</td><td>IndexedDB</td><td>Mantiene tu sesión iniciada con Google.</td><td>Hasta que cierres sesión</td><td>Necesaria si inicias sesión</td></tr>
+          <tr><td data-label="Nombre">_ga y _ga_&lt;id></td><td>Cookie (Google Analytics)</td><td>Mide cómo se usa la app: qué productos se ven y si se completan pedidos.</td><td>2 años (lo define Google)</td><td>Opcional: solo si aceptas</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Las necesarias no se pueden desactivar porque la tienda no
+        funcionaría sin ellas. En el panel de administración y en la
+        app de domiciliarios se guarda además una lista de los pedidos
+        ya vistos, para avisar solo de los nuevos.
+      </p>
+    </section>
+
+    <section class="policy-section">
+      <h2>Servicios de terceros que pueden guardar datos</h2>
+      <ul>
+        <li><strong>Google Analytics para Firebase:</strong> solo si aceptas las cookies de Analytics. Si las rechazas, no se carga.</li>
+        <li><strong>Inicio de sesión con Google y reCAPTCHA Enterprise:</strong> Google puede guardar datos técnicos propios para iniciar sesión y proteger la tienda contra abuso.</li>
+        <li><strong>Google Fonts:</strong> carga las tipografías desde servidores de Google.</li>
+        <li><strong>AAvance / Coopcentral:</strong> si pagas en línea, te lleva a su página, que tiene sus propias políticas.</li>
+      </ul>
+    </section>
+
+    <section class="policy-section">
+      <h2>Cómo cambiar tu decisión</h2>
+      <p>
+        Puedes cambiar tu decisión sobre las cookies de Analytics cuando
+        quieras:
+        <button type="button" class="policy-cookies-btn" id="cookies-cambiar">Cambiar mi decisión sobre cookies</button>.
+        Tampoco necesitas nuestro permiso para borrar los datos desde
+        la configuración de tu navegador; si lo haces, se borrará tu
+        carrito y tendrás que iniciar sesión otra vez.
+      </p>
+    </section>
+
+    <p class="policy-note">Esta política está en revisión legal y puede cambiar.</p>
+
+    <a class="policy-back" href="index.html" id="policy-back-link">← Volver</a>
+    <script>
+      // Mismo comportamiento que privacidad.html: borra la decisión guardada y las cookies _ga
+      // que haya dejado Analytics, y vuelve a la tienda, donde el aviso sale otra vez.
+      document.getElementById('cookies-cambiar').addEventListener('click', () => {
+        try { localStorage.removeItem('rodizio_cookies'); } catch {}
+        const dominios = ['', location.hostname, '.' + location.hostname.replace(/^www\./, '')];
+        document.cookie.split(';').map((c) => c.split('=')[0].trim()).filter((n) => /^_ga/.test(n)).forEach((n) => {
+          dominios.forEach((d) => { document.cookie = `${n}=; Max-Age=0; path=/${d ? `; domain=${d}` : ''}`; });
+        });
+        location.href = 'index.html';
+      });
+      if (window.history.length > 1) {
+        document.getElementById('policy-back-link').addEventListener('click', (e) => {
+          e.preventDefault();
+          window.history.back();
+        });
+      }
+    </script>
+  </main>
+</body>
+</html>

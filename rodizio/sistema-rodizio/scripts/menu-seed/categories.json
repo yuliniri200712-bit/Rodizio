@@ -1,0 +1,62 @@
+{
+  "entradas": {
+    "name": "Entradas",
+    "order": 0
+  },
+  "para-compartir": {
+    "name": "Para Compartir",
+    "order": 1
+  },
+  "de-la-parrilla": {
+    "name": "De la Parrilla",
+    "order": 2
+  },
+  "angus-beef": {
+    "name": "Angus Beef",
+    "order": 3
+  },
+  "burger-angus": {
+    "name": "Burger Angus",
+    "order": 4
+  },
+  "de-la-casa": {
+    "name": "De la Casa",
+    "order": 5
+  },
+  "del-mar": {
+    "name": "Del Mar",
+    "order": 6
+  },
+  "menu-infantil": {
+    "name": "Menú Infantil",
+    "order": 7
+  },
+  "postres": {
+    "name": "Postres",
+    "order": 8
+  },
+  "bebidas": {
+    "name": "Bebidas",
+    "order": 9
+  },
+  "cervezas-3-cordilleras": {
+    "name": "Cervezas 3 Cordilleras",
+    "order": 10
+  },
+  "mocktails": {
+    "name": "Mocktails",
+    "order": 11
+  },
+  "cocteles": {
+    "name": "Cocteles",
+    "order": 12
+  },
+  "vinos": {
+    "name": "Vinos",
+    "order": 13
+  },
+  "champagnes": {
+    "name": "Champagnes",
+    "order": 14
+  }
+}

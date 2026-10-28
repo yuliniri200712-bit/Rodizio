@@ -1,0 +1,30 @@
+{
+  "functions": {
+    "source": "tienda/functions"
+  },
+  "database": [
+    {
+      "instance": "demo-rodizio",
+      "rules": "database.rules.json"
+    },
+    {
+      "instance": "demo-rodizio-default-rtdb",
+      "rules": "database.rules.json"
+    }
+  ],
+  "emulators": {
+    "singleProjectMode": true,
+    "auth": {
+      "port": 9099
+    },
+    "database": {
+      "port": 9000
+    },
+    "functions": {
+      "port": 5001
+    },
+    "ui": {
+      "enabled": false
+    }
+  }
+}

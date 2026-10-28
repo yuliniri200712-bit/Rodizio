@@ -1,0 +1,16 @@
+{
+  "BEB-03/description": "Elige tu sabor. Si no tenemos ese sabor, te contactamos o usamos tu segunda opción.",
+  "BEB-03/sabores": ["Mora", "Lulo", "Mango", "Maracuyá"],
+  "BEB-04/description": "Elige tu sabor. Si no tenemos ese sabor, te contactamos o usamos tu segunda opción.",
+  "BEB-04/sabores": ["Mora", "Lulo", "Mango", "Maracuyá"],
+  "BEB-05/description": "Elige Original o Zero. Si no tenemos tu sabor, te contactamos o usamos tu segunda opción.",
+  "BEB-05/sabores": ["Original", "Zero"],
+  "BEB-07/description": "Elige Manzana o Uva. Si no tenemos tu sabor, te contactamos o usamos tu segunda opción.",
+  "BEB-07/sabores": ["Manzana", "Uva"],
+  "BEB-21/description": "Soda importada, mezcla frutal y herbal. Elige tu sabor. Si no tenemos ese sabor, te contactamos o usamos tu segunda opción.",
+  "BEB-21/sabores": ["Frambuesa & Rosas", "Limón & Hierbabuena", "Sandía & Albahaca", "Uva Blanca & Romero"],
+  "BEB-29/description": "Té importado. Elige tu sabor. Si no tenemos ese sabor, te contactamos o usamos tu segunda opción.",
+  "BEB-29/sabores": ["Negro & Jugo de Limón", "Blanco sabor Mangostino", "Carambolo & Flor de Loto", "Granada & Mora Azul", "Rojo sabor Frutos Rojos", "Blanco sabor Flor de Cerezo"],
+  "BEB-03/pedirSabor": null,
+  "BEB-04/pedirSabor": null
+}

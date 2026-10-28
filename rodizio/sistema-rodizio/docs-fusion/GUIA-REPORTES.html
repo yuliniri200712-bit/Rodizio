@@ -1,0 +1,304 @@
+<title>Guía del panel de reportes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --ground:#f7f1e8;
+  --card:#fffdf9;
+  --card-2:#f1e9dc;
+  --ink:#2c2822;
+  --ink-2:#5f574b;
+  --ink-3:#8a8071;
+  --rule:#e2d8c7;
+  --rule-soft:#ece3d4;
+  --brasa:#9a1408;
+  --brasa-ink:#7a1206;
+  --brasa-wash:#f4ddd0;
+  --oliva:#51602f;
+  --oliva-wash:#e8efd6;
+  --shadow:0 1px 2px rgba(44,40,34,.06), 0 12px 30px -20px rgba(44,40,34,.45);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#1c1915;--card:#26221b;--card-2:#302a21;--ink:#f3ede2;--ink-2:#c6bcaa;
+    --ink-3:#948a79;--rule:#3c352b;--rule-soft:#332d24;--brasa:#e79284;--brasa-ink:#f1b3a7;
+    --brasa-wash:#3b241f;--oliva:#a7bd80;--oliva-wash:#2a3020;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 12px 30px -20px rgba(0,0,0,.85);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#1c1915;--card:#26221b;--card-2:#302a21;--ink:#f3ede2;--ink-2:#c6bcaa;
+  --ink-3:#948a79;--rule:#3c352b;--rule-soft:#332d24;--brasa:#e79284;--brasa-ink:#f1b3a7;
+  --brasa-wash:#3b241f;--oliva:#a7bd80;--oliva-wash:#2a3020;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 12px 30px -20px rgba(0,0,0,.85);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:"Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:17.5px;line-height:1.68;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 22px}
+
+/* ── Portada ── */
+.hero{padding:64px 0 40px;text-align:left}
+.kicker{
+  font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--brasa);margin:0 0 16px;
+}
+h1{
+  font-family:"Caprasimo",Georgia,serif;font-weight:400;
+  font-size:clamp(36px,8vw,58px);line-height:1;letter-spacing:-.01em;
+  margin:0 0 18px;text-wrap:balance;
+}
+.hero p{font-size:19.5px;color:var(--ink-2);margin:0;max-width:34em;text-wrap:pretty}
+
+/* ── Pasos numerados = recorrido real de la pantalla, de arriba a abajo ── */
+.paso{
+  background:var(--card);border:1px solid var(--rule);border-radius:16px;
+  padding:26px 26px 24px;margin-bottom:18px;box-shadow:var(--shadow);
+}
+.paso-cab{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+.paso-num{
+  font-family:"Caprasimo",Georgia,serif;font-size:22px;color:var(--brasa);
+  flex:none;width:1.4em;text-align:center;
+}
+.paso h2{
+  font-family:"Figtree",sans-serif;font-weight:800;font-size:21px;
+  letter-spacing:-.01em;margin:0;text-wrap:balance;line-height:1.25;
+}
+.paso-cuerpo{padding-left:calc(1.4em + 14px)}
+.paso-cuerpo p{margin:0 0 12px}
+.paso-cuerpo p:last-child{margin-bottom:0}
+.paso-cuerpo strong{font-weight:700}
+
+/* ── "Qué decidir con esto" ── */
+.decidir{
+  margin-top:14px;padding:13px 16px;border-radius:11px;
+  background:var(--oliva-wash);border-left:3px solid var(--oliva);
+  font-size:15.5px;color:var(--ink-2);
+}
+.decidir b{color:var(--ink);font-weight:800;display:block;margin-bottom:2px;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase}
+
+/* ── Chips de filtro / ejemplo ── */
+.demo{
+  display:inline-flex;gap:8px;flex-wrap:wrap;margin:4px 0 12px;
+}
+.pill{
+  font-size:13.5px;font-weight:700;padding:6px 13px;border-radius:999px;
+  background:var(--card-2);color:var(--ink-2);border:1px solid var(--rule);
+}
+.pill.on{background:var(--brasa);color:#fffdf9;border-color:transparent}
+:root[data-theme="dark"] .pill.on,:root:not([data-theme="light"]) .pill.on{color:#1c1915}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .pill.on{color:#fffdf9}}
+
+/* ── Ejemplo con números ── */
+.ej{
+  background:var(--card-2);border-radius:11px;padding:15px 17px;margin:12px 0;
+  font-size:15.5px;color:var(--ink-2);
+}
+.ej-tit{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0 0 6px}
+.ej b{color:var(--brasa-ink);font-weight:700}
+
+/* ── Tres números grandes ── */
+.kpis{display:grid;gap:12px;margin:6px 0 4px}
+@media(min-width:560px){.kpis{grid-template-columns:repeat(3,1fr)}}
+.kpi{background:var(--card-2);border-radius:12px;padding:15px 16px}
+.kpi-n{font-family:"Caprasimo",Georgia,serif;font-size:24px;color:var(--brasa);line-height:1}
+.kpi-l{font-size:13px;color:var(--ink-2);margin-top:5px;font-weight:600}
+
+/* ── Preguntas frecuentes ── */
+.faq{margin-top:44px}
+.faq h2{
+  font-family:"Caprasimo",Georgia,serif;font-weight:400;font-size:30px;
+  margin:0 0 20px;
+}
+details{
+  background:var(--card);border:1px solid var(--rule);border-radius:13px;
+  padding:0;margin-bottom:11px;overflow:hidden;
+}
+summary{
+  padding:17px 20px;font-weight:700;font-size:16.5px;cursor:pointer;
+  list-style:none;display:flex;justify-content:space-between;gap:14px;align-items:center;
+}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-family:"Caprasimo",serif;color:var(--brasa);font-size:20px;flex:none}
+details[open] summary::after{content:"–"}
+details[open] summary{border-bottom:1px solid var(--rule-soft)}
+.faq-body{padding:16px 20px 20px;color:var(--ink-2);font-size:16px}
+.faq-body p{margin:0 0 10px}
+.faq-body p:last-child{margin:0}
+.faq-body strong{color:var(--ink);font-weight:700}
+
+footer{
+  margin-top:56px;padding:24px 0 64px;border-top:1px solid var(--rule);
+  font-size:14px;color:var(--ink-3);
+}
+
+a{color:var(--brasa-ink)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <p class="kicker">Rodizio Cúcuta · Guía rápida</p>
+    <h1>Cómo leer el panel de reportes</h1>
+    <p>Entrás por <strong>Administración → Reportes</strong>. Esta guía recorre la pantalla de arriba hacia abajo y explica qué mirar en cada parte y qué decidir con eso.</p>
+  </header>
+
+  <section class="paso">
+    <div class="paso-cab"><span class="paso-num">1</span><h2>Arriba: los tres filtros</h2></div>
+    <div class="paso-cuerpo">
+      <p>Todo lo que ves debajo cambia según estos tres. Son la pregunta que le estás haciendo al reporte.</p>
+      <div class="demo">
+        <span class="pill on">Hoy</span><span class="pill">Todos los canales</span><span class="pill">Todo el equipo</span>
+      </div>
+      <p><strong>Fechas</strong> — Hoy, Ayer, Últimos 7 días, Este mes, Mes pasado, o un día / un mes puntual que elijas.</p>
+      <p><strong>Canal</strong> — Mesa, Domicilio o Recoger en tienda. Dejalo en «Todos» para ver el negocio completo, o elegí uno para mirar solo ese.</p>
+      <p><strong>Equipo</strong> — un mesero, un cajero o un domiciliario. Para ver cómo le fue a una persona.</p>
+      <div class="decidir"><b>Para qué sirve</b>«¿Cómo estuvo el sábado pasado en domicilios?» → Fechas: ese día · Canal: Domicilio.</div>
+    </div>
+  </section>
+
+  <section class="paso">
+    <div class="paso-cab"><span class="paso-num">2</span><h2>Los tres números grandes</h2></div>
+    <div class="paso-cuerpo">
+      <p>Lo primero que hay que mirar. Responden «¿cómo vamos?».</p>
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-n">$1.089.000</div><div class="kpi-l">Venta cobrada</div></div>
+        <div class="kpi"><div class="kpi-n">$121.000</div><div class="kpi-l">Ticket promedio</div></div>
+        <div class="kpi"><div class="kpi-n">9</div><div class="kpi-l">Pedidos cobrados</div></div>
+      </div>
+      <p><strong>Venta cobrada</strong> — la plata que de verdad entró. Solo cuenta los pedidos que caja marcó como pagados; un pedido entregado pero sin cobrar todavía no aparece acá.</p>
+      <p><strong>Ticket promedio</strong> — cuánto gastó cada pedido en promedio ($1.089.000 ÷ 9 pedidos).</p>
+      <p><strong>Pedidos cobrados</strong> — cuántos pedidos se pagaron.</p>
+      <p>Debajo de cada uno hay una flecha: <strong>▲ 12%</strong> o <strong>▼ 8%</strong>. Compara contra el mismo periodo justo antes — hoy contra ayer, esta semana contra la anterior.</p>
+      <div class="ej">
+        <p class="ej-tit">Ojo con las flechas al principio</p>
+        <p>Si ayer hubo 1 pedido y hoy 9, la flecha dice <b>▲ 800%</b>. Es cierto pero no significa nada — con pocos días de historia esos porcentajes se disparan. Empiezan a servir cuando hay varias semanas cargadas. El número grande sí es real desde el primer día.</p>
+      </div>
+      <p>Debajo, en letra chica: <strong>unidades vendidas, ítems por pedido, plata en envíos y en propinas</strong>. Son datos de apoyo, no titulares.</p>
+    </div>
+  </section>
+
+  <section class="paso">
+    <div class="paso-cab"><span class="paso-num">3</span><h2>Ventas</h2></div>
+    <div class="paso-cuerpo">
+      <p><strong>La línea</strong> — la venta de cada día del periodo. Sube y baja siguiendo lo que se vendió; un día cerrado toca el piso. Pasá el dedo o el mouse por un punto y te dice el monto y cuántos pedidos fueron. Solo aparece si elegiste más de un día.</p>
+      <p><strong>Por canal</strong> — reparte la venta entre Mesa, Domicilio y Recoger. Debajo, por cada canal: cuántos pedidos y el ticket promedio de ese canal.</p>
+      <div class="ej">
+        <p class="ej-tit">Ejemplo</p>
+        <p>La barra de Domicilio llega a <b>$800.000</b> y la de Mesa a <b>$250.000</b>. Tres de cada cuatro pesos entran por domicilio — el domicilio ya no es «lo de al lado», es el negocio principal.</p>
+      </div>
+      <p><strong>Por método de pago</strong> — la rueda se parte según cómo pagó la gente: efectivo, tarjeta, transferencia. Si la mitad es efectivo, la mitad de la plata del día está en billetes y hay que cuadrarla contra la caja al cerrar.</p>
+      <div class="decidir"><b>Para qué sirve</b>Ver si el negocio crece o baja, qué canal tira, y cuánto efectivo esperar en la caja.</div>
+    </div>
+  </section>
+
+  <section class="paso">
+    <div class="paso-cab"><span class="paso-num">4</span><h2>Operación</h2></div>
+    <div class="paso-cuerpo">
+      <p>Cuánto tarda cada parte del proceso, y cuándo hay más movimiento.</p>
+      <p><strong>Las tarjetas de tiempo</strong> — Cocina, Entrega a domicilio, Caja confirma, y % a tiempo. Cada una muestra un promedio y, debajo, de cuántos pedidos salió.</p>
+      <div class="ej">
+        <p class="ej-tit">Cómo leer cada tiempo</p>
+        <p><b>«18 min · 40 pedidos · entre 9 y 32 min»</b> → confiable, cocina tarda unos 18 minutos.</p>
+        <p><b>«51 min · Poca muestra: solo 3 pedidos»</b> → todavía no confíes. Un pedido que quedó abierto por error dispara ese número.</p>
+        <p><b>«45 min · mediana 12 min (hay un caso atípico)»</b> → la mayoría de entregas fueron rápidas (12 min), pero una o dos muy largas subieron el promedio. Mirá la mediana.</p>
+      </div>
+      <p><strong>Pedidos por hora</strong> y <strong>por día de la semana</strong> — barras que cuentan pedidos (no plata). Muestran cuándo entra el trabajo.</p>
+      <p><strong>Cancelados y No entregados</strong> — el porcentaje y los motivos más comunes.</p>
+      <div class="decidir"><b>Para qué sirve</b>Si la barra de las 8 p.m. es el doble que la de las 3 p.m., a esa hora hace falta más gente en cocina y en salón.</div>
+    </div>
+  </section>
+
+  <section class="paso">
+    <div class="paso-cab"><span class="paso-num">5</span><h2>Productos</h2></div>
+    <div class="paso-cuerpo">
+      <p><strong>Top platos</strong> — cuenta cuántas <strong>unidades</strong> se vendieron de cada plato, no cuánta plata. «Coctel de Camarón — 9» = se pidieron 9 cocteles. El de arriba es el más pedido. El buscador de al lado sirve para revisar un plato puntual.</p>
+      <p><strong>Por categoría</strong> — agrupa la venta por el grupo del menú: Entradas, De la Parrilla, Bebidas… «Angus Beef — $350.000» = entre todos los cortes Angus, entraron $350.000.</p>
+      <div class="ej">
+        <p class="ej-tit">Si ves «Sin categoría»</p>
+        <p><strong>No es un error de plata.</strong> Significa que algún plato de un pedido no tenía grupo asignado en el menú. La venta está bien contada. Se arregla poniéndole la categoría a ese plato en el editor del menú, y los pedidos siguientes ya caen en su grupo.</p>
+      </div>
+      <div class="decidir"><b>Para qué sirve</b>Saber qué se vende de verdad, qué no rota, y qué comprar más o menos.</div>
+    </div>
+  </section>
+
+  <section class="paso">
+    <div class="paso-cab"><span class="paso-num">6</span><h2>Equipo</h2></div>
+    <div class="paso-cuerpo">
+      <p>Tres tablas: <strong>meseros, cajeros y domiciliarios</strong>. Por cada persona: cuántos pedidos y cuánta plata movió en el periodo.</p>
+      <div class="decidir"><b>Para qué sirve</b>Ver quién vendió más, quién cobró en cada turno, cuántas entregas hizo cada domiciliario.</div>
+    </div>
+  </section>
+
+  <section class="paso">
+    <div class="paso-cab"><span class="paso-num">7</span><h2>El filtro de cada sección</h2></div>
+    <div class="paso-cuerpo">
+      <p>Cada sección (Ventas, Operación, Productos, Equipo) tiene su propio selector de fecha arriba a la derecha. Por defecto dice <strong>«Sigue el filtro general»</strong>.</p>
+      <p>Si le cambiás la fecha a una sección, esa sección se separa del filtro de arriba y muestra un <strong>recuadro con su fecha y una × para volver</strong>. Sirve para comparar — por ejemplo, las ventas del mes contra los tiempos de cocina de un solo día.</p>
+    </div>
+  </section>
+
+  <div class="faq">
+    <h2>Preguntas frecuentes</h2>
+
+    <details>
+      <summary>¿Por qué la venta del reporte no coincide con lo que yo sumé?</summary>
+      <div class="faq-body">
+        <p>El reporte solo suma pedidos <strong>que caja marcó como pagados</strong>. Un pedido entregado pero que todavía no se cobró no aparece en la venta. Apenas caja confirma el pago, entra.</p>
+        <p>Es a propósito: la venta es la plata que de verdad entró, no la que debería entrar.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>¿Por qué un tiempo dice «Poca muestra»?</summary>
+      <div class="faq-body">
+        <p>Ese promedio se calculó con menos de 5 pedidos. Con tan pocos, un solo caso raro (un pedido que quedó abierto toda la tarde) mueve el número entero.</p>
+        <p>Tomalo como referencia, no como dato firme. Se vuelve confiable cuando hay más pedidos medidos.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>¿Por qué el gráfico de categorías dice «Sin categoría»?</summary>
+      <div class="faq-body">
+        <p>Porque algún plato de un pedido no tiene grupo asignado en el menú. <strong>La plata está bien contada</strong> — solo que ese plato quedó sin clasificar.</p>
+        <p>Se arregla entrando al menú, abriendo ese plato y poniéndole su categoría. Los pedidos siguientes ya aparecen en el grupo correcto.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>¿Por qué las flechas de porcentaje son tan altas (▲ 800%)?</summary>
+      <div class="faq-body">
+        <p>La flecha compara contra el periodo anterior. Con pocos días cargados, cualquier diferencia se ve enorme: de 1 pedido a 9 es «+800%».</p>
+        <p>Empiezan a tener sentido cuando hay varias semanas de historia. Mientras tanto, mirá el número grande, que sí es real.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>¿Los pedidos cancelados cuentan en la venta?</summary>
+      <div class="faq-body">
+        <p>No. Los cancelados quedan fuera de la venta y del ticket promedio. Solo aparecen en la sección Operación, como porcentaje y con su motivo, para que sepas cuántos y por qué.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Puse un filtro y no cambió nada / se ve vacío</summary>
+      <div class="faq-body">
+        <p>Puede que no haya pedidos que cumplan ese filtro en esa fecha. Por ejemplo, «Domicilio + un día que no hubo domicilios» muestra todo en cero.</p>
+        <p>Ampliá la fecha o quitá el filtro de canal para confirmar que hay datos.</p>
+      </div>
+    </details>
+  </div>
+
+  <footer>
+    Rodizio Cúcuta · Panel de administración → Reportes
+  </footer>
+
+</div>

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Rodízio Cúcuta — Tratamiento de datos personales</title>
+  <meta name="author" content="ParaTouch — DJG (djgv · Mxi)" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/marca.css" />
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+
+  <style>
+    /* Sin esto, el "scroll anchoring" nativo del navegador (pensar
+       que el usuario prefiere mantener la posición visual cuando el
+       contenido de arriba cambia de tamaño) compensa el scroll cada
+       vez que las fuentes async (Anton/Manrope) terminan de cargar y
+       el texto se reacomoda — moviendo el scroll lejos del ancla
+       (#cliente/#panel/#domiciliario) a la que el navegador acababa
+       de saltar al abrir el enlace, y dejando al usuario viendo el
+       mensaje general del inicio de la página en vez de su sección.
+       Desactivarlo en toda la página es lo correcto acá: no hay
+       ningún otro contenido que cargue de forma diferida después del
+       salto inicial que se beneficie de esa compensación. */
+    html, body {
+      overflow-anchor: none;
+    }
+    /* Solo esta página: es texto largo, no necesita layout de app. */
+    .policy-page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: var(--sp-6) var(--sp-5) var(--sp-8);
+    }
+    .policy-page h1 {
+      font-size: var(--fs-2xl);
+      margin-bottom: var(--sp-2);
+      /* Detalle rojo a juego con el resto del sistema (a pedido del
+         usuario) — una franja corta bajo el título, en vez de un
+         subrayado completo, para que se sienta como un acento de
+         marca y no como un link. */
+      border-bottom: 3px solid var(--color-flame);
+      display: inline-block;
+      padding-bottom: var(--sp-2);
+    }
+    .policy-intro {
+      color: var(--color-text-muted);
+      font-size: var(--fs-sm);
+      line-height: 1.7;
+      margin-bottom: var(--sp-5);
+    }
+    /* Índice para saltar directo a "tu" sección — la mayoría de
+       quien abre este enlace viene de un solo formulario (cliente,
+       panel o domiciliario) y solo le interesa esa parte. */
+    .policy-jump {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--sp-2);
+      margin-bottom: var(--sp-6);
+    }
+    .policy-jump a {
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+      font-size: var(--fs-xs);
+      font-weight: 700;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    /* Detalle rojo al pasar el mouse/tocar — mismo criterio que el
+       resto del sistema (tarjetas y tabs ya resaltan en rojo al
+       interactuar). */
+    .policy-jump a:hover,
+    .policy-jump a:focus-visible {
+      border-color: var(--color-flame);
+      color: var(--color-flame);
+    }
+    .policy-section {
+      margin-top: var(--sp-7);
+      padding-top: var(--sp-6);
+      border-top: 1px solid var(--color-border);
+      scroll-margin-top: var(--sp-5);
+    }
+    .policy-section:first-of-type {
+      border-top: none;
+      padding-top: 0;
+      margin-top: var(--sp-6);
+    }
+    .policy-section-eyebrow {
+      display: inline-block;
+      font-size: var(--fs-xs);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-flame);
+      margin-bottom: var(--sp-2);
+    }
+    .policy-page h2 {
+      font-size: var(--fs-xl);
+      margin-bottom: var(--sp-4);
+      position: relative;
+      padding-left: var(--sp-4);
+    }
+    /* Marcador rojo al lado de cada título de sección — refuerza el
+       mismo acento que ya usa .policy-section-eyebrow justo arriba. */
+    .policy-page h2::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 4px;
+      bottom: 4px;
+      width: 4px;
+      border-radius: var(--radius-pill);
+      background: var(--color-flame);
+    }
+    .policy-page h3 {
+      font-size: var(--fs-md);
+      margin-top: var(--sp-5);
+      margin-bottom: var(--sp-2);
+      color: var(--color-flame);
+    }
+    .policy-page p,
+    .policy-page li {
+      color: var(--color-text-muted);
+      font-size: var(--fs-sm);
+      line-height: 1.7;
+      margin-bottom: var(--sp-3);
+    }
+    .policy-page ul {
+      padding-left: var(--sp-5);
+    }
+    .policy-page strong {
+      color: var(--color-text);
+    }
+    .policy-back {
+      display: inline-block;
+      margin-top: var(--sp-7);
+      color: var(--color-flame);
+      font-weight: 700;
+      font-size: var(--fs-sm);
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.15s ease;
+    }
+    .policy-back:hover {
+      border-bottom-color: var(--color-flame);
+    }
+    /* Secciones plegables: el cliente ve un resumen y abre solo lo que necesita. */
+    details.policy-section,
+    details.policy-section:first-of-type {
+      margin-top: var(--sp-3);
+      padding: 0;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-surface);
+      scroll-margin-top: var(--sp-5);
+    }
+    details.policy-section > summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--sp-3);
+      padding: var(--sp-4);
+      cursor: pointer;
+      list-style: none;
+    }
+    details.policy-section > summary::-webkit-details-marker { display: none; }
+    details.policy-section > summary h2 { margin: 0; font-size: var(--fs-lg); }
+    details.policy-section > summary::after {
+      content: '+';
+      flex-shrink: 0;
+      font-size: 1.5rem;
+      line-height: 1;
+      color: var(--color-flame);
+    }
+    details.policy-section[open] > summary::after { content: '\2212'; }
+    details.policy-section > :not(summary) {
+      margin-left: var(--sp-4);
+      margin-right: var(--sp-4);
+    }
+    details.policy-section[open] { padding-bottom: var(--sp-2); }
+    .policy-resumen {
+      margin: 0 0 var(--sp-5);
+      padding: var(--sp-4) var(--sp-5);
+      border-left: 4px solid var(--color-flame);
+      border-radius: var(--radius-md);
+      background: var(--color-surface);
+    }
+    .policy-resumen h2 { margin: 0 0 var(--sp-3); padding-left: 0; font-size: var(--fs-lg); }
+    .policy-resumen h2::before { display: none; }
+    .policy-resumen ul { margin: 0; }
+    .policy-note { margin-top: var(--sp-6); font-size: var(--fs-xs); color: var(--color-text-faint); }
+    .policy-draft {
+      margin: 0 0 var(--sp-5);
+      padding: var(--sp-3) var(--sp-4);
+      border: 1px solid var(--color-flame);
+      border-radius: var(--radius-md);
+      font-size: var(--fs-sm);
+      line-height: 1.6;
+    }
+    .policy-pending {
+      background: color-mix(in srgb, var(--aviso) 25%, transparent);
+      border-radius: var(--radius-sm);
+      padding: 0 4px;
+    }
+    .policy-cookies-btn {
+      display: inline;
+      padding: 0;
+      background: none;
+      border: 0;
+      color: var(--color-flame);
+      font: inherit;
+      font-weight: 700;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <main class="policy-page">
+    <h1>Tratamiento de datos personales</h1>
+
+
+    <p class="policy-intro">
+      Abre solo la parte que te corresponda. Las partes para el personal
+      del panel y para domiciliarios están al final.
+    </p>
+
+    <nav class="policy-jump">
+      <a href="#cliente">Soy cliente</a>
+      <a href="#panel">Trabajo en el panel</a>
+      <a href="#domiciliario">Soy domiciliario</a>
+      <a href="#responsable">Quiénes somos</a>
+      <a href="#derechos">Tus derechos</a>
+    </nav>
+
+    <div class="policy-resumen">
+      <h2>En resumen</h2>
+      <ul>
+        <li>Usamos tus datos solo para tomar y entregar tu pedido.</li>
+        <li>No vendemos tus datos ni los usamos para publicidad de terceros.</li>
+        <li>Los datos de tu tarjeta o cuenta los escribes en la pasarela de pago, nunca en nuestra página.</li>
+        <li>Puedes conocer, corregir o borrar tus datos escribiéndonos al <a href="mailto:sociedadgastronomicasas@gmail.com">correo</a> o al WhatsApp 314 393 8235.</li>
+        <li>Responsable: Sociedad Gastronómica S.A.S., NIT 901.941.245-3.</li>
+      </ul>
+    </div>
+
+    <!-- ================= RESPONSABLE ================= -->
+    <details class="policy-section" id="responsable">
+      <summary><h2>Quién es el responsable de tus datos</h2></summary>
+      <ul>
+        <li><strong>Razón social:</strong> Sociedad Gastronómica S.A.S.</li>
+        <li><strong>NIT:</strong> 901.941.245-3</li>
+        <li><strong>Dirección:</strong> Av. Libertadores 10-121, II Etapa Malecón, Barrio La Riviera, Cúcuta, Norte de Santander</li>
+        <li><strong>Correo:</strong> <a href="mailto:sociedadgastronomicasas@gmail.com">sociedadgastronomicasas@gmail.com</a></li>
+        <li><strong>Teléfono y WhatsApp:</strong> 314 393 8235</li>
+      </ul>
+      <p>
+        Tratamos tus datos personales conforme a la Ley 1581 de 2012,
+        el Decreto 1377 de 2013 (compilado en el Decreto 1074 de 2015) y las
+        demás normas que los desarrollan.
+      </p>
+    </details>
+
+    <!-- ================= CLIENTE ================= -->
+    <details class="policy-section" id="cliente">
+      <summary><h2>Si pides comida con nosotros</h2></summary>
+
+      <p>
+        Para tomar tu pedido, calcular el domicilio y avisarte cuando
+        vaya en camino necesitamos algunos datos tuyos. Esto es
+        exactamente lo que la app hace con ellos:
+      </p>
+
+      <h3>Qué recogemos</h3>
+      <ul>
+        <li><strong>De tu cuenta de Google</strong> (al iniciar sesión): tu nombre, correo y foto de perfil — no vemos ni pedimos tu contraseña de Google, eso lo maneja Google directamente.</li>
+        <li><strong>Al hacer un pedido:</strong> tu teléfono de contacto y, si escoges "A domicilio" (no aplica si eliges "Recoger en tienda"), la dirección que escribes o, si usas el botón "Usar mi ubicación", tus coordenadas GPS exactas; además una referencia opcional, cualquier nota que escribas por producto (ej. "sin cebolla"), si programaste el pedido para una hora específica en vez de "lo antes posible", y el detalle de lo que pediste con el total.</li>
+        <li><strong>Si pagas en línea:</strong> los datos de tu tarjeta, Nequi o cuenta bancaria los escribes en la página de la pasarela de pagos AAvance, no en la nuestra, y nunca llegan a esta app. De AAvance solo recibimos el número de la orden, el número de la transacción, el medio de pago que usaste (por ejemplo, Nequi) y si el pago quedó aprobado, para confirmar tu pedido.</li>
+        <li><strong>Si activas notificaciones:</strong> un identificador técnico de tu dispositivo (token push) para poder avisarte cuando cambie el estado de tu pedido.</li>
+        <li><strong>Tus favoritos y tu carrito</strong> se guardan solo en tu propio celular (localStorage) — nunca los mandamos a nuestro servidor hasta que confirmas un pedido.</li>
+        <li><strong>Uso de la app</strong> (Google Analytics para Firebase), <strong>solo si lo aceptas</strong> en el aviso de cookies: eventos técnicos como qué producto viste o si completaste un pedido, para saber qué partes de la app se usan — sin tu nombre ni contacto asociado a esos eventos. Google guarda para esto cookies en tu navegador (<code>_ga</code>). Si lo rechazas, Analytics no se carga. <button type="button" id="cookies-cambiar" class="policy-cookies-btn">Cambiar mi decisión sobre cookies</button></li>
+      </ul>
+
+      <h3>Quién ve tus datos</h3>
+      <ul>
+        <li>El personal del restaurante que gestiona pedidos (panel de administración) ve tu nombre, teléfono, dirección (si pediste a domicilio) y lo que pediste, incluida cualquier nota por producto — nunca tu contraseña de Google ni los datos de tu tarjeta o cuenta bancaria.</li>
+        <li>Si tu pedido es a domicilio, el domiciliario asignado ve tu dirección, teléfono, y — solo si compartiste tu ubicación exacta — tus coordenadas GPS, para poder encontrarte. Ningún otro domiciliario ni otro cliente puede verlas.</li>
+      </ul>
+
+      <h3>Ubicación en tiempo real</h3>
+      <p>
+        Mientras tu pedido está "en camino", puedes ver la posición y
+        el recorrido reciente del domiciliario en el mapa — esa
+        ubicación es de él, no tuya. Si tú compartiste tu ubicación
+        exacta al hacer el pedido, esa sí es tuya y solo la ve el
+        domiciliario asignado y el panel, nunca otro cliente.
+      </p>
+
+      <h3>Cuánto tiempo se guarda</h3>
+      <p>
+        Mientras tengas una cuenta activa. Tu historial de pedidos se
+        conserva por motivos contables aunque borres la cuenta —
+        podemos anonimizar tu nombre y contacto de esos registros si lo
+        pides.
+      </p>
+    </details>
+
+    <!-- ================= DERECHOS Y GENERALIDADES ================= -->
+    <details class="policy-section" id="derechos">
+      <summary><h2>Tus derechos y cómo ejercerlos</h2></summary>
+
+      <h3>Para qué usamos tus datos</h3>
+      <ul>
+        <li>Tomar, preparar, cobrar y entregar tus pedidos, y avisarte cómo van.</li>
+        <li>Atender reclamos, devoluciones y soporte sobre un pedido.</li>
+        <li>Cumplir obligaciones contables y tributarias, incluida la facturación electrónica cuando la pidas.</li>
+        <li>Mantener la seguridad de la tienda (evitar pedidos y pagos falsos) y corregir errores técnicos.</li>
+        <li>Medir el uso de la app, solo si aceptas las cookies de Analytics.</li>
+      </ul>
+      <p>No vendemos tus datos ni los usamos para publicidad de terceros.</p>
+
+      <h3>Tus derechos como titular</h3>
+      <ul>
+        <li>Conocer, actualizar y rectificar tus datos.</li>
+        <li>Pedir prueba de la autorización que nos diste.</li>
+        <li>Que te informemos el uso que les hemos dado.</li>
+        <li>Presentar quejas ante la Superintendencia de Industria y Comercio (SIC) por infracciones a la ley.</li>
+        <li>Revocar la autorización y/o pedir que eliminemos tus datos, cuando no haya un deber legal o contractual de conservarlos.</li>
+        <li>Acceder de forma gratuita a tus datos personales.</li>
+      </ul>
+
+      <h3>Cómo ejercerlos y en qué plazos</h3>
+      <p>
+        Escríbenos a <a href="mailto:sociedadgastronomicasas@gmail.com">sociedadgastronomicasas@gmail.com</a>
+        o por WhatsApp al 314 393 8235, indicando quién eres y qué necesitas.
+      </p>
+      <ul>
+        <li><strong>Consultas:</strong> las respondemos en máximo 10 días hábiles. Si no podemos, te avisamos el motivo y la nueva fecha, que no pasará de 5 días hábiles más.</li>
+        <li><strong>Reclamos</strong> (corregir, actualizar, eliminar o revocar): los atendemos en máximo 15 días hábiles. Si no podemos, te avisamos el motivo y la nueva fecha, que no pasará de 8 días hábiles más.</li>
+      </ul>
+      <p>Si no estás conforme con la respuesta, puedes acudir a la Superintendencia de Industria y Comercio.</p>
+
+      <h3>Con quién compartimos tus datos y dónde se guardan</h3>
+      <ul>
+        <li><strong>Google (Firebase, Analytics, reCAPTCHA, Google Fonts):</strong> guarda la base de datos, la sesión, las notificaciones y las fotos, y protege la tienda contra abuso. Sus servidores pueden estar fuera de Colombia, por ejemplo en Estados Unidos.</li>
+        <li><strong>AAvance / Coopcentral:</strong> procesa los pagos en línea. Tus datos de pago los escribes en su página, no en la nuestra.</li>
+        <li><strong>OpenStreetMap (Nominatim):</strong> si pulsas «Usar mi ubicación», se le envían tus coordenadas para convertirlas en una dirección.</li>
+        <li><strong>Proveedor de facturación electrónica (TNS):</strong> si pides factura a tu nombre o al de tu empresa.</li>
+      </ul>
+      <p>
+        Al aceptar esta política autorizas que tus datos se almacenen y
+        procesen en esos servidores, incluso fuera de Colombia, solo para
+        los fines de arriba.
+      </p>
+
+      <h3>Cuánto tiempo los conservamos</h3>
+      <ul>
+        <li><strong>Pedidos:</strong> 5 años, como soporte contable.</li>
+        <li><strong>Registros de errores técnicos:</strong> 90 días.</li>
+        <li><strong>Pagos no completados:</strong> 30 días.</li>
+        <li><strong>Tu cuenta:</strong> mientras la tengas activa. Si la borras, anonimizamos tu nombre y contacto en los pedidos que debemos conservar.</li>
+      </ul>
+
+      <h3>Menores de edad y venta de licor</h3>
+      <p>
+        La tienda no está dirigida a menores de 18 años y no recogemos sus
+        datos a propósito. Para pedir bebidas alcohólicas pedimos confirmar
+        que eres mayor de edad, y esa confirmación queda guardada en el
+        pedido. La venta de licor a menores de 18 años está prohibida.
+      </p>
+
+      <h3>Cookies y almacenamiento en tu dispositivo</h3>
+      <p>
+        El detalle de lo que guardamos en tu navegador está en la
+        <a href="cookies.html">Política de cookies</a>.
+      </p>
+
+      <h3>Cambios a esta política</h3>
+      <p>Si la cambiamos de forma importante, te lo avisaremos en la tienda antes de que aplique.</p>
+    </details>
+
+    <!-- ================= PANEL ================= -->
+    <details class="policy-section" id="panel">
+      <summary><h2>Si trabajas gestionando pedidos, menú o inventario</h2></summary>
+
+      <p>
+        Tu acceso al panel es una cuenta de trabajo, no una cuenta de
+        cliente — esto es lo que guardamos sobre tu actividad ahí.
+      </p>
+
+      <h3>Qué recogemos</h3>
+      <ul>
+        <li><strong>Tu correo y contraseña</strong> para iniciar sesión — la contraseña la cifra Firebase Authentication, nadie en el restaurante (ni nosotros) puede verla en texto plano.</li>
+        <li><strong>Tu rol</strong> (dueño o cajero), que determina qué pestañas puedes usar — un cajero no ve Menú, Reportes ni Configuración.</li>
+        <li><strong>Un registro de tus acciones sobre los pedidos:</strong> cada vez que cambias el estado de un pedido, lo cancelas (con el motivo que escribiste), asignas un domiciliario, pones un tiempo estimado de entrega o agregas una nota interna, queda guardado con tu correo y la hora exacta — es un historial de auditoría, visible para otros administradores, para poder saber quién hizo qué si algo sale mal.</li>
+        <li><strong>Si marcas a un cliente como bloqueado</strong> (solo el dueño puede hacerlo): esa marca queda asociada a tu cuenta como quien la puso, junto con la fecha.</li>
+        <li><strong>Si ocurre un error técnico</strong> mientras usas el panel: se guarda un registro liviano (qué pantalla, qué falló) para poder diagnosticarlo después — solo el dueño lo revisa, en Configuración → Avanzado.</li>
+      </ul>
+
+      <h3>Qué NO recogemos de ti</h3>
+      <p>
+        No registramos tu ubicación, no accedemos a tu dispositivo más
+        allá de lo que escribes en el panel, y no compartimos tu
+        correo con los clientes.
+      </p>
+
+      <h3>Datos de clientes y domiciliarios que vas a ver</h3>
+      <p>
+        Al usar el panel vas a tener acceso al nombre, teléfono,
+        dirección, notas por producto y pedidos de los clientes; a la
+        ubicación en vivo y el recorrido de los domiciliarios mientras
+        están en una entrega; y, si eres el dueño, a los cierres de
+        turno (efectivo esperado vs. entregado) que registra cada
+        domiciliario y al historial de errores técnicos. Es
+        información sensible de otras personas — solo debe usarse para
+        gestionar el pedido, nunca para fines personales o guardarla
+        fuera del sistema.
+      </p>
+
+      <h3>Cuánto tiempo se guarda</h3>
+      <p>
+        Tu cuenta y el historial de tus acciones se conservan mientras
+        tengas acceso al panel. Si dejas de trabajar en el restaurante,
+        pide al dueño que te retire el acceso — tu cuenta de correo
+        puede seguir existiendo, pero sin poder volver a entrar.
+      </p>
+    </details>
+
+    <!-- ================= DOMICILIARIO ================= -->
+    <details class="policy-section" id="domiciliario">
+      <summary><h2>Si entregas los pedidos</h2></summary>
+
+      <p>
+        Como domiciliario compartes más información en tiempo real que
+        cualquier otra persona en el sistema — tu ubicación mientras
+        trabajas. Queremos que sepas exactamente cuándo y con quién se
+        comparte.
+      </p>
+
+      <h3>Qué recogemos</h3>
+      <ul>
+        <li><strong>Tu correo y contraseña</strong> para iniciar sesión, igual que en el panel.</li>
+        <li><strong>Tu nombre y teléfono</strong>, que tú mismo escribes en tu perfil — se le muestran al cliente al que le llevas un pedido, para que pueda identificarte y llamarte si necesita.</li>
+        <li><strong>Tu disponibilidad</strong> ("disponible" / "no disponible"), visible para quien te asigna pedidos en el panel.</li>
+        <li><strong>Tu ubicación GPS en tiempo real — solo mientras tienes un pedido "en camino".</strong> Se actualiza cada ~10 segundos y se comparte con el cliente de ese pedido específico y con el panel. Si llevas dos pedidos por la misma ruta, tu ubicación se comparte con ambos clientes a la vez.</li>
+        <li><strong>Si no puedes tomar o completar una entrega:</strong> al devolver una asignación o marcar "No se pudo entregar", el motivo que elijas de una lista queda guardado en el historial de ese pedido, junto con tu nombre.</li>
+        <li><strong>Al cerrar tu turno:</strong> cuánto efectivo esperaba el sistema que tuvieras (según tus entregas del día) contra cuánto declaraste tener — ese cierre queda guardado de forma permanente, ligado a tu nombre, y no se puede editar después de creado.</li>
+        <li><strong>Las propinas</strong> que registras al marcar un pedido como entregado — son tuyas, no se incluyen en el cálculo de efectivo que le debes al restaurante, solo quedan visibles para el panel como referencia.</li>
+        <li><strong>Un token de notificaciones push</strong>, si activas los avisos de pedidos nuevos.</li>
+      </ul>
+
+      <h3>Cuándo deja de compartirse tu ubicación</h3>
+      <p>
+        En el momento en que marcas un pedido como <strong>"Entregado"</strong>,
+        tu ubicación deja de compartirse con ese cliente y con el panel
+        de inmediato — no se queda visible ni un minuto más, ni el
+        último punto que registró. Fuera de una entrega activa, la app
+        no rastrea dónde estás.
+      </p>
+
+      <h3>Quién ve tu ubicación</h3>
+      <p>
+        Únicamente el cliente del pedido que llevas en ese momento y el
+        personal del panel de administración — nunca otro cliente, ni
+        otro domiciliario, ni nadie fuera del sistema. Tu ubicación no
+        se usa para nada distinto a coordinar esa entrega (no medimos
+        tu desempeño con ella ni se comparte con terceros).
+      </p>
+
+      <h3>Tus cierres de turno</h3>
+      <p>
+        Cada cierre que registras lo puede ver el dueño del
+        restaurante (para cuadrar caja) y tú mismo, en tu propio
+        historial dentro de la app — nunca otro domiciliario. Es un
+        registro contable, no se usa para calificar tu trabajo.
+      </p>
+
+      <h3>Cuánto tiempo se guarda</h3>
+      <p>
+        El recorrido de una entrega es temporal — se borra al marcar el
+        pedido como entregado y, aunque no lo marques, solo guarda los
+        últimos minutos recientes de recorrido, no un historial
+        permanente de tus movimientos.
+      </p>
+    </details>
+
+
+    <p class="policy-note">Esta política está en revisión legal y puede cambiar.</p>
+
+    <a class="policy-back" href="index.html" id="policy-back-link">← Volver</a>
+    <script>
+      // Cambiar la decisión del aviso de cookies (js/cookies.js): borra la
+      // decisión guardada y las cookies _ga que haya dejado Analytics, y
+      // vuelve a la tienda, donde el aviso sale otra vez.
+      document.getElementById('cookies-cambiar').addEventListener('click', () => {
+        try { localStorage.removeItem('rodizio_cookies'); } catch {}
+        const dominios = ['', location.hostname, '.' + location.hostname.replace(/^www\./, '')];
+        document.cookie.split(';').map((c) => c.split('=')[0].trim()).filter((n) => /^_ga/.test(n)).forEach((n) => {
+          dominios.forEach((d) => { document.cookie = `${n}=; Max-Age=0; path=/${d ? `; domain=${d}` : ''}`; });
+        });
+        location.href = 'index.html';
+      });
+
+      if (window.history.length > 1) {
+        document.getElementById('policy-back-link').addEventListener('click', (e) => {
+          e.preventDefault();
+          window.history.back();
+        });
+      }
+
+      // Mantener al usuario en SU sección (#cliente/#panel/
+      // #domiciliario) mientras cargan las fuentes de Google Fonts
+      // (Anton/Manrope, async): antes de esto, el salto inicial del
+      // navegador al abrir con #ancla ocurría antes de que el texto
+      // terminara de reacomodarse por el cambio de fuente, dejando al
+      // usuario viendo el mensaje general del inicio de la página en
+      // vez de su sección (el `overflow-anchor: none` de arriba ya
+      // evita que el navegador "corrija" el scroll solo cuando eso
+      // pasa). Este salto explícito, ya con las fuentes cargadas
+      // (`fonts.ready`), es el que deja al usuario en el lugar
+      // correcto desde el principio.
+      function abrirSeccion() {
+        const t = location.hash ? document.querySelector(location.hash) : null;
+        if (t && t.tagName === 'DETAILS') t.open = true;
+      }
+      abrirSeccion();
+      window.addEventListener('hashchange', abrirSeccion);
+
+      function jumpToOwnSection() {
+        if (!location.hash) return;
+        const target = document.querySelector(location.hash);
+        if (!target) return;
+        // behavior:'instant' a propósito: 'auto' respetaría el
+        // `scroll-behavior: smooth` global de base.css y se vería como
+        // un scroll animado innecesario justo al abrir la página.
+        target.scrollIntoView({ block: 'start', behavior: 'instant' });
+      }
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(jumpToOwnSection).catch(jumpToOwnSection);
+      } else {
+        jumpToOwnSection();
+      }
+    </script>
+  </main>
+  <p class="dev-credit">Desarrollado por <strong>ParaTouch</strong></p>
+</body>
+</html>

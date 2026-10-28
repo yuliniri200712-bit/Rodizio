@@ -1,0 +1,119 @@
+/* Rodizio Cucuta - ParaTouch (DJG . djgv . Mxi . 0808 . 0724 . uwu) */
+/* Rodizio Admin — Reportes (dashboard de Vue + Chart.js).
+   Estilos propios de esta vista, separados de styles.css porque el resto
+   de panel-admin es imperativo/vanilla y esto vive en su propio archivo
+   (dashboard.js). Reusa las variables de ../shared/theme.css y la clase
+   .card ya definida en styles.css. */
+
+.dash-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.dash-toolbar h2{margin:0}
+.mes-exportar{border:1px solid var(--color-divider);background:var(--color-neutral-100);color:var(--color-neutral-700);border-radius:var(--radio-sm);padding:8px 13px;font-size:12.5px;font-weight:600;font-family:var(--font-body)}
+
+.dash-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
+.kpi-card{background:var(--color-bg);border:1px solid var(--color-divider);border-radius:var(--radio-sm);padding:16px 18px;min-width:0}
+.kpi-value{font-family:var(--font-heading);font-size:24px;line-height:1.1;color:var(--tinta)}
+.kpi-label{font-size:12px;color:var(--color-neutral-600);margin-top:4px}
+.kpi-delta{font-size:11.5px;font-weight:700;margin-top:8px}
+.kpi-delta.up{color:var(--exito)}
+.kpi-delta.down{color:var(--marca-texto)}
+.kpi-delta.muted{color:var(--color-neutral-500);font-weight:600}
+
+.dash-filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.dash-filtros select,.dash-filtros .filtro-codigo{border:1px solid var(--color-divider);background:var(--color-neutral-100);color:var(--color-neutral-700);border-radius:var(--radio-sm);padding:7px 12px;font-size:12px;font-weight:600;font-family:var(--font-body);max-width:100%}
+.dash-filtros .filtro-codigo{min-width:150px;flex:1}
+.dash-filtros .filtro-codigo::placeholder{color:var(--color-neutral-500);font-weight:500}
+
+.dash-charts{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:22px}
+.chart-box{position:relative;height:280px;min-width:0}
+.chart-box.chart-box-pie{height:220px}
+.chart-box canvas{max-width:100%}
+
+.dash-mesas{margin-bottom:22px}
+.dash-mesas h3{font-size:15px;margin:0 0 10px}
+.chart-box.chart-box-mesas{height:280px}
+
+.dash-ranking table{width:100%}
+.dash-ranking .barra-wrap{background:var(--color-neutral-200);border-radius:var(--radio-sm);height:8px;overflow:hidden;min-width:70px}
+.dash-ranking .barra-fill{background:var(--color-accent);height:100%;border-radius:var(--radio-sm)}
+.dash-ranking td.num{text-align:right;white-space:nowrap}
+
+/* ── Reportes unificados (fase R2, ver docs-fusion/PLAN-REPORTES.md) ── */
+/* Filtros globales en la barra de título: rango + canal + persona. */
+.dash-filtros-global{margin-bottom:0}
+
+/* Los 3 KPIs titulares se ven más grandes que el resto — jerarquía
+   visual: lo primero que lee el dueño al abrir. */
+.dash-kpis-titular{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.dash-kpis-titular .kpi-value{font-size:30px}
+.kpi-card-sm .kpi-value{font-size:20px}
+
+/* Números de apoyo que no merecen tarjeta propia (unidades, ítems por
+   pedido, envíos, propinas). */
+.dash-subkpis{display:flex;gap:16px;flex-wrap:wrap;margin:-10px 0 24px;font-size:12.5px;color:var(--color-neutral-600)}
+.dash-subkpis b{font-family:var(--font-heading);font-weight:400;font-size:15px;color:var(--color-text);margin-right:4px}
+
+/* Encabezado de sección: título + su propio filtro de fecha a la derecha. */
+.dash-sec{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:30px 0 14px;padding-top:16px;border-top:1px solid var(--color-divider)}
+.dash-sec h3{font-size:16px;margin:0}
+.dash-secfiltro{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dash-secfiltro select,.dash-secfiltro input{border:1px solid var(--color-divider);background:var(--color-neutral-100);color:var(--color-neutral-700);border-radius:var(--radio-sm);padding:6px 11px;font-size:12px;font-weight:600;font-family:var(--font-body)}
+/* Chip que deja claro que ESTA sección se independizó del filtro general
+   — sin él es fácil leer un número creyendo que corresponde al rango de
+   arriba cuando en realidad es de otro día. */
+.dash-chip-propio{display:inline-flex;align-items:center;gap:6px;background:var(--color-accent-100);color:var(--color-accent-700);border:1px solid var(--color-accent-300);border-radius:var(--radio-sm);padding:5px 6px 5px 12px;font-size:11.5px;font-weight:700}
+.dash-chip-propio button{border:0;background:var(--color-accent-700);color:var(--color-neutral-100);border-radius:var(--radio-sm);width:16px;height:16px;line-height:1;font-size:12px;cursor:pointer;padding:0}
+
+/* Tiempos de operación: franja compacta en vez de 4 tarjetas grandes. */
+.dash-tiempos{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.dash-tiempo{background:var(--color-bg);border:1px solid var(--color-divider);border-radius:var(--radio-sm);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.dash-tiempo-valor{font-family:var(--font-heading);font-size:21px;line-height:1.1;color:var(--color-accent-700)}
+.dash-tiempo-label{font-size:12px;color:var(--color-neutral-700);font-weight:600}
+.dash-tiempo-nota{font-size:11px;color:var(--color-neutral-500)}
+/* Muestra chica = el número no es confiable todavía. Se atenúa a propósito
+   para que no compita visualmente con los datos firmes. */
+.dash-tiempo.es-dudoso{border-style:dashed}
+.dash-tiempo.es-dudoso .dash-tiempo-valor{color:var(--color-neutral-600)}
+.dash-aviso{font-size:12px;color:var(--color-neutral-600);background:var(--color-neutral-200);border-radius:var(--radio-sm);padding:10px 13px;margin:10px 0 0;line-height:1.45}
+.dash-subsec{font-size:13px;font-weight:700;color:var(--color-neutral-600);margin:0 0 8px}
+.chart-box.chart-box-mid{height:220px}
+
+.dash-canal-rows{display:flex;flex-direction:column;gap:4px;margin-top:10px;font-size:12.5px;color:var(--color-neutral-600)}
+.dash-canal-rows > div{display:flex;justify-content:space-between;gap:10px}
+.dash-canal-nombre{font-weight:700;color:var(--color-text)}
+
+.dash-incidencias{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+.dash-incidencias > div{background:var(--color-bg);border:1px solid var(--color-divider);border-radius:var(--radio-sm);padding:14px 16px}
+.dash-inc-num{font-family:var(--font-heading);font-size:22px;color:var(--color-accent-700);margin-right:8px}
+.dash-inc-label{font-size:12.5px;color:var(--color-neutral-600)}
+.dash-incidencias ul{margin:8px 0 0;padding-left:16px;font-size:12px;color:var(--color-neutral-600)}
+
+.dash-personas{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+.dash-personas table{width:100%}
+.dash-personas td.num,.dash-personas th:not(:first-child){text-align:right;white-space:nowrap}
+
+@media (max-width: 640px){
+  .dash-charts{grid-template-columns:1fr}
+  .dash-incidencias{grid-template-columns:1fr}
+  .dash-kpis-titular .kpi-value{font-size:24px}
+  .dash-sec{align-items:flex-start}
+}
+
+/* En escritorio ancho la vista de Reportes aprovecha toda la pantalla
+   (ver el override de `main` en styles.css) — con más espacio, los
+   gráficos que estaban apilados pasan a más columnas en vez de estirarse
+   hasta quedar deformes. */
+@media (min-width: 1200px){
+  .dash-charts{grid-template-columns:2fr 1fr}
+  .chart-box{height:320px}
+  .chart-box.chart-box-mid{height:260px}
+  .dash-personas{grid-template-columns:repeat(3,1fr)}
+}
+@media (min-width: 1600px){
+  .dash-kpis-titular{grid-template-columns:repeat(3,1fr)}
+  .dash-tiempos{grid-template-columns:repeat(4,1fr)}
+}
+
+/* Botón "Descargar Excel" de la barra global de Reportes */
+.dash-excel{border:1px solid var(--color-accent);background:var(--color-accent);color:var(--sobre-marca);font:inherit;font-size:13px;font-weight:700;padding:8px 14px;min-height:38px;cursor:pointer;border-radius:var(--radio-sm)}
+.dash-excel:hover{filter:brightness(.92)}
+.dash-excel:disabled{opacity:.6;cursor:progress}

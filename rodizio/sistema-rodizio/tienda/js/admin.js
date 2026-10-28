@@ -1,0 +1,3761 @@
+/* Rodizio Cucuta - ParaTouch (DJG . djgv . Mxi . 0808 . 0724 . uwu) */
+/* =========================================================
+   PANEL DE ADMINISTRACIÓN — punto de entrada
+   =========================================================
+   Página separada del menú de clientes. Cualquiera con correo
+   y contraseña puede crear una cuenta aquí, pero solo entra al
+   panel quien esté marcado como administrador en Realtime
+   Database (admins/{uid}: true) — eso se agrega a mano desde
+   la consola de Firebase, nunca desde la app.
+   ========================================================= */
+
+import { auth, db, createDriverAuthAccount } from './firebase-config.js';
+import * as authApi from './auth.js';
+import * as catalog from './catalog.js';
+import * as settingsApi from './settings.js';
+import * as errors from './errors.js';
+import { confirmDialog, pickReasonDialog } from './confirm.js';
+import { formatCOP, inicioDiaCO, isoDiaCO, fmtHoraCO, fmtFechaCO, normalizeText, debounce, urlFoto } from './data.js';
+import {
+  ref,
+  get,
+  onValue,
+  update,
+  set,
+  remove,
+  push,
+  serverTimestamp,
+  query,
+  orderByKey,
+  orderByChild,
+  limitToLast,
+  startAt,
+  endAt,
+} from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js';
+
+const $ = (id) => document.getElementById(id);
+
+// Escalera de estados unificada (mesas + domicilios), ver
+// docs-fusion/ESQUEMA-UNIFICADO.md. Caja "confirma" el pedido de
+// domicilio pasándolo de `recibido` a `enviado` — ahí entra al tablero
+// de panel-cocina, que avanza `preparacion`/`listo`. Después caja/
+// domiciliario siguen con `en_camino`/`entregado`.
+const STATUS_STEPS = [
+  { id: 'recibido', label: 'Recibido' },
+  { id: 'enviado', label: 'Confirmado' },
+  { id: 'preparacion', label: 'En cocina' },
+  { id: 'listo', label: 'Listo' },
+  { id: 'en_camino', label: 'En camino' },
+  { id: 'llegado', label: 'Llegando' },
+  { id: 'entregado', label: 'Entregado' },
+];
+// Estados que el panel de la tienda NO puede marcar a mano:
+//  - 'enviado' (recibido -> enviado): confirmar es exclusivo de caja.
+//  - 'llegado': es automático por GPS del domiciliario (o su botón "Llegué").
+const STATUS_NO_MANUAL_ADMIN = ['enviado', 'llegado'];
+
+// A partir de cuántos minutos sin avanzar de estado (o sin llegar
+// la hora programada) un pedido se marca como "necesita atención".
+const URGENT_MINUTES = 10;
+const SEEN_ORDERS_KEY = 'rodizio_admin_seen_orders';
+
+// A partir de cuántas unidades restantes un producto se marca con
+// el aviso "quedan pocas" en el panel (no lo ve el cliente).
+const LOW_STOCK_THRESHOLD = 3;
+const ETA_OPTIONS = [15, 30, 45, 60];
+
+// El panel ya no carga el nodo "orders" completo de una: pide solo
+// los últimos N (por llave, que en Firebase ya vienen ordenadas por
+// fecha de creación) — evita que un local con meses de historial se
+// vuelva lento cada vez que alguien abre el panel. "Cargar pedidos
+// anteriores" en la pestaña Pedidos sube este número.
+const ORDERS_PAGE_SIZE = 400;
+const PRODUCTS_PAGE_SIZE = 24; // cuántos productos se muestran antes de "Mostrar más" en Menú
+const CASH_SETTLEMENTS_PAGE_SIZE = 10; // cuántos cierres de turno se muestran antes de "Mostrar más"
+
+const state = {
+  // Por defecto se abre en "Recibido" — son los pedidos que necesitan
+  // acción YA (confirmarlos), no un totalizado de todo el día mezclado
+  // con lo que ya está en curso o entregado. Ver #admin-status-filter
+  // en admin.html, que arranca con esa pastilla activa también.
+  statusFilter: 'recibido',
+  dateFilter: 'hoy', // 'hoy' | 'ayer' | 'todos' | 'YYYY-MM-DD' (fecha exacta, hora de Colombia)
+  orderSearchTerm: '',
+  orders: [],
+  ordersLimit: ORDERS_PAGE_SIZE,
+  stock: {}, // outOfStock/{productId}: true (agotado) | número (unidades restantes)
+  categories: [],
+  products: [],
+  productsFilter: { search: '', categoryId: '' }, // pestaña Menú
+  productsVisibleCount: PRODUCTS_PAGE_SIZE, // "Mostrar más" en Menú -> Productos
+  categoryModalId: null, // id de la categoría abierta en #category-modal
+  categoryModalSearch: '',
+  returnToCategoryId: null, // al cerrar el formulario de producto se vuelve a este detalle de categoría
+  editingCategoryId: null, // id de la categoría en edición inline, o 'new' para una fila nueva sin guardar
+  editingDriverUid: null, // uid del domiciliario en edición en #driver-modal, o null si se está creando uno nuevo
+  stockFilter: { search: '', categoryId: '', status: 'todos' }, // pestaña Inventario
+  settings: settingsApi.DEFAULT_SETTINGS,
+  blockedUids: new Set(),
+  errorLogs: [],
+  errorsDay: isoDiaCO(), // Configuración -> Avanzado: se muestra un día a la vez (hoy por defecto)
+  errorsPage: 0,
+  reportOrders: null, // pedidos cargados para Reportes (ver loadReportOrders)
+  reportLoadedFrom: null,
+  reportLoadedAt: 0,
+  reportLoading: false,
+  reportsFilter: { from: '', to: '', zone: '' }, // 'zone': '' todas, '__recoger__', '__sin_zona__' o el nombre exacto de una zona
+  drivers: {}, // { uid: { name, phone, available } } — solo con access, para el selector "Domiciliario"
+  allDrivers: {}, // { uid: { name, phone, email, available, access } } — TODOS, para la pestaña Domiciliarios
+  driversSearch: '',
+  driversFilter: 'todos', // 'todos' | 'disponibles' | 'no-disponibles' | 'deshabilitados'
+  cashSettlements: [],
+  // Cierres de turno: por defecto solo HOY, con filtros de día/domiciliario/estado y paginación.
+  cashFilter: { from: isoDiaCO(), to: isoDiaCO(), driverId: '', status: 'todos' }, // status: todos | cuadrado | faltante | sobrante
+  cashPage: 0,
+  role: 'dueno', // 'dueno' | 'cajero' — decide qué pestañas ve cada quien
+  seenOrderIds: loadSeenOrderIds(),
+  newOrdersCount: 0,
+  // Ids que acaban de llegar en el último snapshot de Firebase, solo
+  // para destacar su tarjeta con un destello (ver renderOrderCard) —
+  // se vacía apenas termina la animación, no es un estado persistente.
+  justArrivedOrderIds: new Set(),
+};
+
+let unsubOrders = null;
+let unsubStock = null;
+let unsubCategories = null;
+let unsubProducts = null;
+let unsubSettings = null;
+let unsubCustomerFlags = null;
+let unsubErrors = null;
+let unsubDrivers = null;
+let unsubCashSettlements = null;
+let ordersRefreshTimer = null;
+let hasLoadedOrdersOnce = false;
+
+function init() {
+  errors.watchGlobalErrors('panel');
+  registerServiceWorker();
+  hideSplashWhenReady();
+  bindGateEvents();
+  bindTabEvents();
+  bindStatusFilterEvents();
+  bindDateFilterEvents();
+  bindOrdersListEvents();
+  bindMenuEvents();
+  bindSettingsEvents();
+  bindDriversEvents();
+  bindReportsFilterEvents();
+  bindConfigTabEvents();
+  $('btn-export-orders-csv').addEventListener('click', exportOrdersXLSX);
+  bindErrorLogEvents();
+
+  authApi.onAuthChange(async (user) => {
+    detachSubscriptions();
+
+    if (!user) {
+      showGate('signed-out');
+      return;
+    }
+
+    $('btn-admin-signout').hidden = false;
+
+    let isAdmin = false;
+    try {
+      const snap = await get(ref(db, `admins/${user.uid}`));
+      const val = snap.val();
+      isAdmin = val === true || val === 'dueno' || val === 'cajero';
+      state.role = val === true || val === 'dueno' ? 'dueno' : 'cajero';
+    } catch (err) {
+      console.error('No se pudo verificar el acceso de administrador:', err);
+    }
+
+    if (!isAdmin) {
+      $('gate-not-admin-text').textContent =
+        `La cuenta ${user.email} inició sesión pero no está autorizada como administradora del panel.`;
+      showGate('not-admin');
+      return;
+    }
+
+    applyRoleUI(state.role);
+    showGate('main');
+    subscribeOrders();
+    subscribeStock();
+    subscribeCategories();
+    subscribeProducts();
+    subscribeSettings();
+    subscribeCustomerFlags();
+    subscribeDrivers();
+    if (state.role === 'dueno') {
+      unsubErrors = errors.onRecentErrors((logs) => {
+        state.errorLogs = logs;
+        renderErrorLog();
+      });
+      unsubCashSettlements = subscribeCashSettlements();
+    }
+  });
+}
+
+/* Un cajero real de un restaurante maneja pedidos e inventario del
+   día a día — no debería poder borrar el menú, cambiar precios ni
+   tocar la configuración del negocio. Eso queda solo para "dueno". */
+function applyRoleUI(role) {
+  const restrictedTabs = document.querySelectorAll('#admin-tabs button[data-role="dueno"]');
+  restrictedTabs.forEach((btn) => {
+    btn.hidden = role !== 'dueno';
+  });
+  if (role !== 'dueno') {
+    const activeTab = document.querySelector('#admin-tabs button.is-active');
+    if (activeTab && activeTab.dataset.role === 'dueno') {
+      document.querySelector('#admin-tabs button[data-tab="pedidos"]').click();
+    }
+  }
+}
+
+function detachSubscriptions() {
+  if (unsubOrders) unsubOrders();
+  if (unsubStock) unsubStock();
+  if (unsubCategories) unsubCategories();
+  if (unsubProducts) unsubProducts();
+  if (unsubSettings) unsubSettings();
+  if (unsubCustomerFlags) unsubCustomerFlags();
+  if (unsubErrors) unsubErrors();
+  if (unsubDrivers) unsubDrivers();
+  if (unsubCashSettlements) unsubCashSettlements();
+  if (ordersRefreshTimer) clearInterval(ordersRefreshTimer);
+  if (renderOrdersTimer) clearTimeout(renderOrdersTimer);
+  if (renderStockTimer) clearTimeout(renderStockTimer);
+  renderOrdersTimer = null;
+  renderStockTimer = null;
+  unsubOrders = null;
+  unsubStock = null;
+  unsubCategories = null;
+  unsubProducts = null;
+  unsubSettings = null;
+  unsubCustomerFlags = null;
+  unsubErrors = null;
+  unsubDrivers = null;
+  unsubCashSettlements = null;
+  ordersRefreshTimer = null;
+  hasLoadedOrdersOnce = false;
+}
+
+/* ---------- Acceso (correo y contraseña) ---------- */
+let authMode = 'signin'; // 'signin' | 'register'
+
+function setAuthMode(mode) {
+  authMode = mode;
+  const isRegister = authMode === 'register';
+  $('admin-auth-subtitle').textContent = isRegister
+    ? 'Crea una cuenta. Después, quien administre el proyecto debe autorizarte.'
+    : 'Inicia sesión con tu correo y contraseña de administrador.';
+  $('btn-admin-auth-submit').textContent = isRegister ? 'Crear cuenta' : 'Iniciar sesión';
+  $('btn-admin-toggle-mode').textContent = isRegister ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate';
+  $('admin-password').autocomplete = isRegister ? 'new-password' : 'current-password';
+  $('btn-admin-forgot').hidden = isRegister;
+  $('admin-consent-row').hidden = !isRegister;
+}
+
+function bindGateEvents() {
+  $('admin-auth-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('admin-email').value.trim();
+    const password = $('admin-password').value;
+    const submitBtn = $('btn-admin-auth-submit');
+    submitBtn.disabled = true;
+
+    if (authMode === 'register' && !$('admin-consent-checkbox').checked) {
+      showToast('Debes aceptar la política de tratamiento de datos para crear tu cuenta');
+      submitBtn.disabled = false;
+      return;
+    }
+
+    try {
+      if (authMode === 'register') {
+        await authApi.registerWithEmail(email, password);
+        await authApi.recordConsent('panel');
+        await authApi.signOutUser();
+        setAuthMode('signin');
+        $('admin-auth-form').reset();
+        showToast('Cuenta creada. Pídele a quien administra el proyecto que te dé acceso, luego inicia sesión.');
+      } else {
+        await authApi.signInWithEmail(email, password);
+      }
+    } catch (err) {
+      showToast(err.message || 'No se pudo continuar');
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  $('btn-admin-toggle-mode').addEventListener('click', () => {
+    setAuthMode(authMode === 'signin' ? 'register' : 'signin');
+  });
+
+  $('btn-admin-forgot').addEventListener('click', async () => {
+    const email = $('admin-email').value.trim();
+    if (!email) {
+      showToast('Escribe tu correo arriba primero');
+      return;
+    }
+    try {
+      await authApi.resetPassword(email);
+      showToast('Te enviamos un correo para restablecer tu contraseña');
+    } catch (err) {
+      showToast(err.message || 'No se pudo enviar el correo');
+    }
+  });
+
+  $('btn-admin-signout').addEventListener('click', async () => {
+    if (!(await confirmDialog('¿Seguro que quieres cerrar sesión?'))) return;
+    authApi.signOutUser();
+  });
+  $('btn-admin-signout-2').addEventListener('click', () => authApi.signOutUser());
+}
+
+function showGate(which) {
+  $('gate-signed-out').hidden = which !== 'signed-out';
+  $('gate-not-admin').hidden = which !== 'not-admin';
+  $('admin-main').hidden = which !== 'main';
+  $('btn-admin-signout').hidden = which === 'signed-out';
+
+  if (which === 'signed-out') {
+    $('admin-auth-form').reset();
+  }
+  // Recién acá se sabe de verdad qué pantalla mostrar (sesión restaurada
+  // o no) — ver hideSplash() más abajo, antes esto se hacía con un
+  // timer fijo sin relación con Firebase Auth y por eso se alcanzaba a
+  // ver el login un instante aunque la sesión ya estuviera activa.
+  hideSplash();
+}
+
+/* ---------- Tabs ---------- */
+function bindTabEvents() {
+  const buttons = document.querySelectorAll('#admin-tabs button');
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      buttons.forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      const tab = btn.dataset.tab;
+      $('tab-pedidos').hidden = tab !== 'pedidos';
+      $('tab-inventario').hidden = tab !== 'inventario';
+      $('tab-menu').hidden = tab !== 'menu';
+      $('tab-domiciliarios').hidden = tab !== 'domiciliarios';
+      $('tab-reportes').hidden = tab !== 'reportes';
+      $('tab-config').hidden = tab !== 'config';
+
+      if (tab === 'pedidos' && state.newOrdersCount > 0) {
+        state.newOrdersCount = 0;
+        updatePedidosBadge();
+      }
+      if (tab === 'domiciliarios') {
+        renderCashSettlementsList();
+      }
+      if (tab === 'reportes') {
+        renderReports();
+        loadReportOrders();
+      }
+      if (tab === 'config') {
+        renderErrorLog();
+      }
+    });
+  });
+
+  // Logo del header -> "Inicio" del panel (Pedidos), mismo patrón que
+  // #btn-brand-home en la tienda de clientes (app.js).
+  const brandHome = $('btn-brand-home');
+  if (brandHome) {
+    const goHome = () => {
+      document.querySelector('#admin-tabs button[data-tab="pedidos"]').click();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    brandHome.addEventListener('click', goHome);
+    brandHome.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        goHome();
+      }
+    });
+  }
+}
+
+/* Sub-pestañas de Configuración (Datos/Horario/Zonas/Avanzado) — antes
+   era una sola página larga con anclas de solo scroll ("todo se ve en
+   una página", pedido del usuario). Mismo patrón que bindTabEvents(),
+   una escala más abajo. */
+function bindConfigTabEvents() {
+  const buttons = document.querySelectorAll('#admin-config-tabs button');
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      buttons.forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      const tab = btn.dataset.configTab;
+      $('config-section-datos').hidden = tab !== 'datos';
+      $('config-section-horario').hidden = tab !== 'horario';
+      $('config-section-zonas').hidden = tab !== 'zonas';
+      $('config-section-avanzado').hidden = tab !== 'avanzado';
+    });
+  });
+}
+
+/* ---------- Pedidos ---------- */
+// Mismas 10 opciones que las pastillas de #admin-status-filter, en el
+// mismo orden — el <select> de escritorio (ver admin.css, 1080px) las
+// reemplaza ahí para no tener que buscar deslizando entre 10 nombres.
+const STATUS_FILTER_OPTIONS = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'recibido', label: 'Recibido' },
+  { id: 'enviado', label: 'Confirmado' },
+  { id: 'preparacion', label: 'En cocina' },
+  { id: 'listo', label: 'Listo' },
+  { id: 'en_camino', label: 'En camino' },
+  { id: 'llegado', label: 'Llegando' },
+  { id: 'entregado', label: 'Entregado' },
+  { id: 'no_entregado', label: 'No entregado' },
+  { id: 'programados', label: 'Programados' },
+  { id: 'cancelado', label: 'Cancelado' },
+];
+
+function setStatusFilter(id) {
+  document.querySelectorAll('#admin-status-filter button').forEach((b) => b.classList.toggle('is-active', b.dataset.filter === id));
+  const select = $('admin-status-select');
+  if (select) select.value = id;
+  state.statusFilter = id;
+  renderOrders();
+}
+
+function bindStatusFilterEvents() {
+  document.querySelectorAll('#admin-status-filter button').forEach((btn) => {
+    btn.addEventListener('click', () => setStatusFilter(btn.dataset.filter));
+  });
+
+  const select = $('admin-status-select');
+  if (select) {
+    select.innerHTML = STATUS_FILTER_OPTIONS.map((o) => `<option value="${o.id}">${escapeHtml(o.label)}</option>`).join('');
+    select.addEventListener('change', (e) => setStatusFilter(e.target.value));
+  }
+
+  const debouncedRenderOrders = debounce(renderOrders, 180);
+  $('admin-order-search')?.addEventListener('input', (e) => {
+    state.orderSearchTerm = e.target.value;
+    debouncedRenderOrders();
+  });
+}
+
+/* Filtro de día — separado del de estado, porque "Entregado" o
+   "Cancelado" acumulan pedidos de meses sin esto y la lista se vuelve
+   ilegible. Por defecto "Hoy", calculado con la hora de Colombia
+   (inicioDiaCO/isoDiaCO en data.js) — no la del navegador, que puede
+   estar en otra zona horaria. */
+function bindDateFilterEvents() {
+  const buttons = document.querySelectorAll('#admin-date-filter button[data-date]');
+  const picker = $('admin-date-picker');
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      buttons.forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      if (picker) picker.value = '';
+      state.dateFilter = btn.dataset.date;
+      subscribeOrders();
+    });
+  });
+  picker?.addEventListener('change', (e) => {
+    if (!e.target.value) return;
+    buttons.forEach((b) => b.classList.remove('is-active'));
+    state.dateFilter = e.target.value; // 'YYYY-MM-DD'
+    subscribeOrders();
+  });
+}
+
+// Límites (ms, hora de Colombia) del día que cubre el filtro activo —
+// para acotar la consulta a Firebase con orderByChild('createdAt')
+// en vez de bajar SIEMPRE los últimos `ordersLimit` pedidos sin
+// importar la fecha (ver subscribeOrders).
+function dayBoundsForDateFilter() {
+  let start;
+  if (state.dateFilter === 'hoy') start = inicioDiaCO();
+  else if (state.dateFilter === 'ayer') start = inicioDiaCO(Date.now() - 86400000);
+  else start = inicioDiaCO(new Date(`${state.dateFilter}T12:00:00`).getTime()); // 'YYYY-MM-DD' exacto
+  return { start, end: start + 86400000 - 1 };
+}
+
+function isoForDateFilter() {
+  if (state.dateFilter === 'hoy') return isoDiaCO();
+  if (state.dateFilter === 'ayer') return isoDiaCO(Date.now() - 86400000);
+  return state.dateFilter; // 'YYYY-MM-DD' exacto del date picker
+}
+
+function applyDateFilter(orders) {
+  if (state.dateFilter === 'todos') return orders;
+  const targetIso = isoForDateFilter();
+  return orders.filter((o) => isoDiaCO(o.createdAt) === targetIso);
+}
+
+function dateFilterLabel() {
+  if (state.dateFilter === 'todos') return '';
+  if (state.dateFilter === 'hoy') return ' hoy';
+  if (state.dateFilter === 'ayer') return ' ayer';
+  return ` el ${fmtFechaCO(new Date(`${state.dateFilter}T12:00:00`).getTime())}`;
+}
+
+function subscribeOrders() {
+  if (unsubOrders) unsubOrders();
+  // Con un día puntual elegido (no "Todos"), la consulta se acota de
+  // verdad por fecha (orderByChild('createdAt')+startAt/endAt) en vez
+  // de bajar siempre los últimos `ordersLimit` pedidos sin importar el
+  // filtro — un día de un restaurante es un conjunto chico, no necesita
+  // paginación aparte. "Todos" mantiene el comportamiento de siempre
+  // (orderByKey+limitToLast + "Cargar pedidos anteriores").
+  let ordersQuery;
+  if (state.dateFilter === 'todos') {
+    ordersQuery = query(ref(db, 'orders'), orderByKey(), limitToLast(state.ordersLimit));
+  } else {
+    const { start, end } = dayBoundsForDateFilter();
+    ordersQuery = query(ref(db, 'orders'), orderByChild('createdAt'), startAt(start), endAt(end));
+  }
+  unsubOrders = onValue(
+    ordersQuery,
+    (snapshot) => {
+    const value = snapshot.val() || {};
+    // `orders` es compartida con los pedidos de mesa (fusión). El panel
+    // del marketplace solo gestiona domicilio / recoger — los de mesa
+    // se ven y avanzan en panel-cocina/panel-caja del sistema de mesas.
+    const orders = Object.entries(value)
+      .map(([id, data]) => ({ id, ...data }))
+      .filter((o) => (o.origen || 'mesa') !== 'mesa');
+    // "Cargar pedidos anteriores" solo tiene sentido en "Todos" — con
+    // fecha acotada, la consulta ya trae el día completo de una vez.
+    state.ordersMaybeMore = state.dateFilter === 'todos' && orders.length >= state.ordersLimit;
+    state.orders = sortOrdersForQueue(orders);
+
+    if (hasLoadedOrdersOnce) {
+      const newOnes = orders.filter((o) => !state.seenOrderIds.has(o.id));
+      if (newOnes.length > 0) {
+        newOnes.forEach((o) => {
+          state.seenOrderIds.add(o.id);
+          state.justArrivedOrderIds.add(o.id);
+        });
+        saveSeenOrderIds(state.seenOrderIds);
+        state.newOrdersCount += newOnes.length;
+        updatePedidosBadge();
+        playNewOrderSound();
+        showToast(
+          newOnes.length === 1
+            ? `Nuevo pedido de ${newOnes[0].customerName || 'un cliente'}`
+            : `${newOnes.length} pedidos nuevos`
+        );
+        // El destello (ver renderOrderCard/.is-new-order en
+        // animations.css) solo tiene sentido en el primer repintado
+        // tras llegar — se limpia después para que un repintado
+        // posterior (otro cajero, un cambio de estado cualquiera) no
+        // vuelva a destacar la misma tarjeta sin que de verdad haya
+        // llegado un pedido nuevo.
+        setTimeout(() => {
+          newOnes.forEach((o) => state.justArrivedOrderIds.delete(o.id));
+        }, 2000);
+      }
+    } else {
+      orders.forEach((o) => state.seenOrderIds.add(o.id));
+      saveSeenOrderIds(state.seenOrderIds);
+      hasLoadedOrdersOnce = true;
+    }
+
+    scheduleRenderOrders();
+    },
+    errors.logOnValueError('admin:orders')
+  );
+
+  // Refresca "hace X min" y el resaltado de urgentes aunque no
+  // llegue ningún cambio nuevo de Firebase.
+  if (ordersRefreshTimer) clearInterval(ordersRefreshTimer);
+  ordersRefreshTimer = setInterval(renderOrders, 45000);
+}
+
+/* En un turno pesado, varios domiciliarios mandan su ubicación cada
+   pocos segundos y varios cajeros cambian estados a la vez — cada
+   una de esas escrituras dispara un snapshot nuevo de "orders"
+   completo. Sin agrupar, la lista se reconstruye varias veces por
+   segundo (parpadeo, gasto de CPU, y le borra a alguien lo que
+   estaba escribiendo en una nota). Se agrupan ráfagas cercanas en un
+   solo repintado. */
+let renderOrdersTimer = null;
+function scheduleRenderOrders() {
+  if (renderOrdersTimer) return;
+  renderOrdersTimer = setTimeout(() => {
+    renderOrdersTimer = null;
+    renderOrders();
+  }, 400);
+}
+
+/* Los pedidos que todavía necesitan trabajo (no entregados) van
+   primero, del más viejo al más nuevo (el que lleva más tiempo
+   esperando queda arriba, listo para atenderse). Los entregados
+   quedan abajo, más reciente primero, solo como referencia. */
+function sortOrdersForQueue(orders) {
+  const isClosed = (o) => ['entregado', 'cancelado'].includes(o.status || 'recibido');
+  const pending = orders.filter((o) => !isClosed(o)).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  const done = orders.filter(isClosed).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  return [...pending, ...done];
+}
+
+/* Sugiere un tiempo estimado según cuántos pedidos activos hay en
+   cola en este momento — así el cajero no tiene que calcular a ojo
+   en horas pico. Es solo una sugerencia visual (marca el botón
+   correspondiente con "· sugerido"): sigue siendo el cajero quien
+   elige, esto nunca pone el ETA solo. Umbrales simples a propósito,
+   no un cálculo de tiempos de cocina real (eso necesitaría datos
+   históricos que el proyecto no tiene). */
+function suggestedEtaMinutes() {
+  const active = state.orders.filter((o) => !['entregado', 'cancelado', 'no_entregado'].includes(o.status || 'recibido')).length;
+  if (active <= 3) return 15;
+  if (active <= 6) return 30;
+  if (active <= 10) return 45;
+  return 60;
+}
+
+function isUrgent(order) {
+  if (['entregado', 'cancelado'].includes(order.status || 'recibido')) return false;
+  const now = Date.now();
+  if (order.scheduledFor) {
+    // Programado: urgente si ya casi es la hora (o ya pasó) y sigue sin avanzar.
+    return order.scheduledFor - now <= URGENT_MINUTES * 60000;
+  }
+  return !!order.createdAt && now - order.createdAt >= URGENT_MINUTES * 60000;
+}
+
+function timeAgo(ms) {
+  if (!ms) return '';
+  const diffMin = Math.max(0, Math.floor((Date.now() - ms) / 60000));
+  if (diffMin < 1) return 'justo ahora';
+  if (diffMin < 60) return `hace ${diffMin} min`;
+  const h = Math.floor(diffMin / 60);
+  const m = diffMin % 60;
+  // Más de un día: "hace 169h 37min" no se entendía de un vistazo.
+  if (h >= 24) {
+    const d = Math.floor(h / 24);
+    return `hace ${d} ${d === 1 ? 'día' : 'días'}`;
+  }
+  return `hace ${h}h ${m}min`;
+}
+
+/* Busca por nombre o teléfono — encima del filtro de estado, así que
+   "Todos" + un nombre te deja buscar sin importar en qué estado esté
+   el pedido. Coincidencia simple por texto, sin acentos ni mayúsculas
+   (mismo criterio que matchZone en settings.js; normalizeText vive en
+   data.js, compartida — antes esto tenía su propia copia). */
+function applyOrderSearch(orders) {
+  const term = normalizeText(state.orderSearchTerm);
+  if (!term) return orders;
+  return orders.filter((o) => {
+    const haystack = normalizeText(`${o.customerName || ''} ${o.phone || ''}`);
+    return haystack.includes(term);
+  });
+}
+
+function ordersForCurrentFilter(byDate) {
+  if (state.statusFilter === 'todos') return applyOrderSearch(byDate);
+  if (state.statusFilter === 'programados') {
+    // Vista tipo calendario: solo los que tienen hora programada,
+    // ordenados por esa hora (no por cuándo se hizo el pedido).
+    return applyOrderSearch(
+      byDate
+        .filter((o) => !!o.scheduledFor && (o.status || 'recibido') !== 'cancelado')
+        .sort((a, b) => (a.scheduledFor || 0) - (b.scheduledFor || 0))
+    );
+  }
+  return applyOrderSearch(byDate.filter((o) => (o.status || 'recibido') === state.statusFilter));
+}
+
+function renderOrders() {
+  const byDate = applyDateFilter(state.orders);
+  updateFilterCounts(byDate);
+  renderQuickStats();
+
+  const container = $('admin-orders-list');
+  const orders = ordersForCurrentFilter(byDate);
+
+  // Si alguien está a mitad de escribir una nota interna cuando llega
+  // un repintado (otro cajero cambió algo, un domiciliario actualizó
+  // su ubicación), se pierde lo que llevaba escrito al reconstruir el
+  // HTML — se guarda antes de repintar y se restaura después.
+  const draftNote = captureFocusedNoteDraft(container);
+
+  if (orders.length === 0) {
+    container.innerHTML = `<p class="admin-hint">No hay pedidos${state.statusFilter === 'todos' ? '' : ' en este grupo'}${dateFilterLabel()}.</p>`;
+    return;
+  }
+
+  container.innerHTML = renderOrdersBoard(orders);
+
+  // Solo tiene sentido "cargar más" en la vista "Todos" — los filtros
+  // por estado ya casi siempre caben en la primera página, y cargar
+  // más ahí no cambiaría lo que se ve (el filtro ya lo tenía todo).
+  if (state.statusFilter === 'todos' && state.ordersMaybeMore) {
+    const loadMore = document.createElement('button');
+    loadMore.type = 'button';
+    loadMore.className = 'admin-load-more-btn';
+    loadMore.textContent = 'Cargar pedidos anteriores';
+    loadMore.addEventListener('click', () => {
+      state.ordersLimit += ORDERS_PAGE_SIZE;
+      subscribeOrders();
+    });
+    container.appendChild(loadMore);
+  }
+
+  restoreFocusedNoteDraft(container, draftNote);
+}
+
+/* Tablero por columnas (rediseño 2026-10-23): los mismos pedidos que ya
+   deja pasar el filtro, solo agrupados por estado en columnas — con un
+   filtro de un solo estado queda una sola columna. Solo presentación:
+   no cambia qué pedidos se ven ni su orden dentro de cada estado. */
+const BOARD_COLUMN_LABELS = {
+  recibido: 'Recibidos',
+  enviado: 'Confirmados',
+  preparacion: 'En cocina',
+  listo: 'Listos',
+  en_camino: 'En camino',
+  llegado: 'Llegando',
+  entregado: 'Entregados',
+  no_entregado: 'No entregados',
+  cancelado: 'Cancelados',
+};
+const BOARD_COLUMN_ORDER = Object.keys(BOARD_COLUMN_LABELS);
+
+function renderOrdersBoard(orders) {
+  const groups = new Map();
+  if (state.statusFilter === 'programados') {
+    groups.set('programados', orders);
+  } else {
+    orders.forEach((o) => {
+      const status = o.status || 'recibido';
+      if (!groups.has(status)) groups.set(status, []);
+      groups.get(status).push(o);
+    });
+  }
+  const keys = [...groups.keys()].sort((a, b) => BOARD_COLUMN_ORDER.indexOf(a) - BOARD_COLUMN_ORDER.indexOf(b));
+  const columns = keys
+    .map((key) => {
+      const list = groups.get(key);
+      const label = key === 'programados' ? 'Programados' : BOARD_COLUMN_LABELS[key] || key;
+      return `
+      <div class="admin-board-col" data-status="${key}">
+        <div class="admin-board-col-head">
+          <h2 class="admin-board-col-title">${escapeHtml(label)}</h2>
+          <span class="admin-board-col-count">${list.length}</span>
+        </div>
+        <div class="admin-board-col-body">${list.map((order) => renderOrderCard(order)).join('')}</div>
+      </div>`;
+    })
+    .join('');
+  return `<div class="admin-board${keys.length === 1 ? ' is-single' : ''}">${columns}</div>`;
+}
+
+/* Un solo listener delegado en vez de re-buscar y re-enganchar ~9 grupos
+   de botones en CADA repintado de la lista (cada clic de filtro, cada
+   tecla en el buscador). Se engancha UNA vez en init(); "container" se
+   reemplaza por dentro con innerHTML pero sigue siendo el mismo nodo, así
+   que el listener delegado nunca se pierde. */
+function bindOrdersListEvents() {
+  const container = $('admin-orders-list');
+  if (!container) return;
+
+  container.addEventListener('click', (e) => {
+    const cancelBtn = e.target.closest('.admin-cancel-order-btn');
+    if (cancelBtn) return handleCancelOrderFromPanel(cancelBtn.dataset.orderId, cancelBtn);
+
+    const blockBtn = e.target.closest('.admin-block-btn');
+    if (blockBtn) return handleBlockToggle(blockBtn.dataset.uid, blockBtn.dataset.block === '1', blockBtn);
+
+    const retryBtn = e.target.closest('.admin-retry-btn');
+    if (retryBtn) return handleRetryDelivery(retryBtn.dataset.orderId);
+
+    const statusBtn = e.target.closest('.admin-status-buttons button');
+    if (statusBtn) return handleStatusButtonClick(statusBtn);
+
+    const copyBtn = e.target.closest('.admin-copy-btn');
+    if (copyBtn) {
+      navigator.clipboard
+        .writeText(copyBtn.dataset.copy || '')
+        .then(() => showToast('Dirección copiada'))
+        .catch(() => showToast('No se pudo copiar la dirección'));
+      return;
+    }
+
+    const printBtn = e.target.closest('.admin-print-btn');
+    if (printBtn) {
+      const order = state.orders.find((o) => o.id === printBtn.dataset.orderId);
+      if (order) printOrder(order);
+      return;
+    }
+
+    const etaBtn = e.target.closest('.admin-eta-btn');
+    if (etaBtn) return handleSetEta(etaBtn.dataset.orderId, Number(etaBtn.dataset.eta));
+
+    const noteSaveBtn = e.target.closest('.admin-note-save');
+    if (noteSaveBtn) {
+      const textarea = container.querySelector(`.admin-note-input[data-order-id="${noteSaveBtn.dataset.orderId}"]`);
+      handleSaveInternalNote(noteSaveBtn.dataset.orderId, textarea ? textarea.value.trim() : '');
+    }
+  });
+
+  container.addEventListener('change', (e) => {
+    const select = e.target.closest('.admin-driver-select');
+    if (select) handleAssignDriver(select.dataset.orderId, select.value || null);
+  });
+}
+
+function captureFocusedNoteDraft(container) {
+  const el = document.activeElement;
+  if (!el || !container.contains(el) || !el.classList.contains('admin-note-input')) return null;
+  return {
+    orderId: el.dataset.orderId,
+    value: el.value,
+    selectionStart: el.selectionStart,
+    selectionEnd: el.selectionEnd,
+  };
+}
+
+function restoreFocusedNoteDraft(container, draft) {
+  if (!draft) return;
+  const details = container.querySelector(`.admin-note-input[data-order-id="${draft.orderId}"]`)?.closest('details');
+  const textarea = container.querySelector(`.admin-note-input[data-order-id="${draft.orderId}"]`);
+  if (!textarea) return;
+  if (details) details.open = true;
+  textarea.value = draft.value;
+  textarea.focus();
+  try {
+    textarea.setSelectionRange(draft.selectionStart, draft.selectionEnd);
+  } catch {
+    // Algunos navegadores no soportan setSelectionRange en ciertos
+    // estados del textarea — no es crítico, ya quedó el texto y el foco.
+  }
+}
+
+/* Al presionar un botón de estado: bloquea todo el grupo de
+   inmediato (para que no se pueda hacer doble clic ni cambiar de
+   estado por error mientras se está guardando), muestra que está
+   guardando, y confirma con un mensaje claro cuando termina — sea
+   que haya funcionado o que haya fallado. */
+function handleStatusButtonClick(btn) {
+  const { orderId, status } = btn.dataset;
+  const group = btn.closest('.admin-status-buttons');
+  const label = STATUS_STEPS.find((s) => s.id === status)?.label || status;
+  const order = state.orders.find((o) => o.id === orderId);
+
+  group.classList.add('is-saving');
+  group.querySelectorAll('button').forEach((b) => {
+    b.disabled = true;
+  });
+  btn.classList.add('is-pending');
+
+  // Fusión: un pedido de domicilio es de 1 ronda. Mantener rondaEstados
+  // sincronizado con status para que panel-cocina (que decide la columna
+  // por ronda) no lo deje pegado en "Listos" después de que salió.
+  // tsCambio: hora del último cambio de estado — panel-caja la muestra
+  // como "Hora entregado" (driver.js y las apps de mesa ya la ponían;
+  // el panel no, y caja mostraba "—", Fase 2 bug B3).
+  const patch = { status, rondaEstados: { 1: status }, tsCambio: Date.now() };
+  // "Confirmar" = recibido -> enviado: acá es cuando caja acepta el
+  // pedido y entra al tablero de cocina. Deja registro de quién confirmó.
+  if (status === 'enviado' && (order?.status || 'recibido') === 'recibido') {
+    patch.confirmadoPor = auth.currentUser?.email || 'admin';
+    patch.tsConfirmado = Date.now();
+  }
+
+  update(ref(db, `orders/${orderId}`), patch)
+    .then(() => {
+      showToast(`Pedido marcado como "${label}"`);
+      // Registro de quién cambió el estado y cuándo — útil cuando
+      // hay más de una persona con acceso al panel.
+      push(ref(db, `orders/${orderId}/statusHistory`), {
+        status,
+        byEmail: auth.currentUser?.email || 'admin',
+        at: serverTimestamp(),
+      }).catch(() => {});
+      // No hace falta desbloquear a mano: la suscripción en vivo a
+      // "orders" ya redibuja toda la tarjeta con el estado nuevo.
+    })
+    .catch((err) => {
+      showToast(err.message || 'No se pudo actualizar el estado');
+      group.classList.remove('is-saving');
+      btn.classList.remove('is-pending');
+      group.querySelectorAll('button').forEach((b) => {
+        // Solo el "siguiente" vuelve a quedar habilitado (ver renderOrderCard).
+        b.disabled = !b.classList.contains('is-next');
+      });
+    });
+}
+
+function updateFilterCounts(byDate) {
+  const counts = {
+    todos: byDate.length,
+    recibido: 0,
+    enviado: 0,
+    preparacion: 0,
+    listo: 0,
+    en_camino: 0,
+    llegado: 0,
+    entregado: 0,
+    no_entregado: 0,
+    cancelado: 0,
+    programados: 0,
+  };
+  byDate.forEach((o) => {
+    const s = o.status || 'recibido';
+    if (counts[s] !== undefined) counts[s]++;
+    if (o.scheduledFor && s !== 'cancelado') counts.programados++;
+  });
+  document.querySelectorAll('.admin-filter-count').forEach((span) => {
+    const n = counts[span.dataset.countFor] || 0;
+    span.textContent = n > 0 ? String(n) : '';
+    span.hidden = n === 0;
+  });
+
+  const select = $('admin-status-select');
+  if (select) {
+    STATUS_FILTER_OPTIONS.forEach((o, i) => {
+      const n = counts[o.id] || 0;
+      select.options[i].textContent = n > 0 ? `${o.label} (${n})` : o.label;
+    });
+    select.value = state.statusFilter;
+  }
+}
+
+/* Franja de números reales al abrir la pestaña Pedidos — nada
+   inventado, se calcula de los mismos pedidos que ya están cargados
+   (los últimos `state.ordersLimit`, ver subscribeOrders). */
+function renderQuickStats() {
+  const el = $('admin-quick-stats');
+  if (!el) return;
+
+  const startToday = inicioDiaCO();
+  const todayOrders = state.orders.filter(
+    (o) => (o.createdAt || 0) >= startToday && (o.status || 'recibido') !== 'cancelado'
+  );
+  // El dinero solo cuenta cuando caja (o la pasarela) confirmó el pago
+  // — igual que panel-caja y el dashboard de panel-admin. Un pedido sin
+  // cobrar todavía no es venta.
+  const revenueToday = todayOrders
+    .filter((o) => o.pagado === true)
+    .reduce((sum, o) => sum + (o.total || 0), 0);
+  const activeCount = state.orders.filter((o) => !['entregado', 'cancelado'].includes(o.status || 'recibido')).length;
+  const urgentCount = state.orders.filter(isUrgent).length;
+
+  el.innerHTML = `
+    <div class="admin-quick-stat">
+      <span class="admin-quick-stat-value">${formatCOP(revenueToday)}</span>
+      <span class="admin-quick-stat-label">Vendido hoy</span>
+    </div>
+    <div class="admin-quick-stat">
+      <span class="admin-quick-stat-value">${activeCount}</span>
+      <span class="admin-quick-stat-label">Pedidos activos</span>
+    </div>
+    <div class="admin-quick-stat${urgentCount > 0 ? ' is-alert' : ''}">
+      <span class="admin-quick-stat-value">${urgentCount}</span>
+      <span class="admin-quick-stat-label">Necesitan atención</span>
+    </div>
+  `;
+}
+
+function updatePedidosBadge() {
+  const badge = $('admin-tab-badge-pedidos');
+  if (!badge) return;
+  badge.hidden = state.newOrdersCount === 0;
+  badge.textContent = state.newOrdersCount > 9 ? '9+' : String(state.newOrdersCount);
+}
+
+const ORDER_HISTORY_VISIBLE = 5;
+
+function renderOrderHistory(order) {
+  const entries = order.statusHistory ? Object.values(order.statusHistory) : [];
+  if (entries.length === 0) return '';
+  entries.sort((a, b) => (a.at || 0) - (b.at || 0));
+  const renderEntry = (h) => {
+    const label = STATUS_STEPS.find((s) => s.id === h.status)?.label || (h.status === 'no_entregado' ? 'No se pudo entregar' : h.status);
+    const time = h.at ? fmtHoraCO(h.at) : '';
+    return `<div class="admin-history-entry">${time} — ${escapeHtml(label)}${h.note ? ' (' + escapeHtml(h.note) + ')' : ''} · ${escapeHtml(h.byEmail || '')}</div>`;
+  };
+  // Un pedido con muchos cambios de estado (reasignaciones, reintentos)
+  // podía dejar un historial largo dentro de una tarjeta que ya de por
+  // sí tiene mucho contenido — se muestran los 5 más recientes y el
+  // resto (más viejo, en el mismo orden cronológico) queda plegado
+  // detrás de un "Ver más" anidado.
+  const recent = entries.slice(-ORDER_HISTORY_VISIBLE);
+  const older = entries.slice(0, -ORDER_HISTORY_VISIBLE);
+  const olderHtml = older.length
+    ? `<details class="admin-order-history-more"><summary>Ver ${older.length} más</summary>${older.map(renderEntry).join('')}</details>`
+    : '';
+  return `<details class="admin-order-history"><summary>Historial (${entries.length})</summary>${olderHtml}${recent.map(renderEntry).join('')}</details>`;
+}
+
+function renderOrderCard(order) {
+  const currentStatus = order.status || 'recibido';
+  const isCancelled = currentStatus === 'cancelado';
+  const isFailedDelivery = currentStatus === 'no_entregado';
+  const isDone = ['entregado', 'cancelado'].includes(currentStatus);
+  const itemsListHtml = (order.items || [])
+    .map(
+      (item) => `
+      <div class="admin-order-item-row">
+        <span class="admin-order-item-qty">${item.qty}×</span>
+        <span class="admin-order-item-text">${escapeHtml(item.name)}${item.notes ? `<em>${escapeHtml(item.notes)}</em>` : ''}</span>
+        ${item.price ? `<span class="admin-order-item-price">${formatCOP(item.price * (item.qty || 1))}</span>` : ''}
+      </div>`
+    )
+    .join('');
+  const PAY_METHOD_LABELS = { efectivo: 'efectivo', tarjeta: 'tarjeta', transferencia: 'transferencia', en_linea: 'en línea' };
+  const modeLabel = order.deliveryMode === 'recoger' ? 'Recoger en tienda' : 'A domicilio';
+  const addressLine = order.deliveryMode === 'recoger' ? '' : order.address || 'sin dirección';
+  const urgent = isUrgent(order);
+  const isNewArrival = state.justArrivedOrderIds.has(order.id);
+  const isBlocked = order.uid && state.blockedUids.has(order.uid);
+  const phoneDigits = (order.phone || '').replace(/[^\d+]/g, '');
+  const orderWa = whatsappHref(order.phone);
+  const phoneHtml = phoneDigits
+    ? `<a class="admin-order-phone" href="tel:${phoneDigits}">${escapeHtml(order.phone)}</a>${
+        orderWa
+          ? `<a class="admin-order-whatsapp-btn" href="${orderWa}" target="_blank" rel="noopener" aria-label="Escribirle por WhatsApp">${whatsappSvg()}</a>`
+          : ''
+      }`
+    : escapeHtml(order.phone || 'sin teléfono');
+
+  // Vista previa de la tarjeta (rediseño 2026-10-23): número, fotos de
+  // los platos y una línea de resumen, visibles sin abrir "Ver detalle".
+  const orderCode = order.codigo || '#' + (order.id || '').replace(/[^A-Za-z0-9]/g, '').slice(-5).toUpperCase();
+  const items = order.items || [];
+  const previewThumbs = items
+    .filter((item) => item.image)
+    .slice(0, 3)
+    .map((item) => `<img src="${escapeHtml(urlFoto(item.image))}" alt="" loading="lazy" onerror="this.style.display='none'" />`)
+    .join('');
+  const previewText = items.length
+    ? `${items[0].qty}× ${escapeHtml(items[0].name)}${items.length > 1 ? ` <span class="admin-order-preview-more">+${items.length - 1} más</span>` : ''}`
+    : '';
+  const customerName = order.customerName || 'Cliente';
+  const initial = escapeHtml((customerName.trim()[0] || 'C').toUpperCase());
+
+  return `
+    <div class="admin-order${urgent ? ' is-urgent' : ''}${isCancelled ? ' is-cancelled' : ''}${isNewArrival ? ' is-new-arrival' : ''}">
+      <div class="admin-order-head">
+        <span class="admin-order-code">${escapeHtml(orderCode)}</span>
+        <span class="admin-order-head-actions">
+          ${urgent ? '<span class="admin-order-tag is-urgent">Urgente</span>' : currentStatus === 'recibido' ? '<span class="admin-order-tag">Nuevo</span>' : ''}
+          <button type="button" class="admin-print-btn" data-order-id="${order.id}" aria-label="Imprimir comanda">${printSvg()}</button>
+        </span>
+      </div>
+      <div class="admin-order-top">
+        <div class="admin-order-top-info">
+          <span class="admin-order-avatar" aria-hidden="true">${initial}</span>
+          <div class="admin-order-customer">${escapeHtml(customerName)}</div>
+        </div>
+        <div class="admin-order-top-actions">
+          <span class="price">${formatCOP(order.total || 0)}</span>
+          ${order.pagado ? '<span class="admin-order-paid">Pagado</span>' : ''}
+        </div>
+      </div>
+      ${
+        isBlocked
+          ? `<div class="admin-order-summary-chips">
+        <span class="admin-order-chip admin-order-chip-cancelled">Cliente bloqueado</span>
+      </div>`
+          : ''
+      }
+      ${
+        previewText || previewThumbs
+          ? `<div class="admin-order-preview">
+        <span class="admin-order-preview-text">${previewText}</span>
+        ${previewThumbs ? `<span class="admin-order-preview-thumbs">${previewThumbs}</span>` : ''}
+      </div>`
+          : ''
+      }
+      <div class="admin-order-foot">
+        <span class="admin-order-foot-mode${order.deliveryMode === 'recoger' ? '' : ' is-delivery'}">${modeLabel}</span>
+        <span>${order.scheduledFor ? `Programado ${fmtHoraCO(order.scheduledFor)}` : timeAgo(order.createdAt)}</span>
+      </div>
+      <details class="admin-order-toggle-wrap">
+        <summary class="admin-order-toggle"></summary>
+        <div class="admin-order-detail-body">
+          <!-- Detalle en secciones con título (rediseño 2026-10-23): antes
+               todo iba seguido y repetía el tiempo, el modo de entrega y
+               los productos que ya muestra la tarjeta. -->
+          <section class="admin-detail-sec">
+            <h4 class="admin-detail-title">Cliente</h4>
+            <div class="admin-order-meta">${phoneHtml}</div>
+            ${
+              addressLine
+                ? `<div class="admin-order-address"><span>${escapeHtml(addressLine)}</span><button type="button" class="admin-copy-btn" data-copy="${escapeHtml(addressLine)}" aria-label="Copiar dirección">${copySvg()}</button></div>`
+                : `<div class="admin-order-address"><span>${modeLabel}</span></div>`
+            }
+            ${order.reference ? `<div class="admin-order-reference"><strong>Referencia:</strong> ${escapeHtml(order.reference)}</div>` : ''}
+          </section>
+          <section class="admin-detail-sec">
+            <h4 class="admin-detail-title">Productos</h4>
+            <div class="admin-order-items">${itemsListHtml}</div>
+          </section>
+          <section class="admin-detail-sec">
+            <h4 class="admin-detail-title">Pago</h4>
+            <div class="admin-order-chips">
+              ${order.pagado
+                ? `<span class="admin-order-chip admin-order-chip-paid">Pagado${order.metodoPago ? ' · ' + (PAY_METHOD_LABELS[order.metodoPago] || order.metodoPago) : ''}</span>`
+                : (!isCancelled && !isFailedDelivery ? '<span class="admin-order-chip">Sin cobrar</span>' : '')}
+              ${order.tipAmount ? `<span class="admin-order-chip admin-order-chip-tip">Propina ${formatCOP(order.tipAmount)}</span>` : ''}
+              ${isCancelled ? '<span class="admin-order-chip admin-order-chip-cancelled">Cancelado por el cliente</span>' : ''}
+              ${isFailedDelivery ? `<span class="admin-order-chip admin-order-chip-cancelled">No se pudo entregar — ${escapeHtml(order.deliveryFailureReason || 'sin motivo')}</span>` : ''}
+            </div>
+          </section>
+          <section class="admin-detail-sec">
+            <h4 class="admin-detail-title">Estado</h4>
+          ${
+            isCancelled
+              ? ''
+              : isFailedDelivery
+                ? `<div class="admin-status-buttons">
+              <button type="button" class="admin-retry-btn" data-order-id="${order.id}">Reintentar entrega</button>
+            </div>`
+                : currentStatus === 'recibido'
+                  ? `<div class="admin-status-waiting">⏳ Esperando que <strong>caja</strong> confirme el pedido y lo mande a cocina</div>`
+                  : `<div class="admin-status-buttons">
+            ${(() => {
+              // Solo se puede AVANZAR al siguiente estado — no saltar ni
+              // retroceder libremente (retroceder = "Cancelar pedido").
+              // "enviado" (recibido -> enviado) ya NO es una acción del panel:
+              // confirmar el pedido es exclusivo de caja (panel-caja). Acá el
+              // pedido ya entró como "enviado" o más adelante.
+              const curIdx = STATUS_STEPS.findIndex((s) => s.id === currentStatus);
+              // Si el siguiente estado en la escalera es uno que el panel no
+              // marca a mano (enviado / llegado), se ofrece el que sigue.
+              // Recoger en tienda no tiene viaje: de "Listo" pasa directo a
+              // "Entregado", sin "En camino"/"Llegando" (Fase 2, bug B1).
+              const saltar = order.deliveryMode === 'recoger'
+                ? [...STATUS_NO_MANUAL_ADMIN, 'en_camino']
+                : STATUS_NO_MANUAL_ADMIN;
+              let nextIdx = curIdx + 1;
+              while (saltar.includes(STATUS_STEPS[nextIdx]?.id)) nextIdx++;
+              const nextStep = STATUS_STEPS[nextIdx];
+              const currentLabel = STATUS_STEPS[curIdx]?.label || currentStatus;
+              // Antes esto pintaba los 7 estados de la escalera como botones
+              // (la mayoría deshabilitados) en una sola fila — confuso, se
+              // veía como una fila larga de botones sin poder tocarlos. Ahora
+              // solo se muestra en qué estado va y, si hay a dónde avanzar,
+              // un único botón de acción.
+              return `
+              <span class="admin-status-current" data-status="${escapeHtml(currentStatus)}">${escapeHtml(currentLabel)}</span>
+              ${
+                nextStep
+                  ? `<button type="button" class="admin-status-next-btn is-next" data-order-id="${order.id}" data-status="${nextStep.id}">Marcar «${escapeHtml(nextStep.label)}»</button>`
+                  : ''
+              }`;
+            })()}
+          </div>`
+          }
+          ${
+            isDone || isFailedDelivery
+              ? ''
+              : `<div class="admin-eta-row">
+            <span class="admin-eta-label">Tiempo estimado:</span>
+            ${ETA_OPTIONS.map(
+              (m) =>
+                `<button type="button" class="admin-eta-btn${m === suggestedEtaMinutes() ? ' is-suggested' : ''}${order.etaSetAt && order.etaMinutes === m ? ' is-chosen' : ''}" data-order-id="${order.id}" data-eta="${m}">${m} min${m === suggestedEtaMinutes() ? ' · sugerido' : ''}</button>`
+            ).join('')}
+          </div>`
+          }
+          ${
+            isDone || order.deliveryMode === 'recoger'
+              ? ''
+              : `<div class="admin-driver-row">
+            <label class="admin-driver-label" for="driver-select-${order.id}">Domiciliario:</label>
+            <select class="admin-driver-select" id="driver-select-${order.id}" data-order-id="${order.id}">
+              <option value="">Sin asignar</option>
+              ${Object.entries(state.drivers)
+                // Un domiciliario que apagó "Disponible" no debe poder recibir
+                // pedidos nuevos — se saca de la lista, salvo que ya sea el
+                // asignado actual de ESTE pedido (para poder verlo/reasignar).
+                .filter(([uid, d]) => d.available || order.driverId === uid)
+                .map(
+                  ([uid, d]) =>
+                    `<option value="${uid}" ${order.driverId === uid ? 'selected' : ''}>${escapeHtml(d.name || uid.slice(0, 6))}${d.available ? '' : ' · no disponible'}</option>`
+                )
+                .join('')}
+            </select>
+            ${
+              order.driverId && order.driverLocation
+                ? isDriverLocationStale(order.driverLocation)
+                  ? `<span class="admin-driver-map-link admin-driver-map-stale">Sin señal del domiciliario (${timeAgo(order.driverLocation.updatedAt)}) — sigue en camino</span>`
+                  : `<a class="admin-driver-map-link" href="${trailMapsUrl(order.driverTrail, order.driverLocation)}" target="_blank" rel="noopener noreferrer">Ver ${Array.isArray(order.driverTrail) && order.driverTrail.length > 1 ? 'recorrido' : 'ubicación'} (${timeAgo(order.driverLocation.updatedAt)})</a>`
+                : ''
+            }
+            ${
+              order.customerLocation
+                ? `<a class="admin-driver-map-link admin-customer-map-link" href="https://www.google.com/maps?q=${order.customerLocation.lat},${order.customerLocation.lng}" target="_blank" rel="noopener noreferrer">Ver ubicación del cliente</a>`
+                : ''
+            }
+            ${
+              order.driverId && driverOrderWhatsappHref(order)
+                ? `<a class="admin-driver-map-link admin-driver-wa-link" href="${driverOrderWhatsappHref(order)}" target="_blank" rel="noopener noreferrer">Enviar al domiciliario por WhatsApp</a>`
+                : ''
+            }
+          </div>`
+          }
+          </section>
+          <div class="admin-detail-extras">
+            <details class="admin-order-note">
+              <summary>Nota interna${order.internalNote ? ' · tiene nota' : ''}</summary>
+              <textarea class="admin-note-input" data-order-id="${order.id}" rows="2" placeholder="Solo la ve el panel. Ej: cliente llamó, cambia la dirección…">${escapeHtml(order.internalNote || '')}</textarea>
+              <button type="button" class="btn btn-ghost admin-note-save" data-order-id="${order.id}">Guardar nota</button>
+            </details>
+            ${renderOrderHistory(order)}
+          </div>
+          ${
+            (!isCancelled && currentStatus !== 'entregado') || (state.role === 'dueno' && order.uid)
+              ? `<div class="admin-order-actions">
+            ${
+              !isCancelled && currentStatus !== 'entregado'
+                ? `<button type="button" class="admin-block-btn admin-cancel-order-btn" data-order-id="${order.id}">Cancelar pedido</button>`
+                : ''
+            }
+            ${
+              state.role === 'dueno' && order.uid
+                ? `<button type="button" class="admin-block-btn${isBlocked ? ' is-blocked' : ''}" data-uid="${order.uid}" data-block="${isBlocked ? '0' : '1'}">${isBlocked ? 'Desbloquear cliente' : 'Bloquear cliente'}</button>`
+                : ''
+            }
+          </div>`
+              : ''
+          }
+        </div>
+      </details>
+    </div>
+  `;
+}
+
+/* ---------- Aviso de pedidos nuevos ---------- */
+function loadSeenOrderIds() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(SEEN_ORDERS_KEY) || '[]'));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveSeenOrderIds(ids) {
+  try {
+    localStorage.setItem(SEEN_ORDERS_KEY, JSON.stringify([...ids]));
+  } catch {
+    // localStorage no disponible (modo privado, etc.): no rompe el panel.
+  }
+}
+
+/* Dos "beeps" cortos con el sintetizador del navegador — no depende
+   de ningún archivo de audio. Si el navegador bloquea el audio
+   (autoplay) simplemente no suena, sin romper el panel. */
+function playNewOrderSound() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new Ctx();
+    const beep = (freq, startDelay) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const t0 = ctx.currentTime + startDelay;
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t0);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.2, t0 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.32);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.35);
+    };
+    beep(880, 0);
+    beep(1046, 0.18);
+  } catch {
+    // Sin soporte de Web Audio o bloqueado por el navegador: silencioso.
+  }
+}
+
+/* ---------- Inventario ---------- */
+/* outOfStock/{productId} ahora puede ser: ausente (disponible, sin
+   conteo), un número > 0 (unidades restantes, sigue disponible) o
+   0/true (agotado para el cliente). */
+function subscribeStock() {
+  unsubStock = onValue(
+    ref(db, 'outOfStock'),
+    (snapshot) => {
+      state.stock = snapshot.val() || {};
+      scheduleRenderStockList();
+    },
+    errors.logOnValueError('admin:stock')
+  );
+}
+
+let renderStockTimer = null;
+function scheduleRenderStockList() {
+  if (renderStockTimer) return;
+  renderStockTimer = setTimeout(() => {
+    renderStockTimer = null;
+    renderStockList();
+  }, 400);
+}
+
+function isOutOfStock(value) {
+  return value === true || value === 0;
+}
+
+/* Filtro compartido por texto + categoría — lo usan tanto la pestaña
+   Menú (productos) como Inventario (mismo listado de 130+ productos,
+   mismo problema de "se tira todo en una sola página"). normalizeText
+   vive en data.js (compartida — antes esto tenía su propia copia). */
+function filterProductsBy(filter) {
+  const search = normalizeText(filter.search);
+  return state.products.filter((p) => {
+    if (filter.categoryId && p.categoryId !== filter.categoryId) return false;
+    if (search && !normalizeText(p.name).includes(search)) return false;
+    return true;
+  });
+}
+
+/* Pastillas de categoría (mismo patrón visual que .admin-filter-row de
+   Pedidos/Domiciliarios) — "Todas" + una por categoría, en el orden que
+   ya traen (state.categories viene ordenado por catalog.js). */
+// Antes era una fila de pastillas (una por categoría, ~16 en Menú/
+// Inventario) — con tantas categorías quedaban todas amontonadas en
+// una sola fila que había que deslizar para ver completa, sin dejar
+// claro cuántas más había. Un <select> muestra el filtro activo de un
+// vistazo y no ocupa más espacio que cualquier otro campo del panel.
+function renderCategoryFilterPills(containerId, filter, onChange) {
+  const container = $(containerId);
+  if (!container) return;
+  const options = [{ id: '', name: 'Todas las categorías' }, ...state.categories.map((c) => ({ id: c.id, name: c.name }))];
+  container.innerHTML = `<select class="admin-category-select">${options
+    .map((c) => `<option value="${c.id}" ${filter.categoryId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`)
+    .join('')}</select>`;
+  container.querySelector('select').addEventListener('change', (e) => {
+    filter.categoryId = e.target.value;
+    onChange();
+  });
+}
+
+/* Cada producto tiene UN solo estado en Inventario, calculado con los
+   dos datos que ya existen (no cambia la estructura de la base):
+   - oculto:     products/{id}.hidden === true (no sale en la tienda)
+   - agotado:    outOfStock/{id} es true o 0 (sale, pero sin poder pedirse)
+   - pocas:      outOfStock/{id} es un número entre 1 y LOW_STOCK_THRESHOLD
+   - disponible: lo demás (sin conteo, o con unidades de sobra)
+   Si está oculto manda sobre agotado: no se ve, así que no importa. */
+const STOCK_STATUS_LABELS = {
+  disponible: 'Disponible',
+  pocas: 'Quedan pocas',
+  agotado: 'Agotado',
+  oculto: 'Oculto',
+};
+
+function stockStatusOf(product) {
+  if (product.hidden) return 'oculto';
+  const value = state.stock[product.id];
+  if (isOutOfStock(value)) return 'agotado';
+  if (typeof value === 'number' && value > 0 && value <= LOW_STOCK_THRESHOLD) return 'pocas';
+  return 'disponible';
+}
+
+/* Filtro de estado (pastillas con conteo) — se cuenta sobre lo que ya
+   pasó el filtro de texto y categoría, para que los números cuadren con
+   la lista que se ve. */
+function renderStockStatusFilter(baseProducts) {
+  const container = $('admin-stock-status-filter');
+  if (!container) return;
+  const counts = { todos: baseProducts.length, disponible: 0, pocas: 0, agotado: 0, oculto: 0 };
+  baseProducts.forEach((p) => {
+    counts[stockStatusOf(p)] += 1;
+  });
+  const options = [
+    ['todos', 'Todos'],
+    ['disponible', 'Disponibles'],
+    ['pocas', 'Quedan pocas'],
+    ['agotado', 'Agotados'],
+    ['oculto', 'Ocultos'],
+  ];
+  container.innerHTML = options
+    .map(
+      ([key, label]) =>
+        `<button type="button" data-status="${key}" class="${state.stockFilter.status === key ? 'is-active' : ''}">${label}<span class="admin-filter-count">${counts[key]}</span></button>`
+    )
+    .join('');
+}
+
+/* Cambia el estado de un producto. "Disponible" conserva las unidades si
+   las tenía; solo quita la marca de agotado. */
+function setStockStatus(productId, status) {
+  const product = state.products.find((p) => p.id === productId);
+  if (!product) return;
+  let op;
+  if (status === 'oculto') {
+    op = update(ref(db, `products/${productId}`), { hidden: true });
+  } else {
+    const jobs = [];
+    if (product.hidden) jobs.push(update(ref(db, `products/${productId}`), { hidden: null }));
+    if (status === 'agotado') {
+      jobs.push(set(ref(db, `outOfStock/${productId}`), true));
+    } else if (isOutOfStock(state.stock[productId])) {
+      jobs.push(remove(ref(db, `outOfStock/${productId}`)));
+    }
+    op = Promise.all(jobs);
+  }
+  op.catch((err) => showToast(err.message || 'No se pudo actualizar el producto'));
+}
+
+function stockRowHtml(product) {
+  const status = stockStatusOf(product);
+  const value = state.stock[product.id];
+  const count = typeof value === 'number' && value > 0 ? value : '';
+  const canHide = state.role === 'dueno';
+  const name = escapeHtml(product.name);
+  // El cajero no puede ocultar ni volver a mostrar (las reglas de
+  // "products" son solo del dueño): un producto oculto se le muestra
+  // sin controles para que no choque con un error de permisos.
+  const locked = status === 'oculto' && !canHide;
+  const seg = [['disponible', 'Disponible'], ['agotado', 'Agotado']];
+  if (canHide) seg.push(['oculto', 'Oculto']);
+  const activeKey = status === 'pocas' ? 'disponible' : status;
+  const controls = locked
+    ? '<span class="admin-hint admin-stock-locked">Solo el dueño puede volver a mostrarlo.</span>'
+    : `<div class="admin-stock-seg" role="group" aria-label="Estado de ${name}">${seg
+        .map(
+          ([key, label]) =>
+            `<button type="button" data-status="${key}" data-product-id="${product.id}" class="${activeKey === key ? 'is-active is-' + key : ''}" aria-pressed="${activeKey === key}">${label}</button>`
+        )
+        .join('')}</div>
+      ${
+        status === 'disponible' || status === 'pocas'
+          ? `<label class="admin-stock-units">Unidades<input type="number" min="0" class="admin-stock-count" data-product-id="${product.id}" placeholder="Sin límite" value="${count}" aria-label="Unidades restantes de ${name}" /></label>`
+          : ''
+      }`;
+  return `
+      <div class="admin-stock-row is-${status}">
+        <img src="${escapeHtml(urlFoto(product.image))}" alt="" loading="lazy" />
+        <div class="admin-stock-info">
+          <span class="admin-stock-name" title="${name}">${name}</span>
+          <span class="admin-stock-state is-${status}">${STOCK_STATUS_LABELS[status]}${status === 'pocas' ? ` · ${value}` : ''}</span>
+        </div>
+        <div class="admin-stock-controls">${controls}</div>
+      </div>`;
+}
+
+function renderStockList() {
+  renderCategoryFilterPills('admin-stock-category-filter', state.stockFilter, renderStockList);
+  const container = $('admin-stock-list');
+
+  // Mismo riesgo que las notas de pedido: si otro cajero marca un
+  // producto distinto como agotado mientras alguien está a mitad de
+  // escribir un conteo, el repintado no debe borrarle lo que llevaba.
+  const draft = document.activeElement?.classList.contains('admin-stock-count')
+    ? { productId: document.activeElement.dataset.productId, value: document.activeElement.value }
+    : null;
+
+  const base = filterProductsBy(state.stockFilter);
+  renderStockStatusFilter(base);
+  const visible = state.stockFilter.status === 'todos' ? base : base.filter((p) => stockStatusOf(p) === state.stockFilter.status);
+
+  if (!visible.length) {
+    container.innerHTML = `<p class="admin-hint">Ningún producto coincide con el filtro.</p>`;
+    return;
+  }
+
+  // Agrupado por categoría, en el mismo orden del menú; lo que no
+  // tenga categoría válida va al final en su propio grupo.
+  const groups = state.categories.map((c) => ({ id: c.id, name: c.name, items: [] }));
+  const orphans = { id: '', name: 'Sin categoría', items: [] };
+  visible.forEach((p) => {
+    (groups.find((g) => g.id === p.categoryId) || orphans).items.push(p);
+  });
+  if (orphans.items.length) groups.push(orphans);
+
+  container.innerHTML = groups
+    .filter((g) => g.items.length)
+    .map((g) => {
+      const out = g.items.filter((p) => stockStatusOf(p) === 'agotado').length;
+      const hid = g.items.filter((p) => stockStatusOf(p) === 'oculto').length;
+      const extra = [out ? `${out} agotado${out === 1 ? '' : 's'}` : '', hid ? `${hid} oculto${hid === 1 ? '' : 's'}` : '']
+        .filter(Boolean)
+        .join(' · ');
+      return `
+      <section class="admin-stock-group">
+        <h4 class="admin-stock-group-head">${escapeHtml(g.name)}<span>${g.items.length} producto${g.items.length === 1 ? '' : 's'}${extra ? ' · ' + extra : ''}</span></h4>
+        <div class="admin-stock-grid">${g.items.map(stockRowHtml).join('')}</div>
+      </section>`;
+    })
+    .join('');
+
+  if (draft) {
+    const input = container.querySelector(`.admin-stock-count[data-product-id="${draft.productId}"]`);
+    if (input) {
+      input.value = draft.value;
+      input.focus();
+    }
+  }
+}
+
+/* Delegación: un solo par de listeners para toda la lista (se repinta
+   completa con cada cambio de datos). Se engancha una vez al iniciar. */
+function bindStockListEvents() {
+  const container = $('admin-stock-list');
+  container.addEventListener('click', (e) => {
+    const btn = e.target.closest('.admin-stock-seg button[data-status]');
+    if (!btn) return;
+    setStockStatus(btn.dataset.productId, btn.dataset.status);
+  });
+  container.addEventListener('change', (e) => {
+    const input = e.target.closest('.admin-stock-count');
+    if (!input) return;
+    const productId = input.dataset.productId;
+    const raw = input.value.trim();
+    const op = raw === '' ? remove(ref(db, `outOfStock/${productId}`)) : set(ref(db, `outOfStock/${productId}`), Math.max(0, Number(raw) || 0));
+    op.catch((err) => showToast(err.message || 'No se pudo actualizar el inventario'));
+  });
+  $('admin-stock-status-filter').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-status]');
+    if (!btn) return;
+    state.stockFilter.status = btn.dataset.status;
+    renderStockList();
+  });
+}
+
+/* ---------- Menú: categorías ---------- */
+function subscribeCategories() {
+  unsubCategories = catalog.onCategoriesChange((categories) => {
+    state.categories = categories;
+    renderCategoriesList();
+    renderProductCategoryOptions();
+    if (state.categoryModalId) renderCategoryModal();
+    updateSeedBanner();
+  });
+}
+
+// Edición inline: se quitó el formulario aparte de abajo (a pedido del
+// usuario, "no necesito todo ese contenido en la página") — el nombre y
+// el orden se editan directo en la misma tarjeta de la categoría, sin
+// abrir nada. `state.editingCategoryId` guarda cuál tarjeta está en modo
+// edición (o 'new' para una fila en blanco todavía sin guardar).
+function renderCategoryEditRow(cat) {
+  const isNew = !cat;
+  const name = cat ? cat.name : '';
+  const order = cat ? cat.order ?? 0 : state.categories.length;
+  return `
+    <div class="admin-item-row admin-category-editing">
+      <input type="text" class="admin-category-edit-name" placeholder="Nombre de la categoría" value="${escapeHtml(name)}" />
+      <input type="number" class="admin-category-edit-order" placeholder="Orden" value="${order}" title="Orden (menor número = aparece primero)" />
+      <div class="admin-item-actions">
+        <button type="button" class="admin-category-save-btn" data-cat-id="${isNew ? '' : cat.id}" aria-label="Guardar">${checkSvg()}</button>
+        <button type="button" class="admin-category-cancel-btn" aria-label="Cancelar">${closeSvg()}</button>
+      </div>
+    </div>`;
+}
+
+function renderCategoriesList() {
+  const container = $('admin-categories-list');
+  if (state.categories.length === 0 && state.editingCategoryId !== 'new') {
+    container.innerHTML = `<p class="admin-hint">Sin categorías todavía.</p>`;
+    return;
+  }
+  const newRowHtml = state.editingCategoryId === 'new' ? renderCategoryEditRow(null) : '';
+  container.innerHTML =
+    newRowHtml +
+    state.categories
+      .map((cat) =>
+        state.editingCategoryId === cat.id
+          ? renderCategoryEditRow(cat)
+          : `
+      <div class="admin-item-row">
+        <button type="button" class="admin-item-info admin-item-open" data-open-category="${cat.id}" aria-label="Abrir la categoría ${escapeHtml(cat.name)}">
+          <span class="admin-item-name" title="${escapeHtml(cat.name)}">${escapeHtml(cat.name)}</span>
+          <span class="admin-item-meta">${state.products.filter((p) => p.categoryId === cat.id).length} producto(s) · orden: ${cat.order ?? 0}</span>
+        </button>
+        <div class="admin-item-actions">
+          <button type="button" data-edit-category="${cat.id}" aria-label="Editar">${pencilSvg()}</button>
+          <button type="button" class="admin-delete-btn" data-delete-category="${cat.id}" aria-label="Eliminar">${trashSvg()}</button>
+        </div>
+      </div>`
+      )
+      .join('');
+
+  container.querySelectorAll('[data-open-category]').forEach((btn) => {
+    btn.addEventListener('click', () => openCategoryModal(btn.dataset.openCategory));
+  });
+  container.querySelectorAll('[data-edit-category]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.editingCategoryId = btn.dataset.editCategory;
+      renderCategoriesList();
+    });
+  });
+  container.querySelectorAll('[data-delete-category]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.deleteCategory;
+      const productsInCategory = state.products.filter((p) => p.categoryId === id).length;
+      const msg = productsInCategory
+        ? `Esta categoría tiene ${productsInCategory} producto(s). Bórralos o cámbialos de categoría primero.`
+        : null;
+      if (msg) {
+        showToast(msg);
+        return;
+      }
+      catalog.deleteCategory(id).catch((err) => showToast(err.message || 'No se pudo eliminar'));
+    });
+  });
+
+  const editingRow = container.querySelector('.admin-category-editing');
+  if (editingRow) {
+    const nameInput = editingRow.querySelector('.admin-category-edit-name');
+    const orderInput = editingRow.querySelector('.admin-category-edit-order');
+    const saveBtn = editingRow.querySelector('.admin-category-save-btn');
+    const cancelBtn = editingRow.querySelector('.admin-category-cancel-btn');
+    const save = async () => {
+      const name = nameInput.value.trim();
+      if (!name) {
+        showToast('Ponle un nombre a la categoría');
+        return;
+      }
+      try {
+        await catalog.saveCategory({
+          id: saveBtn.dataset.catId || null,
+          name,
+          order: Number(orderInput.value) || 0,
+        });
+        state.editingCategoryId = null;
+        // No basta con esperar a que subscribeCategories() repinte solo:
+        // si el valor guardado quedó igual al que ya había en Firebase
+        // (ej. tocar "Guardar" sin cambiar nada), onValue no siempre
+        // vuelve a disparar, y la fila se quedaba en modo edición.
+        renderCategoriesList();
+        showToast('Categoría guardada');
+      } catch (err) {
+        showToast(err.message || 'No se pudo guardar la categoría');
+      }
+    };
+    saveBtn.addEventListener('click', save);
+    cancelBtn.addEventListener('click', () => {
+      state.editingCategoryId = null;
+      renderCategoriesList();
+    });
+    [nameInput, orderInput].forEach((input) => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') save();
+        else if (e.key === 'Escape') {
+          state.editingCategoryId = null;
+          renderCategoriesList();
+        }
+      });
+    });
+    nameInput.focus();
+  }
+}
+
+/* ---------- Menú: detalle de una categoría ---------- */
+/* Al tocar una categoría se abre su detalle: los productos que tiene (con
+   "Mover a…" para sacarlos de ahí sin borrarlos), un buscador para sumar
+   productos que ya existen y un atajo para crear un plato nuevo ya
+   metido en esa categoría. Reutiliza el mismo patrón de ventana
+   flotante (.modal + #overlay) que el formulario de producto. */
+const CATEGORY_CANDIDATES_LIMIT = 20;
+
+function openCategoryModal(categoryId) {
+  const cat = state.categories.find((c) => c.id === categoryId);
+  if (!cat) return;
+  state.categoryModalId = categoryId;
+  state.categoryModalSearch = '';
+  $('category-modal-search').value = '';
+  renderCategoryModal();
+  $('category-modal').hidden = false;
+  requestAnimationFrame(() => $('category-modal').classList.add('is-open'));
+  $('overlay').classList.add('is-open');
+}
+
+function closeCategoryModal() {
+  state.categoryModalId = null;
+  $('category-modal').classList.remove('is-open');
+  // Si hay otra ventana abierta encima (formulario de producto), el
+  // overlay se queda; si no, se apaga.
+  if ($('product-modal').hidden && $('driver-modal').hidden) $('overlay').classList.remove('is-open');
+  setTimeout(() => {
+    if (!state.categoryModalId) $('category-modal').hidden = true;
+  }, 250);
+}
+
+function renderCategoryModal() {
+  const catId = state.categoryModalId;
+  const cat = state.categories.find((c) => c.id === catId);
+  if (!cat) {
+    if (!$('category-modal').hidden) closeCategoryModal();
+    return;
+  }
+  $('category-modal-title').textContent = cat.name;
+
+  const inCategory = state.products.filter((p) => p.categoryId === catId);
+  $('category-modal-count').textContent = `(${inCategory.length})`;
+
+  const moveOptions =
+    '<option value="">Mover a…</option>' +
+    state.categories
+      .filter((c) => c.id !== catId)
+      .map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`)
+      .join('') +
+    '<option value="__none__">Sin categoría</option>';
+
+  $('category-modal-products').innerHTML = inCategory.length
+    ? inCategory
+        .map(
+          (p) => `
+      <div class="admin-item-row">
+        <img src="${escapeHtml(urlFoto(p.image || ''))}" alt="" loading="lazy" />
+        <div class="admin-item-info">
+          <div class="admin-item-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}${p.hidden ? ' · oculto' : ''}</div>
+          <div class="admin-item-meta">${formatCOP(p.price || 0)}</div>
+        </div>
+        <div class="admin-item-actions">
+          <select class="admin-category-select admin-move-select" data-move-product="${p.id}" aria-label="Mover ${escapeHtml(p.name)} a otra categoría">${moveOptions}</select>
+          <button type="button" data-edit-category-product="${p.id}" aria-label="Editar ${escapeHtml(p.name)}">${pencilSvg()}</button>
+        </div>
+      </div>`
+        )
+        .join('')
+    : '<p class="admin-hint">Esta categoría todavía no tiene productos. Agrega uno que ya exista o crea uno nuevo.</p>';
+
+  renderCategoryModalCandidates();
+}
+
+function renderCategoryModalCandidates() {
+  const catId = state.categoryModalId;
+  const container = $('category-modal-candidates');
+  const term = normalizeText(state.categoryModalSearch);
+  if (!term) {
+    container.innerHTML = '<p class="admin-hint">Escribe el nombre de un producto para buscarlo.</p>';
+    return;
+  }
+  const categoryName = (id) => state.categories.find((c) => c.id === id)?.name || 'Sin categoría';
+  const matches = state.products.filter((p) => p.categoryId !== catId && normalizeText(p.name).includes(term));
+  if (!matches.length) {
+    container.innerHTML = '<p class="admin-hint">Ningún producto coincide.</p>';
+    return;
+  }
+  container.innerHTML =
+    matches
+      .slice(0, CATEGORY_CANDIDATES_LIMIT)
+      .map(
+        (p) => `
+      <div class="admin-item-row">
+        <img src="${escapeHtml(urlFoto(p.image || ''))}" alt="" loading="lazy" />
+        <div class="admin-item-info">
+          <div class="admin-item-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div>
+          <div class="admin-item-meta">Está en: ${escapeHtml(categoryName(p.categoryId))}</div>
+        </div>
+        <div class="admin-item-actions">
+          <button type="button" class="btn btn-ghost admin-add-existing-btn" data-add-product="${p.id}">Agregar</button>
+        </div>
+      </div>`
+      )
+      .join('') +
+    (matches.length > CATEGORY_CANDIDATES_LIMIT
+      ? `<p class="admin-hint">Mostrando ${CATEGORY_CANDIDATES_LIMIT} de ${matches.length}. Escribe más para afinar.</p>`
+      : '');
+}
+
+function bindCategoryModalEvents() {
+  const modal = $('category-modal');
+  $('btn-close-category-modal').addEventListener('click', () => closeCategoryModal());
+  $('btn-category-new-product').addEventListener('click', () => {
+    const catId = state.categoryModalId;
+    closeCategoryModal();
+    // Vuelve a este detalle al guardar o cancelar el formulario.
+    state.returnToCategoryId = catId;
+    openProductForm(null, catId);
+  });
+  const debouncedCandidates = debounce(renderCategoryModalCandidates, 150);
+  $('category-modal-search').addEventListener('input', (e) => {
+    state.categoryModalSearch = e.target.value;
+    debouncedCandidates();
+  });
+  modal.addEventListener('change', (e) => {
+    const select = e.target.closest('[data-move-product]');
+    if (!select || !select.value) return;
+    const target = select.value === '__none__' ? '' : select.value;
+    catalog.moveProductToCategory(select.dataset.moveProduct, target).catch((err) => {
+      select.value = '';
+      showToast(err.message || 'No se pudo mover el producto');
+    });
+  });
+  modal.addEventListener('click', (e) => {
+    const addBtn = e.target.closest('[data-add-product]');
+    if (addBtn) {
+      addBtn.disabled = true;
+      catalog.moveProductToCategory(addBtn.dataset.addProduct, state.categoryModalId).catch((err) => {
+        addBtn.disabled = false;
+        showToast(err.message || 'No se pudo agregar el producto');
+      });
+      return;
+    }
+    const editBtn = e.target.closest('[data-edit-category-product]');
+    if (editBtn) {
+      const product = state.products.find((p) => p.id === editBtn.dataset.editCategoryProduct);
+      if (!product) return;
+      const catId = state.categoryModalId;
+      closeCategoryModal();
+      state.returnToCategoryId = catId;
+      openProductForm(product);
+    }
+  });
+}
+
+/* ---------- Menú: productos ---------- */
+function subscribeProducts() {
+  unsubProducts = catalog.onProductsChange((products) => {
+    state.products = products;
+    renderProductsList();
+    renderStockList();
+    // El conteo por categoría cambia con los productos; no se repinta si hay una
+    // fila en edición para no borrarle lo que se estaba escribiendo.
+    if (!state.editingCategoryId) renderCategoriesList();
+    if (state.categoryModalId) renderCategoryModal();
+    updateSeedBanner();
+  });
+}
+
+// Cambiar de categoría o de búsqueda vuelve a la primera página —
+// si no, alguien podía terminar viendo "Mostrar más" de un filtro
+// viejo, o una lista vacía porque el recorte de la página anterior
+// no tenía nada del filtro nuevo.
+function renderProductsListFromScratch() {
+  state.productsVisibleCount = PRODUCTS_PAGE_SIZE;
+  renderProductsList();
+}
+
+function renderProductsList() {
+  renderCategoryFilterPills('admin-products-category-filter', state.productsFilter, renderProductsListFromScratch);
+  const container = $('admin-products-list');
+  if (state.products.length === 0) {
+    container.innerHTML = `<p class="admin-hint">Sin productos todavía.</p>`;
+    return;
+  }
+  const categoryName = (id) => state.categories.find((c) => c.id === id)?.name || 'Sin categoría';
+  const matched = filterProductsBy(state.productsFilter);
+  if (matched.length === 0) {
+    container.innerHTML = `<p class="admin-hint">Ningún producto coincide con el filtro.</p>`;
+    return;
+  }
+  const visible = matched.slice(0, state.productsVisibleCount);
+
+  // Tarjeta con foto grande (rediseño 2026-10-23). El estado es solo
+  // informativo: se cambia en Inventario, como antes.
+  const stockLabels = { disponible: 'Disponible', pocas: 'Pocas unidades', agotado: 'Agotado', oculto: 'Oculto' };
+  container.innerHTML = visible
+    .map((product) => {
+      const status = stockStatusOf(product);
+      return `
+      <div class="admin-product-card">
+        <div class="admin-product-photo">
+          <img src="${escapeHtml(urlFoto(product.image || ''))}" alt="" loading="lazy" onerror="this.style.visibility='hidden'" />
+        </div>
+        <div class="admin-product-body">
+          <div class="admin-item-name" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</div>
+          <div class="admin-item-meta">${escapeHtml(categoryName(product.categoryId))}</div>
+          <div class="admin-product-price">${formatCOP(product.price || 0)}</div>
+          <div class="admin-product-foot">
+            <span class="admin-product-status is-${status}">${stockLabels[status]}</span>
+            <div class="admin-item-actions">
+              <button type="button" data-edit-product="${product.id}" aria-label="Editar">${pencilSvg()}</button>
+              <button type="button" class="admin-delete-btn" data-delete-product="${product.id}" aria-label="Eliminar">${trashSvg()}</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    })
+    .join('');
+
+  if (matched.length > visible.length) {
+    const restantes = matched.length - visible.length;
+    const loadMore = document.createElement('button');
+    loadMore.type = 'button';
+    loadMore.className = 'admin-load-more-btn';
+    loadMore.textContent = `Mostrar más (${restantes} más)`;
+    loadMore.addEventListener('click', () => {
+      state.productsVisibleCount += PRODUCTS_PAGE_SIZE;
+      renderProductsList();
+    });
+    container.appendChild(loadMore);
+  }
+
+  container.querySelectorAll('[data-edit-product]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const product = state.products.find((p) => p.id === btn.dataset.editProduct);
+      if (product) openProductForm(product);
+    });
+  });
+  container.querySelectorAll('[data-delete-product]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      catalog.deleteProduct(btn.dataset.deleteProduct).catch((err) => showToast(err.message || 'No se pudo eliminar'));
+    });
+  });
+}
+
+function renderProductCategoryOptions() {
+  const select = $('product-form-category');
+  const current = select.value;
+  select.innerHTML = state.categories.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  if (current) select.value = current;
+}
+
+// Mismas 7 opciones que el sub-menú de "Bebidas" en la tienda de
+// clientes (ui.js -> SUBGROUP_LABELS) — no se importa de ahí porque
+// admin.js es una app separada a propósito (ver tienda/CLAUDE.md), se
+// duplica esta lista chica en vez de romper ese aislamiento.
+const SUBGROUP_LABELS = {
+  'jugos-limonadas': 'Jugos y Limonadas',
+  frappes: 'Frappes',
+  gaseosas: 'Gaseosas',
+  aguas: 'Aguas',
+  cervezas: 'Cervezas',
+  'sodas-tes-importados': 'Sodas y Tés Importados',
+  energizantes: 'Energizantes',
+};
+
+function renderProductSubgroupOptions() {
+  const select = $('product-form-subgroup');
+  select.innerHTML =
+    '<option value="">Ninguna</option>' +
+    Object.entries(SUBGROUP_LABELS).map(([id, label]) => `<option value="${id}">${escapeHtml(label)}</option>`).join('');
+}
+
+// Antes el formulario vivía pegado al final de la lista de productos
+// — con 130+ productos, tocar "Editar" arriba de todo significaba
+// bajar todo el scroll para encontrarlo. Ahora es una ventana
+// flotante (mismo patrón .modal/.overlay que ya usa la tienda de
+// clientes, toggleSheet en ui.js — acá se reimplementa sin importar
+// ui.js, admin.js es una app aparte a propósito) que se abre ahí
+// mismo, sobre lo que se estaba viendo.
+function openProductForm(product, defaultCategoryId) {
+  $('product-form-id').value = product ? product.id : '';
+  $('product-form-name').value = product ? product.name : '';
+  $('product-form-desc').value = product ? product.description || '' : '';
+  $('product-form-price').value = product ? product.price || 0 : '';
+  $('product-form-image').value = product ? product.image || '' : '';
+  $('product-form-badge').value = product ? product.badge || '' : '';
+  $('product-form-sabores').value = product && Array.isArray(product.sabores) ? product.sabores.join(', ') : '';
+  $('product-form-pedir-sabor').checked = !!(product && product.pedirSabor);
+  renderProductCategoryOptions();
+  renderProductSubgroupOptions();
+  $('product-form-subgroup').value = product ? product.subGroup || '' : '';
+  if (product) $('product-form-category').value = product.categoryId;
+  else if (defaultCategoryId) $('product-form-category').value = defaultCategoryId;
+  $('product-modal-title').textContent = product ? 'Editar producto' : 'Nuevo producto';
+  $('product-modal').hidden = false;
+  requestAnimationFrame(() => $('product-modal').classList.add('is-open'));
+  $('overlay').classList.add('is-open');
+}
+
+function closeProductForm() {
+  $('product-modal').classList.remove('is-open');
+  $('overlay').classList.remove('is-open');
+  setTimeout(() => {
+    $('product-modal').hidden = true;
+  }, 250);
+  $('product-form').reset();
+  if (state.returnToCategoryId) {
+    const back = state.returnToCategoryId;
+    state.returnToCategoryId = null;
+    setTimeout(() => openCategoryModal(back), 260);
+  }
+}
+
+/* ---------- Menú: eventos ---------- */
+function bindMenuEvents() {
+  $('btn-add-category').addEventListener('click', () => {
+    state.editingCategoryId = 'new';
+    renderCategoriesList();
+  });
+
+  $('btn-add-product').addEventListener('click', () => openProductForm(null));
+  bindCategoryModalEvents();
+  $('btn-cancel-product').addEventListener('click', () => closeProductForm());
+  $('btn-close-product-modal').addEventListener('click', () => closeProductForm());
+  $('overlay').addEventListener('click', () => {
+    if (!$('product-modal').hidden) closeProductForm();
+    if (!$('category-modal').hidden) closeCategoryModal();
+    if (!$('driver-modal').hidden) closeDriverForm();
+  });
+  $('product-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = $('product-form-name').value.trim();
+    const price = Number($('product-form-price').value);
+    if (!name || !price) {
+      showToast('Ponle nombre y precio al producto');
+      return;
+    }
+    // Lista fija de sabores gana sobre "el cliente escribe el sabor"
+    // si por error quedan los dos marcados — mismo criterio que ya usa
+    // el selector del cliente (ui.js -> setupFlavorFields, hasFixedList
+    // antes que hasOpenFlavor).
+    const saboresList = $('product-form-sabores')
+      .value.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const pedirSaborChecked = $('product-form-pedir-sabor').checked;
+    try {
+      await catalog.saveProduct({
+        id: $('product-form-id').value || null,
+        name,
+        categoryId: $('product-form-category').value,
+        description: $('product-form-desc').value.trim(),
+        price,
+        image: $('product-form-image').value.trim(),
+        badge: $('product-form-badge').value.trim() || null,
+        subGroup: $('product-form-subgroup').value || null,
+        sabores: saboresList.length > 0 ? saboresList : null,
+        pedirSabor: saboresList.length === 0 && pedirSaborChecked ? true : null,
+      });
+      closeProductForm();
+      showToast('Producto guardado');
+    } catch (err) {
+      showToast(err.message || 'No se pudo guardar el producto');
+    }
+  });
+
+  $('btn-seed-catalog').addEventListener('click', async () => {
+    try {
+      const seeded = await catalog.seedCatalogIfEmpty();
+      showToast(seeded ? 'Menú inicial cargado' : 'Ya había productos, no se tocó nada');
+    } catch (err) {
+      showToast(err.message || 'No se pudo cargar el menú inicial');
+    }
+  });
+
+  const debouncedRenderProducts = debounce(renderProductsListFromScratch, 180);
+  $('admin-product-search').addEventListener('input', (e) => {
+    state.productsFilter.search = e.target.value;
+    debouncedRenderProducts();
+  });
+  const debouncedRenderStock = debounce(renderStockList, 180);
+  $('admin-stock-search').addEventListener('input', (e) => {
+    state.stockFilter.search = e.target.value;
+    debouncedRenderStock();
+  });
+  bindStockListEvents();
+}
+
+function updateSeedBanner() {
+  $('admin-seed-banner').hidden = state.products.length > 0;
+}
+
+/* Minigráfico de línea de las tarjetas de Reportes: un punto por día,
+   escalado al máximo del período. Sin datos (todo 0) queda una línea
+   plana abajo, que es lo que de verdad pasó. */
+function sparklineSvg(values, tone) {
+  const w = 96;
+  const h = 32;
+  const pts = values.length > 1 ? values : [0, ...values, 0].slice(0, 2);
+  const max = Math.max(...pts, 0);
+  const coords = pts.map((v, i) => {
+    const x = (i / (pts.length - 1)) * w;
+    const y = max > 0 ? h - 3 - (v / max) * (h - 6) : h - 3;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  return `<svg class="report-spark ${tone}" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true" preserveAspectRatio="none"><polygon points="0,${h} ${coords.join(' ')} ${w},${h}" /><polyline points="${coords.join(' ')}" /></svg>`;
+}
+
+function pencilSvg() {
+  return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 20l1-4L16.5 4.5a1.5 1.5 0 012 2L7 18l-4 1z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+}
+function trashSvg() {
+  return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 7h14M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m1 0-1 13a1 1 0 01-1 1H9a1 1 0 01-1-1L7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+function copySvg() {
+  return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" stroke="currentColor" stroke-width="1.8"/></svg>';
+}
+function printSvg() {
+  return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9V4h12v5M6 18H4a1 1 0 01-1-1v-5a1 1 0 011-1h16a1 1 0 011 1v5a1 1 0 01-1 1h-2M6 14h12v6H6v-6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+}
+function checkSvg() {
+  return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+function closeSvg() {
+  return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+}
+
+/* ---------- Imprimir comanda ---------- */
+/* Usa el diálogo de impresión normal del navegador (@media print
+   en admin.css oculta todo menos #print-ticket) — funciona con
+   cualquier impresora que ya tengas configurada en el computador,
+   térmica o normal, sin necesitar un driver especial. */
+async function printOrder(order) {
+  const itemsHtml = (order.items || [])
+    .map(
+      (item) => `
+      <div class="ticket-item">${item.qty}× ${escapeHtml(item.name)}</div>
+      ${item.notes ? `<div class="ticket-notes">Nota: ${escapeHtml(item.notes)}</div>` : ''}`
+    )
+    .join('');
+
+  // Correlativo D-001 que le pone caja al confirmar; si todavía no lo
+  // tiene (pedido sin confirmar, o dato viejo), un corto del pushId.
+  const orderNumber = order.codigo || '#' + (order.id || '').replace(/[^A-Za-z0-9]/g, '').slice(-5).toUpperCase();
+
+  $('print-ticket').innerHTML = `
+    <div class="ticket">
+      <div class="ticket-brand">
+        <img src="icon.svg" alt="" class="ticket-logo" />
+        <h2>Rodízio Cúcuta</h2>
+      </div>
+      ${orderNumber ? `<p class="ticket-order-number">Pedido #${escapeHtml(orderNumber)}</p>` : ''}
+      <p>${order.createdAt ? new Date(order.createdAt).toLocaleString('es-CO') : ''}</p>
+      <hr />
+      <p><strong>${escapeHtml(order.customerName || 'Cliente')}</strong></p>
+      <p>${escapeHtml(order.phone || '')}</p>
+      <p>${order.deliveryMode === 'recoger' ? 'Recoger en tienda' : `A domicilio${order.address ? ' — ' + escapeHtml(order.address) : ''}`}</p>
+      ${order.reference ? `<p>Ref: ${escapeHtml(order.reference)}</p>` : ''}
+      ${order.scheduledFor ? `<p>Programado: ${new Date(order.scheduledFor).toLocaleString('es-CO')}</p>` : ''}
+      ${order.internalNote ? `<p>Nota: ${escapeHtml(order.internalNote)}</p>` : ''}
+      <hr />
+      ${itemsHtml}
+      <hr />
+      ${order.tipAmount ? `<p>Propina: ${formatCOP(order.tipAmount)}</p>` : ''}
+      <p><strong>Total: ${formatCOP(order.total || 0)}</strong></p>
+    </div>
+  `;
+
+  // El logo se acaba de insertar con innerHTML — en computador,
+  // window.print() puede disparar la vista previa antes de que el
+  // navegador termine de cargar esa imagen (llamada síncrona, sin
+  // darle tiempo a un solo frame de pintarla), y sale en blanco. En
+  // celular casi nunca pasa porque abrir la hoja de compartir/imprimir
+  // nativa ya toma más tiempo, de sobra para que cargue. Se espera a
+  // que la imagen cargue (o a que fallen/pasen 800ms de margen) antes
+  // de imprimir, para que salga siempre, sin importar el dispositivo.
+  const logo = $('print-ticket').querySelector('.ticket-logo');
+  await new Promise((resolve) => {
+    if (!logo || logo.complete) {
+      resolve();
+      return;
+    }
+    const done = () => resolve();
+    logo.addEventListener('load', done, { once: true });
+    logo.addEventListener('error', done, { once: true });
+    setTimeout(done, 800);
+  });
+
+  window.print();
+}
+
+/* ---------- Reportes ---------- */
+// Zona de un pedido: no se guarda en el pedido (se calcula al vuelo,
+// igual que hace app.js en el checkout) contra la dirección de texto
+// y las zonas configuradas hoy — así funciona también con pedidos
+// viejos, sin tener que migrar nada.
+function zoneKeyForOrder(order) {
+  if (order.deliveryMode === 'recoger') return '__recoger__';
+  const match = settingsApi.matchZone(order.address, state.settings.coverageZones);
+  return match ? match.name : '__sin_zona__';
+}
+
+function zoneLabelForExport(zoneKey) {
+  if (zoneKey === '__recoger__') return 'Recoger en tienda';
+  if (zoneKey === '__sin_zona__') return 'Fuera de zonas configuradas';
+  return zoneKey;
+}
+
+function populateReportsZoneSelect() {
+  const select = $('reports-filter-zone');
+  const current = select.value;
+  const zoneNames = (state.settings.coverageZones || []).map((z) => z.name);
+  select.innerHTML = [
+    '<option value="">Todas las zonas</option>',
+    '<option value="__recoger__">Recoger en tienda</option>',
+    ...zoneNames.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`),
+    '<option value="__sin_zona__">Dirección fuera de zonas configuradas</option>',
+  ].join('');
+  select.value = current;
+}
+
+/* Reportes tiene su propia carga de pedidos. Antes leía state.orders,
+   que es lo que cargó la pestaña Pedidos para SU filtro de día (por
+   defecto solo hoy): "Últimos 7 días", "Top 30 días" y el rango
+   Desde/Hasta solo veían los pedidos de hoy. Ahora se piden a Firebase
+   (índice createdAt) desde el día más lejano que necesite el reporte
+   hasta ahora, y se reutilizan 60 s para no repetir la lectura. */
+function reportSource() {
+  return state.reportOrders || state.orders;
+}
+
+async function loadReportOrders() {
+  let fromMs = inicioDiaCO() - 29 * 86400000;
+  if (state.reportsFilter.from) fromMs = Math.min(fromMs, new Date(`${state.reportsFilter.from}T00:00:00`).getTime());
+  const fresh = state.reportLoadedFrom != null && fromMs >= state.reportLoadedFrom && Date.now() - state.reportLoadedAt < 60000;
+  if (fresh || state.reportLoading) return;
+  state.reportLoading = true;
+  renderReports();
+  try {
+    const snap = await get(query(ref(db, 'orders'), orderByChild('createdAt'), startAt(fromMs)));
+    state.reportOrders = Object.entries(snap.val() || {}).map(([id, data]) => ({ id, ...data }));
+    state.reportLoadedFrom = fromMs;
+    state.reportLoadedAt = Date.now();
+  } catch (err) {
+    showToast(err.message || 'No se pudieron cargar los pedidos del reporte');
+  } finally {
+    state.reportLoading = false;
+    renderReports();
+  }
+}
+
+// null si no hay ningún filtro puesto (para que renderReports() sepa
+// que debe mostrar las tarjetas fijas de siempre en vez del rango).
+function ordersInReportRange() {
+  const { from, to, zone } = state.reportsFilter;
+  if (!from && !to && !zone) return null;
+  let list = reportSource().filter((o) => (o.status || 'recibido') !== 'cancelado');
+  if (from) {
+    const fromMs = new Date(`${from}T00:00:00`).getTime();
+    list = list.filter((o) => (o.createdAt || 0) >= fromMs);
+  }
+  if (to) {
+    const toMs = new Date(`${to}T23:59:59.999`).getTime();
+    list = list.filter((o) => (o.createdAt || 0) <= toMs);
+  }
+  if (zone) {
+    list = list.filter((o) => zoneKeyForOrder(o) === zone);
+  }
+  return list;
+}
+
+function renderReports() {
+  populateReportsZoneSelect();
+
+  const startToday = inicioDiaCO();
+  const startWeek = startToday - 6 * 86400000;
+  const start30 = startToday - 29 * 86400000;
+
+  const counted = reportSource().filter((o) => (o.status || 'recibido') !== 'cancelado');
+  // Ventas = solo lo efectivamente cobrado (pagado === true). Un pedido
+  // entregado sin cobrar no suma a ventas — la plata la confirma caja.
+  const sumRevenue = (list) => list.filter((o) => o.pagado === true).reduce((sum, o) => sum + (o.total || 0), 0);
+  const todayOrders = counted.filter((o) => (o.createdAt || 0) >= startToday);
+  const weekOrders = counted.filter((o) => (o.createdAt || 0) >= startWeek);
+
+  const todayAll = reportSource().filter((o) => (o.createdAt || 0) >= startToday);
+  const todayDelivered = todayAll.filter((o) => (o.status || 'recibido') === 'entregado').length;
+  const todayCancelled = todayAll.filter((o) => (o.status || 'recibido') === 'cancelado').length;
+  const todayActive = todayAll.length - todayDelivered - todayCancelled;
+
+  const rangeOrders = ordersInReportRange();
+
+  if (state.reportLoading && !state.reportOrders) {
+    $('admin-report-cards').innerHTML = '<p class="admin-hint">Cargando pedidos del reporte…</p>';
+    return;
+  }
+
+  // Indicadores grandes (rediseño 2026-10-23): del rango filtrado, o de
+  // los últimos 7 días si no hay filtro — con un minigráfico por día.
+  const periodOrders = rangeOrders || weekOrders;
+  const periodLabel = rangeOrders ? 'Rango filtrado' : 'Últimos 7 días';
+  const paidPeriod = periodOrders.filter((o) => o.pagado === true);
+  const periodRevenue = sumRevenue(periodOrders);
+  const periodDelivered = periodOrders.filter((o) => (o.status || 'recibido') === 'entregado').length;
+  const avgTicket = paidPeriod.length ? Math.round(periodRevenue / paidPeriod.length) : 0;
+
+  // Días del período (máx. 31 puntos): del filtro, o los últimos 7.
+  const dayKeys = [];
+  const firstDay = !rangeOrders
+    ? startWeek
+    : state.reportsFilter.from
+      ? inicioDiaCO(new Date(`${state.reportsFilter.from}T12:00:00`).getTime())
+      : Math.min(startToday, ...periodOrders.map((o) => inicioDiaCO(o.createdAt || Date.now())));
+  const lastDay = rangeOrders && state.reportsFilter.to ? Math.min(startToday, inicioDiaCO(new Date(`${state.reportsFilter.to}T12:00:00`).getTime())) : startToday;
+  for (let d = Math.max(firstDay, lastDay - 30 * 86400000); d <= lastDay; d += 86400000) dayKeys.push(isoDiaCO(d));
+  const perDay = (fn) => dayKeys.map((key) => fn(periodOrders.filter((o) => isoDiaCO(o.createdAt || 0) === key)));
+  const revenueByDay = perDay(sumRevenue);
+  const deliveredByDay = perDay((list) => list.filter((o) => (o.status || 'recibido') === 'entregado').length);
+  const ticketByDay = perDay((list) => {
+    const paid = list.filter((o) => o.pagado === true);
+    return paid.length ? sumRevenue(paid) / paid.length : 0;
+  });
+
+  $('admin-report-cards').innerHTML = `
+    <div class="report-kpis">
+      <div class="report-kpi">
+        <span class="report-kpi-label">Ventas</span>
+        <span class="report-kpi-value">${formatCOP(periodRevenue)}</span>
+        <span class="report-kpi-sub">${periodLabel} · ${periodOrders.length} pedido${periodOrders.length === 1 ? '' : 's'}</span>
+        ${sparklineSvg(revenueByDay, 'is-exito')}
+      </div>
+      <div class="report-kpi">
+        <span class="report-kpi-label">Pedidos entregados</span>
+        <span class="report-kpi-value">${periodDelivered} <small>pedido${periodDelivered === 1 ? '' : 's'}</small></span>
+        <span class="report-kpi-sub">${periodLabel}</span>
+        ${sparklineSvg(deliveredByDay, 'is-marca')}
+      </div>
+      <div class="report-kpi">
+        <span class="report-kpi-label">Ticket promedio</span>
+        <span class="report-kpi-value">${formatCOP(avgTicket)}</span>
+        <span class="report-kpi-sub">Por pedido pagado · ${periodLabel.toLowerCase()}</span>
+        ${sparklineSvg(ticketByDay, 'is-marca')}
+      </div>
+    </div>
+    <div class="report-today">
+      <span class="report-today-title">Hoy</span>
+      <span class="report-today-item"><strong>${formatCOP(sumRevenue(todayOrders))}</strong> vendidos</span>
+      <span class="report-today-item"><strong>${todayDelivered}</strong> entregados</span>
+      <span class="report-today-item"><strong>${todayActive}</strong> pendientes</span>
+      <span class="report-today-item${todayCancelled ? ' is-alert' : ''}"><strong>${todayCancelled}</strong> cancelados</span>
+    </div>
+  `;
+
+  const productSource = rangeOrders || counted.filter((o) => (o.createdAt || 0) >= start30);
+  $('admin-top-products-heading').textContent = rangeOrders ? 'Productos más vendidos (rango filtrado)' : 'Productos más vendidos (últimos 30 días)';
+  // Mismo conteo de unidades por nombre que antes; además se suma lo
+  // vendido (precio × cantidad) y se toma foto/categoría para la tabla.
+  const productStats = {};
+  productSource.forEach((o) => {
+    (o.items || []).forEach((item) => {
+      if (!productStats[item.name]) productStats[item.name] = { qty: 0, total: 0, id: item.id, image: item.image };
+      const row = productStats[item.name];
+      row.qty += item.qty || 0;
+      row.total += (item.price || 0) * (item.qty || 0);
+      if (!row.image && item.image) row.image = item.image;
+    });
+  });
+  const top = Object.entries(productStats)
+    .sort((a, b) => b[1].qty - a[1].qty)
+    .slice(0, 10);
+  const totalUnits = Object.values(productStats).reduce((sum, p) => sum + p.qty, 0);
+  const categoryOf = (id) => {
+    const product = state.products.find((p) => p.id === id);
+    return state.categories.find((c) => c.id === product?.categoryId)?.name || '—';
+  };
+
+  $('admin-report-top-products').innerHTML = top.length
+    ? `<div class="report-table" role="table">
+        <div class="report-row report-row-head" role="row">
+          <span role="columnheader">#</span>
+          <span role="columnheader">Producto</span>
+          <span role="columnheader">Categoría</span>
+          <span role="columnheader">Vendidos</span>
+          <span role="columnheader">Total ventas</span>
+          <span role="columnheader">Participación</span>
+        </div>
+        ${top
+          .map(([name, p], i) => {
+            const share = totalUnits ? Math.round((p.qty / totalUnits) * 100) : 0;
+            return `
+        <div class="report-row" role="row">
+          <span class="report-rank" role="cell">${i + 1}</span>
+          <span class="report-product" role="cell">
+            ${p.image ? `<img src="${escapeHtml(urlFoto(p.image))}" alt="" loading="lazy" onerror="this.style.visibility='hidden'" />` : '<span class="report-product-noimg"></span>'}
+            <span>${escapeHtml(name)}</span>
+          </span>
+          <span class="report-cat" role="cell" data-label="Categoría">${escapeHtml(categoryOf(p.id))}</span>
+          <span class="report-num" role="cell" data-label="Vendidos">${p.qty}</span>
+          <span class="report-num" role="cell" data-label="Total">${formatCOP(p.total)}</span>
+          <span class="report-share" role="cell" data-label="Participación"><span class="report-share-bar"><span style="width:${Math.max(share, 2)}%"></span></span>${share}%</span>
+        </div>`;
+          })
+          .join('')}
+      </div>`
+    : '<div class="config-empty"><strong>Todavía no hay ventas en este período.</strong><span>Cuando entren pedidos, aquí verás los productos que más se venden.</span></div>';
+
+  $('btn-export-orders-csv').textContent = rangeOrders ? 'Exportar rango filtrado (Excel)' : 'Exportar pedidos de hoy (Excel)';
+  $('admin-export-hint').textContent = rangeOrders
+    ? 'Vas a exportar el rango de fechas/zona que elegiste arriba.'
+    : 'Exporta los pedidos de hoy. Si eliges un rango de fechas arriba, exporta ese rango en su lugar.';
+}
+
+function bindReportsFilterEvents() {
+  const onChange = () => {
+    state.reportsFilter = {
+      from: $('reports-filter-from').value,
+      to: $('reports-filter-to').value,
+      zone: $('reports-filter-zone').value,
+    };
+    renderReports();
+    loadReportOrders();
+  };
+  $('reports-filter-from').addEventListener('change', onChange);
+  $('reports-filter-to').addEventListener('change', onChange);
+  $('reports-filter-zone').addEventListener('change', onChange);
+  $('btn-reports-filter-clear').addEventListener('click', () => {
+    $('reports-filter-from').value = '';
+    $('reports-filter-to').value = '';
+    $('reports-filter-zone').value = '';
+    state.reportsFilter = { from: '', to: '', zone: '' };
+    renderReports();
+  });
+}
+
+/* ---------- Exportar pedidos del día a Excel ---------- */
+/* Antes era un CSV crudo (números sin formato de moneda, la columna
+   de productos como un solo texto largo sin ajustar, sin nada de
+   marca) — se veía "desordenado" al abrirlo. Ahora genera un .xlsx de
+   verdad con ExcelJS (librería externa, cargada solo cuando hace
+   falta — no vale la pena sumarla al App Shell para algo que se usa
+   una vez cada tanto): encabezado con el logo y el nombre del
+   restaurante, columnas con ancho fijo y ajuste de texto, montos con
+   formato de pesos colombianos, y la fila de títulos congelada para
+   poder desplazarse por muchos pedidos sin perderla de vista. */
+let exceljsReady = null;
+function loadExcelJS() {
+  if (window.ExcelJS) return Promise.resolve();
+  if (!exceljsReady) {
+    exceljsReady = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('No se pudo cargar la librería de Excel (revisa tu conexión a internet)'));
+      document.head.appendChild(script);
+    });
+  }
+  return exceljsReady;
+}
+
+const MONEY_FORMAT = '"$"#,##0';
+
+async function exportOrdersXLSX() {
+  // Si hay un rango de fechas/zona puesto en Reportes, se exporta ESE
+  // rango; si no, el comportamiento de siempre (pedidos de hoy).
+  const rangeOrders = ordersInReportRange();
+  const startToday = inicioDiaCO();
+  const todayOrders = (rangeOrders || reportSource().filter((o) => (o.createdAt || 0) >= startToday)).sort(
+    (a, b) => (a.createdAt || 0) - (b.createdAt || 0)
+  );
+
+  if (todayOrders.length === 0) {
+    showToast(rangeOrders ? 'No hay pedidos en ese rango para exportar' : 'No hay pedidos de hoy para exportar');
+    return;
+  }
+
+  const exportBtn = $('btn-export-orders-csv');
+  exportBtn.disabled = true;
+  exportBtn.classList.add('is-loading');
+  try {
+    await loadExcelJS();
+    const workbook = new window.ExcelJS.Workbook();
+    workbook.creator = 'Rodízio Cúcuta';
+    const sheet = workbook.addWorksheet('Pedidos', {
+      views: [{ state: 'frozen', ySplit: 4 }],
+    });
+
+    const columns = [
+      { header: 'Hora', width: 9 },
+      { header: 'Cliente', width: 22 },
+      { header: 'Teléfono', width: 15 },
+      { header: 'Modo', width: 16 },
+      { header: 'Dirección', width: 28 },
+      { header: 'Productos', width: 40 },
+      { header: 'Subtotal', width: 13 },
+      { header: 'Domicilio', width: 12 },
+      { header: 'Total', width: 13 },
+      { header: 'Propina', width: 12 },
+      { header: 'Estado', width: 14 },
+    ];
+    sheet.columns = columns.map((c) => ({ width: c.width }));
+
+    // --- Encabezado de marca: logo + nombre + fecha, en una franja
+    // roja que ocupa todas las columnas de la tabla. ---
+    sheet.mergeCells(1, 1, 1, columns.length);
+    sheet.mergeCells(2, 1, 2, columns.length);
+    const titleRow = sheet.getRow(1);
+    titleRow.height = 26;
+    titleRow.getCell(1).value = 'Rodízio Cúcuta';
+    titleRow.getCell(1).font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FFF2F0EC' } };
+    titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', indent: 6 };
+    titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2A2D33' } };
+    columns.forEach((_, i) => {
+      if (i > 0) titleRow.getCell(i + 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2A2D33' } };
+    });
+
+    const subtitleRow = sheet.getRow(2);
+    subtitleRow.height = 18;
+    const todayLabel = fmtFechaCO(Date.now(), { day: 'numeric', month: 'long', year: 'numeric' });
+    const periodLabel = rangeOrders
+      ? `Rango: ${state.reportsFilter.from || '…'} a ${state.reportsFilter.to || '…'}${state.reportsFilter.zone ? ' · ' + zoneLabelForExport(state.reportsFilter.zone) : ''}`
+      : `Pedidos del ${todayLabel}`;
+    const phoneLabel = state.settings.restaurantPhone ? ` · Tel. ${state.settings.restaurantPhone}` : '';
+    subtitleRow.getCell(1).value = `${periodLabel} — ${todayOrders.length} pedido${todayOrders.length === 1 ? '' : 's'} — generado el ${todayLabel}${phoneLabel}`;
+    subtitleRow.getCell(1).font = { name: 'Calibri', size: 11, italic: true, color: { argb: 'FF24262B' } };
+    subtitleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', indent: 6 };
+    columns.forEach((_, i) => {
+      subtitleRow.getCell(i + 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE3E0DA' } };
+    });
+
+    // Logo — solo si se puede leer el archivo local (nunca bloquea la
+    // exportación si falla: la tabla igual sirve sin el logo).
+    try {
+      const logoBuffer = await fetch('icon-512.png').then((r) => r.arrayBuffer());
+      const imageId = workbook.addImage({ buffer: logoBuffer, extension: 'png' });
+      sheet.addImage(imageId, { tl: { col: 0.05, row: 0.05 }, ext: { width: 40, height: 40 } });
+    } catch {
+      // Sin logo, sin problema — el resto del archivo se genera igual.
+    }
+
+    // --- Fila de encabezados de columna ---
+    const headerRow = sheet.getRow(3);
+    headerRow.values = columns.map((c) => c.header);
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFF2F0EC' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2A2D33' } };
+      cell.alignment = { vertical: 'middle', horizontal: 'left' };
+    });
+
+    // --- Filas de datos ---
+    todayOrders.forEach((o) => {
+      const row = sheet.addRow([
+        o.createdAt ? fmtHoraCO(o.createdAt) : '',
+        o.customerName || '',
+        o.phone || '',
+        o.deliveryMode === 'recoger' ? 'Recoger en tienda' : 'A domicilio',
+        o.address || '',
+        (o.items || []).map((i) => `${i.qty}x ${i.name}${i.notes ? ` (${i.notes})` : ''}`).join('\n'),
+        o.subtotal || 0,
+        o.shipping || 0,
+        o.total || 0,
+        o.tipAmount || 0,
+        STATUS_STEPS.find((s) => s.id === (o.status || 'recibido'))?.label ||
+          (o.status === 'no_entregado' ? 'No entregado' : o.status === 'cancelado' ? 'Cancelado' : o.status || 'Recibido'),
+      ]);
+      row.getCell(6).alignment = { wrapText: true, vertical: 'top' };
+      [7, 8, 9, 10].forEach((col) => {
+        row.getCell(col).numFmt = MONEY_FORMAT;
+      });
+      row.eachCell((cell) => {
+        cell.border = { bottom: { style: 'thin', color: { argb: 'FFD3CFC8' } } };
+      });
+    });
+
+    // --- Fila de totales, solo de lo efectivamente cobrado (mismo
+    // criterio que "Ventas" en Reportes: pagado === true). ---
+    const paidOrders = todayOrders.filter((o) => o.pagado === true);
+    const totalsRow = sheet.addRow([
+      '',
+      '',
+      '',
+      '',
+      '',
+      `Total cobrado (${paidOrders.length} de ${todayOrders.length} pedidos)`,
+      paidOrders.reduce((sum, o) => sum + (o.subtotal || 0), 0),
+      paidOrders.reduce((sum, o) => sum + (o.shipping || 0), 0),
+      paidOrders.reduce((sum, o) => sum + (o.total || 0), 0),
+      paidOrders.reduce((sum, o) => sum + (o.tipAmount || 0), 0),
+      '',
+    ]);
+    totalsRow.font = { bold: true };
+    [7, 8, 9, 10].forEach((col) => {
+      totalsRow.getCell(col).numFmt = MONEY_FORMAT;
+    });
+    totalsRow.eachCell((cell) => {
+      cell.border = { top: { style: 'medium', color: { argb: 'FF2A2D33' } } };
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = rangeOrders ? `pedidos-${state.reportsFilter.from || 'rango'}-a-${state.reportsFilter.to || isoDiaCO()}.xlsx` : `pedidos-${isoDiaCO()}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    showToast(err.message || 'No se pudo generar el archivo de Excel');
+  } finally {
+    exportBtn.disabled = false;
+    exportBtn.classList.remove('is-loading');
+  }
+}
+
+/* ---------- Cierres de turno de domiciliarios ---------- */
+/* Antes solo se podían revisar a mano desde la consola de Firebase
+   (nodo cashSettlements) — cada domiciliario crea uno al cerrar
+   turno en driver.js. Solo lectura acá: el registro es un historial
+   de auditoría, nunca se edita desde el panel (ver reglas de RTDB en
+   firebase-config.js — solo se puede crear uno nuevo, no tocar uno
+   que ya existe). */
+/* El rango de días del filtro, en milisegundos y en hora de Colombia
+   (mismo criterio que el filtro de días de Pedidos). Si "Desde" quedó
+   después de "Hasta" se intercambian en vez de mostrar una lista vacía. */
+function cashRangeMs() {
+  let from = state.cashFilter.from || isoDiaCO();
+  let to = state.cashFilter.to || from;
+  if (from > to) [from, to] = [to, from];
+  const start = inicioDiaCO(new Date(`${from}T12:00:00`).getTime());
+  const end = inicioDiaCO(new Date(`${to}T12:00:00`).getTime()) + 86400000 - 1;
+  return { start, end };
+}
+
+/* Solo se pide a Firebase el rango de días elegido (por defecto, hoy):
+   antes se traían los últimos 50 de todo el historial y la lista
+   crecía sin parar. Usa el índice de closedAt (database.rules.json). */
+function subscribeCashSettlements() {
+  const { start, end } = cashRangeMs();
+  return onValue(
+    query(ref(db, 'cashSettlements'), orderByChild('closedAt'), startAt(start), endAt(end)),
+    (snapshot) => {
+      const value = snapshot.val() || {};
+      state.cashSettlements = Object.entries(value)
+        .map(([id, data]) => ({ id, ...data }))
+        .sort((a, b) => (b.closedAt || 0) - (a.closedAt || 0));
+      renderCashSettlementsList();
+    },
+    errors.logOnValueError('admin:cashSettlements')
+  );
+}
+
+function resubscribeCashSettlements() {
+  if (unsubCashSettlements) unsubCashSettlements();
+  state.cashPage = 0;
+  unsubCashSettlements = subscribeCashSettlements();
+}
+
+// Opciones = todos los domiciliarios creados (no solo los que tienen
+// cierres ese día), para poder filtrar sin depender de lo que cargó.
+function renderCashSettlementsFilterOptions() {
+  const select = $('cash-driver');
+  if (!select) return;
+  const options = [
+    { id: '', name: 'Todos los domiciliarios' },
+    ...Object.entries(state.allDrivers).map(([id, d]) => ({ id, name: d.name || 'Domiciliario' })),
+  ];
+  select.innerHTML = options
+    .map((o) => `<option value="${o.id}" ${state.cashFilter.driverId === o.id ? 'selected' : ''}>${escapeHtml(o.name)}</option>`)
+    .join('');
+  $('cash-from').value = state.cashFilter.from;
+  $('cash-to').value = state.cashFilter.to;
+  $('cash-status').value = state.cashFilter.status;
+}
+
+function renderCashSettlementsList() {
+  const container = $('admin-cash-settlements-list');
+  const pager = $('admin-cash-pager');
+  if (!container) return;
+  renderCashSettlementsFilterOptions();
+  const { driverId, status } = state.cashFilter;
+  const filtered = state.cashSettlements.filter((s) => {
+    if (driverId && s.driverId !== driverId) return false;
+    const diff = s.difference || 0;
+    if (status === 'cuadrado') return diff === 0;
+    if (status === 'faltante') return diff < 0;
+    if (status === 'sobrante') return diff > 0;
+    return true;
+  });
+  if (filtered.length === 0) {
+    container.innerHTML = `<p class="admin-hint">No hay cierres de turno con este filtro.</p>`;
+    pager.innerHTML = '';
+    return;
+  }
+  const pages = Math.ceil(filtered.length / CASH_SETTLEMENTS_PAGE_SIZE);
+  state.cashPage = Math.min(state.cashPage, pages - 1);
+  const visible = filtered.slice(state.cashPage * CASH_SETTLEMENTS_PAGE_SIZE, (state.cashPage + 1) * CASH_SETTLEMENTS_PAGE_SIZE);
+  container.innerHTML = visible
+    .map((s) => {
+      const diff = s.difference || 0;
+      const diffLabel =
+        diff === 0 ? 'cuadrado' : diff > 0 ? `${formatCOP(diff)} de más` : `${formatCOP(Math.abs(diff))} de menos`;
+      const time = s.closedAt ? new Date(s.closedAt).toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'short', timeStyle: 'short' }) : '';
+      return `
+      <div class="admin-item-row">
+        <div class="admin-item-info">
+          <div class="admin-item-name">${escapeHtml(s.driverName || 'Domiciliario')}<span class="admin-order-chip${diff === 0 ? '' : ' admin-order-chip-cancelled'}" style="margin-left:6px;">${escapeHtml(diffLabel)}</span></div>
+          <div class="admin-item-meta">${time} · ${s.ordersCount || 0} pedido${s.ordersCount === 1 ? '' : 's'} · esperado ${formatCOP(s.expectedCash || 0)} · entregó ${formatCOP(s.actualCash || 0)}</div>
+        </div>
+      </div>`;
+    })
+    .join('');
+
+  pager.innerHTML =
+    pages > 1
+      ? `<button type="button" data-cash-page="prev" ${state.cashPage === 0 ? 'disabled' : ''}>‹ Anterior</button>
+         <span>Página ${state.cashPage + 1} de ${pages} · ${filtered.length} cierres</span>
+         <button type="button" data-cash-page="next" ${state.cashPage >= pages - 1 ? 'disabled' : ''}>Siguiente ›</button>`
+      : `<span>${filtered.length} cierre${filtered.length === 1 ? '' : 's'}</span>`;
+}
+
+/* ---------- Errores recientes del cliente y del panel ---------- */
+/* Sin esto, un error de JS en producción solo se sabe si alguien se
+   queja. Muestra los últimos registrados por errors.js (cualquier
+   sesión, con o sin login) — solo el dueño los ve. */
+const ERRORS_PAGE_SIZE = 10;
+
+/* Se muestra un día a la vez (hoy por defecto) y de 10 en 10, en vez de
+   toda la lista junta. Hay dos límites que conviene tener claros:
+   - el día se filtra sobre los últimos 30 errores registrados (es lo
+     que carga onRecentErrors), no sobre todo el historial;
+   - aquí no se borra nada: el historial queda como registro. */
+function renderErrorLog() {
+  const container = $('admin-error-log');
+  if (!container) return;
+  const pager = $('admin-errors-pager');
+  const dayInput = $('errors-day');
+  if (dayInput && dayInput.value !== state.errorsDay) dayInput.value = state.errorsDay;
+
+  const dayLogs = state.errorLogs.filter((log) => log.at && isoDiaCO(log.at) === state.errorsDay);
+  renderSystemErrorsStatus();
+  if (dayLogs.length === 0) {
+    container.innerHTML = `<div class="config-empty is-ok"><strong>${
+      state.errorLogs.length === 0 ? 'Sin errores registrados' : 'Sin errores en este día'
+    }</strong><span>${state.errorLogs.length === 0 ? 'Buena señal: todo está funcionando bien.' : 'Cambia el día para ver otros registros.'}</span></div>`;
+    if (pager) pager.innerHTML = '';
+    return;
+  }
+  const pages = Math.ceil(dayLogs.length / ERRORS_PAGE_SIZE);
+  state.errorsPage = Math.min(state.errorsPage, pages - 1);
+  const visible = dayLogs.slice(state.errorsPage * ERRORS_PAGE_SIZE, (state.errorsPage + 1) * ERRORS_PAGE_SIZE);
+  // Tabla Hora / Dónde / Mensaje (rediseño 2026-10-23).
+  container.innerHTML = `
+    <div class="config-log-table">
+      <div class="config-log-row config-log-row-head" aria-hidden="true"><span>Hora</span><span>Dónde</span><span>Mensaje</span></div>
+      ${visible
+        .map((log) => {
+          const time = new Date(log.at).toLocaleTimeString('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit' });
+          return `
+      <div class="config-log-row">
+        <span class="config-log-time">${time}</span>
+        <span class="config-log-context"><span class="config-log-badge">!</span>${escapeHtml(log.context || '?')}</span>
+        <span class="config-log-message">${escapeHtml(log.message || '')}</span>
+      </div>`;
+        })
+        .join('')}
+    </div>`;
+  if (pager) {
+    pager.innerHTML =
+      pages > 1
+        ? `<button type="button" data-errors-page="prev" ${state.errorsPage === 0 ? 'disabled' : ''}>‹ Anterior</button>
+           <span>Página ${state.errorsPage + 1} de ${pages} · ${dayLogs.length} errores</span>
+           <button type="button" data-errors-page="next" ${state.errorsPage >= pages - 1 ? 'disabled' : ''}>Siguiente ›</button>`
+        : `<span>${dayLogs.length} error${dayLogs.length === 1 ? '' : 'es'}</span>`;
+  }
+}
+
+/* "Errores de hoy", chip "Todo en orden" e "Información del sistema"
+   de Avanzado: se calculan de los mismos registros de errores. */
+function renderSystemErrorsStatus() {
+  const todayCount = state.errorLogs.filter((log) => log.at && isoDiaCO(log.at) === isoDiaCO()).length;
+  const label = $('config-sys-errors');
+  if (label) {
+    label.textContent = todayCount ? `${todayCount} registrado${todayCount === 1 ? '' : 's'}` : 'Ninguno';
+    $('config-sys-errors-dot').className = `config-dot ${todayCount ? 'is-closed' : 'is-open'}`;
+  }
+  const chip = $('config-system-chip');
+  if (chip) {
+    chip.className = `config-status-chip ${todayCount ? 'is-closed' : 'is-open'}`;
+    chip.textContent = todayCount ? 'Revisar errores de hoy' : 'Todo en orden';
+  }
+  const info = $('config-system-info');
+  if (info) {
+    const local = ['localhost', '127.0.0.1'].includes(location.hostname);
+    const last = state.errorLogs.reduce((max, log) => Math.max(max, log.at || 0), 0);
+    info.innerHTML = `
+      <div><dt>Entorno</dt><dd>${local ? 'Pruebas (este PC)' : 'Producción'}</dd></div>
+      <div><dt>Sitio</dt><dd>${escapeHtml(location.host)}</dd></div>
+      <div><dt>Zona horaria</dt><dd>America/Bogota (UTC−5)</dd></div>
+      <div><dt>Errores guardados</dt><dd>${state.errorLogs.length} (máx. 30)</dd></div>
+      <div><dt>Último error</dt><dd>${last ? new Date(last).toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'short', timeStyle: 'short' }) : '—'}</dd></div>`;
+  }
+}
+
+function bindErrorLogEvents() {
+  $('errors-day')?.addEventListener('change', (e) => {
+    state.errorsDay = e.target.value || isoDiaCO();
+    state.errorsPage = 0;
+    renderErrorLog();
+  });
+  $('errors-today')?.addEventListener('click', () => {
+    state.errorsDay = isoDiaCO();
+    state.errorsPage = 0;
+    renderErrorLog();
+  });
+  $('admin-errors-pager')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-errors-page]');
+    if (!btn || btn.disabled) return;
+    state.errorsPage += btn.dataset.errorsPage === 'next' ? 1 : -1;
+    renderErrorLog();
+  });
+}
+
+/* ---------- Configuración del negocio ---------- */
+function subscribeSettings() {
+  unsubSettings = settingsApi.onSettingsChange((settings) => {
+    state.settings = settings;
+    renderSettingsForm();
+    renderZonesList();
+  });
+}
+
+function renderSettingsForm() {
+  const s = state.settings;
+  $('settings-closed-message').value = s.closedMessage || '';
+  $('settings-address').value = s.restaurantAddress || '';
+  $('settings-phone').value = s.restaurantPhone || '';
+  $('settings-min-order').value = s.minOrderDomicilio || 0;
+  $('settings-default-fee').value = s.defaultShippingFee || 0;
+  $('settings-restrict-zones').checked = !!s.restrictToZones;
+  // No repintar las filas mientras alguien las edita (cada cambio de
+  // settings llega en vivo y borraría lo que está escribiendo).
+  if (!$('schedule-week-rows').contains(document.activeElement)) {
+    renderWeeklyHoursRows(s.weeklyHours || settingsApi.DEFAULT_SETTINGS.weeklyHours);
+  }
+  renderBusinessPreview();
+  renderEstadoHorario();
+}
+
+/* Recuadro "Estado ahora" de la sección Horario: lo que ve el cliente en
+   este momento y los dos botones inmediatos. Se repinta con cada cambio
+   de settings y cada minuto (el horario avanza solo). */
+function renderEstadoHorario() {
+  const s = state.settings;
+  if (!s || !$('horario-estado')) return;
+  const status = settingsApi.getScheduleStatus(s);
+  const detenido = s.manualOverride === 'closed';
+  const pausados = s.domiciliosPausados === true;
+  $('horario-estado').dataset.estado = !status.isOpen ? 'cerrado' : pausados ? 'pausado' : 'abierto';
+  $('horario-estado-titulo').textContent = !status.isOpen
+    ? (detenido ? 'Pedidos detenidos' : 'Cerrado por horario')
+    : pausados ? 'Abierto · solo para recoger' : 'Abierto · domicilio y recoger';
+  let detalle = '';
+  if (!status.isOpen) {
+    detalle = detenido ? 'Nadie puede pedir hasta que reanudes.' : status.closedMessage;
+  } else if (status.minutesUntilClose != null && status.minutesUntilClose >= 0) {
+    const h = Math.floor(status.minutesUntilClose / 60);
+    const m = status.minutesUntilClose % 60;
+    detalle = `Cierra en ${h ? `${h} h ` : ''}${m} min.`;
+  }
+  if (pausados && status.isOpen) detalle = `Domicilios pausados. ${detalle}`.trim();
+  $('horario-estado-detalle').textContent = detalle;
+  const btnDetener = $('btn-detener-pedidos');
+  btnDetener.textContent = detenido ? 'Reanudar pedidos' : 'Detener pedidos';
+  btnDetener.classList.toggle('is-activo', detenido);
+  const btnPausa = $('btn-pausar-domicilios');
+  btnPausa.textContent = pausados ? 'Reanudar domicilios' : 'Pausar domicilios';
+  btnPausa.setAttribute('aria-pressed', String(pausados));
+  btnPausa.classList.toggle('is-activo', pausados);
+  renderConfigLiveStatus(status, detenido, pausados);
+}
+
+/* Rediseño de Configuración (2026-10-23): píldora "Tienda activa",
+   chips de las vistas previas, "Estado del sistema" y "Acciones
+   rápidas". Todo sale del mismo getScheduleStatus() de arriba — solo
+   se muestra en más lugares, no hay estado nuevo. */
+function renderConfigLiveStatus(status, detenido, pausados) {
+  const tone = !status.isOpen ? 'is-closed' : pausados ? 'is-paused' : 'is-open';
+  const chipText = !status.isOpen ? (detenido ? 'Pedidos detenidos' : 'Cerrado ahora') : pausados ? 'Solo para recoger' : 'Abierto ahora';
+  let closesAt = '';
+  if (status.isOpen && status.minutesUntilClose != null && status.minutesUntilClose >= 0) {
+    closesAt = fmtHoraCO(Date.now() + status.minutesUntilClose * 60000);
+  }
+  const pillTitle = $('config-store-pill-title');
+  if (pillTitle) {
+    pillTitle.innerHTML = `<span class="config-dot ${tone}"></span>${!status.isOpen ? 'Tienda cerrada' : 'Tienda activa'}`;
+    $('config-store-pill-detail').textContent = !status.isOpen
+      ? detenido ? 'Pedidos detenidos' : 'Fuera del horario'
+      : pausados ? 'Solo pedidos para recoger' : 'Recibiendo pedidos';
+  }
+  document.querySelectorAll('[data-config-status-chip]').forEach((chip) => {
+    chip.className = `config-status-chip ${tone}${chip.classList.contains('is-large') ? ' is-large' : ''}`;
+    chip.textContent = chipText;
+  });
+  const hours = $('config-preview-hours');
+  if (hours) hours.textContent = closesAt ? `Hoy cerramos a las ${closesAt}.` : status.isOpen ? '' : status.closedMessage || '';
+
+  const setSys = (id, text, ok) => {
+    const el = $(id);
+    if (!el) return;
+    el.textContent = text;
+    $(`${id}-dot`).className = `config-dot ${ok ? 'is-open' : 'is-paused'}`;
+  };
+  setSys('config-sys-store', status.isOpen ? 'Recibiendo pedidos' : detenido ? 'Pedidos detenidos a mano' : 'Cerrada por horario', status.isOpen);
+  setSys('config-sys-delivery', pausados ? 'Pausado: solo recoger' : 'Activo', !pausados);
+  const zones = (state.settings.coverageZones || []).length;
+  setSys('config-sys-zones', zones ? `${zones} configurada${zones === 1 ? '' : 's'}` : 'Ninguna: se cobra el envío por defecto', zones > 0);
+
+  const quick = (id, on) => {
+    const el = $(id);
+    if (!el) return;
+    el.setAttribute('aria-checked', String(on));
+    el.classList.toggle('is-on', on);
+  };
+  quick('config-quick-pausa', pausados);
+  quick('config-quick-detener', detenido);
+}
+
+/* Resumen del horario (columna lateral): se calcula de lo que está
+   en el formulario en este momento, así refleja lo que se está
+   editando antes de guardar. */
+function renderScheduleSummary() {
+  const list = $('config-schedule-summary');
+  if (!list || !$('schedule-week-rows').children.length) return;
+  const week = readWeeklyHoursFromForm();
+  const order = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'];
+  const short = { lun: 'Lun', mar: 'Mar', mie: 'Mié', jue: 'Jue', vie: 'Vie', sab: 'Sáb', dom: 'Dom' };
+  const openDays = order.filter((d) => week[d] && !week[d].closed);
+  const closedDays = order.filter((d) => !week[d] || week[d].closed);
+  const counts = {};
+  openDays.forEach((d) => {
+    const key = `${week[d].open}–${week[d].close}`;
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  const main = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  const fmt12 = (hhmm) => {
+    const [h, m] = hhmm.split(':').map(Number);
+    return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'a. m.' : 'p. m.'}`;
+  };
+  const mainLabel = main ? main[0].split('–').map(fmt12).join(' – ') : 'Sin días abiertos';
+  const rest = main ? openDays.length - main[1] : 0;
+  list.innerHTML = `
+    <li><span class="config-summary-icon is-green" aria-hidden="true">✓</span><div><strong>${openDays.length} día${openDays.length === 1 ? '' : 's'} abierto${openDays.length === 1 ? '' : 's'}</strong><small>${openDays.map((d) => short[d]).join(', ') || '—'}</small></div></li>
+    <li><span class="config-summary-icon is-blue" aria-hidden="true">◷</span><div><strong>Horario principal</strong><small>${mainLabel}${rest > 0 ? ` · ${rest} día${rest === 1 ? '' : 's'} con otro horario` : ''}</small></div></li>
+    <li><span class="config-summary-icon is-violet" aria-hidden="true">☾</span><div><strong>${closedDays.length ? `Día${closedDays.length === 1 ? '' : 's'} cerrado${closedDays.length === 1 ? '' : 's'}` : 'Sin días cerrados'}</strong><small>${closedDays.map((d) => settingsApi.DAY_LABELS[d]).join(', ') || 'Abre toda la semana'}</small></div></li>`;
+}
+
+/* Vista previa de "Negocio": lo que se está escribiendo en dirección
+   y teléfono, tal cual lo vería el cliente. */
+function renderBusinessPreview() {
+  const address = $('config-preview-address');
+  if (!address) return;
+  address.textContent = $('settings-address').value.trim() || 'Sin dirección';
+  $('config-preview-phone').textContent = $('settings-phone').value.trim() || 'Sin teléfono';
+}
+
+function renderWeeklyHoursRows(weeklyHours) {
+  const container = $('schedule-week-rows');
+  // De lunes a domingo (DAY_KEYS empieza en domingo): solo cambia el
+  // orden en pantalla, cada fila se lee por su data-day.
+  const displayOrder = [...settingsApi.DAY_KEYS.slice(1), settingsApi.DAY_KEYS[0]];
+  container.innerHTML = displayOrder.map((day) => {
+    const hours = weeklyHours[day] || { closed: false, open: '11:00', close: '22:00' };
+    // El checkbox sigue siendo "cerrado" (marcado = no abre); el CSS lo
+    // dibuja como interruptor "Abierto" encendido cuando NO está marcado.
+    return `
+      <div class="schedule-day-row${hours.closed ? ' is-cerrado' : ''}" data-day="${day}">
+        <span class="schedule-day-label">${settingsApi.DAY_LABELS[day]}</span>
+        <label class="checkbox-field schedule-day-toggle">
+          <input type="checkbox" class="schedule-day-closed" ${hours.closed ? 'checked' : ''} aria-label="${settingsApi.DAY_LABELS[day]} cerrado" />
+          <span class="schedule-day-state-on">Abierto</span><span class="schedule-day-state-off">Cerrado</span>
+        </label>
+        <span class="schedule-day-hours">
+          <input type="time" class="schedule-day-open" value="${hours.open || '11:00'}" ${hours.closed ? 'disabled' : ''} aria-label="Abre ${settingsApi.DAY_LABELS[day]}" />
+          <span class="schedule-day-sep">a</span>
+          <input type="time" class="schedule-day-close" value="${hours.close || '22:00'}" ${hours.closed ? 'disabled' : ''} aria-label="Cierra ${settingsApi.DAY_LABELS[day]}" />
+        </span>
+      </div>`;
+  }).join('');
+
+  container.querySelectorAll('.schedule-day-closed').forEach((checkbox) => {
+    checkbox.addEventListener('change', () => {
+      const row = checkbox.closest('.schedule-day-row');
+      row.querySelector('.schedule-day-open').disabled = checkbox.checked;
+      row.querySelector('.schedule-day-close').disabled = checkbox.checked;
+      row.classList.toggle('is-cerrado', checkbox.checked);
+    });
+  });
+  renderScheduleSummary();
+}
+
+function readWeeklyHoursFromForm() {
+  const weeklyHours = {};
+  $('schedule-week-rows')
+    .querySelectorAll('.schedule-day-row')
+    .forEach((row) => {
+      weeklyHours[row.dataset.day] = {
+        closed: row.querySelector('.schedule-day-closed').checked,
+        open: row.querySelector('.schedule-day-open').value || '11:00',
+        close: row.querySelector('.schedule-day-close').value || '22:00',
+      };
+    });
+  return weeklyHours;
+}
+
+function bindSettingsEvents() {
+  $('settings-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await settingsApi.saveSettings({
+        ...state.settings,
+        restaurantAddress: $('settings-address').value.trim(),
+        restaurantPhone: $('settings-phone').value.trim(),
+        minOrderDomicilio: Number($('settings-min-order').value) || 0,
+        defaultShippingFee: Number($('settings-default-fee').value) || 0,
+        restrictToZones: $('settings-restrict-zones').checked,
+      });
+      showToast('Configuración guardada');
+    } catch (err) {
+      showToast(err.message || 'No se pudo guardar la configuración');
+    }
+  });
+
+  $('schedule-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      // Guardar el horario lo deja en automático: el modo manual viejo
+      // (isOpen/closingTime) ya no tiene controles en el panel.
+      await settingsApi.saveSettings({
+        ...state.settings,
+        useSchedule: true,
+        closedMessage: $('settings-closed-message').value.trim(),
+        weeklyHours: readWeeklyHoursFromForm(),
+      });
+      showToast('Horario guardado');
+    } catch (err) {
+      showToast(err.message || 'No se pudo guardar el horario');
+    }
+  });
+
+  const copiarLunes = (dias) => {
+    const filas = $('schedule-week-rows');
+    const lunes = filas.querySelector('[data-day="lun"]');
+    const cerrado = lunes.querySelector('.schedule-day-closed').checked;
+    dias.forEach((dia) => {
+      const fila = filas.querySelector(`[data-day="${dia}"]`);
+      if (!fila || fila === lunes) return;
+      fila.querySelector('.schedule-day-closed').checked = cerrado;
+      fila.querySelector('.schedule-day-open').value = lunes.querySelector('.schedule-day-open').value;
+      fila.querySelector('.schedule-day-close').value = lunes.querySelector('.schedule-day-close').value;
+      fila.querySelector('.schedule-day-open').disabled = cerrado;
+      fila.querySelector('.schedule-day-close').disabled = cerrado;
+      fila.classList.toggle('is-cerrado', cerrado);
+    });
+    renderScheduleSummary();
+    showToast('Copiado. Recuerda guardar el horario');
+  };
+  $('schedule-week-rows').addEventListener('change', renderScheduleSummary);
+  $('settings-address').addEventListener('input', renderBusinessPreview);
+  $('settings-phone').addEventListener('input', renderBusinessPreview);
+
+  // Píldora "Tienda activa" → sub-pestaña Horario; "Acciones rápidas"
+  // de Avanzado → los mismos botones de Horario (misma confirmación).
+  $('config-store-pill')?.addEventListener('click', () => {
+    document.querySelector('#admin-config-tabs button[data-config-tab="horario"]')?.click();
+  });
+  document.querySelectorAll('[data-quick-click]').forEach((sw) => {
+    sw.addEventListener('click', () => $(sw.dataset.quickClick)?.click());
+  });
+  $('config-zone-search')?.addEventListener('input', renderZonesList);
+  $('btn-copiar-lun-vie').addEventListener('click', () => copiarLunes(['mar', 'mie', 'jue', 'vie']));
+  $('btn-copiar-todos').addEventListener('click', () => copiarLunes(settingsApi.DAY_KEYS));
+
+  $('btn-detener-pedidos').addEventListener('click', async () => {
+    const detenido = state.settings.manualOverride === 'closed';
+    if (!detenido) {
+      const ok = await confirmDialog('¿Detener todos los pedidos ahora? Nadie podrá pedir hasta que los reanudes.', {
+        confirmLabel: 'Sí, detener',
+        cancelLabel: 'Cancelar',
+        danger: true,
+      });
+      if (!ok) return;
+    }
+    try {
+      // Al reanudar manda el horario automático, así que se asegura activo.
+      if (!state.settings.useSchedule) await settingsApi.guardarCampo('useSchedule', true);
+      await settingsApi.guardarCampo('manualOverride', detenido ? '' : 'closed');
+      showToast(detenido ? 'Pedidos reanudados: vuelve a mandar el horario' : 'Pedidos detenidos');
+    } catch (err) {
+      showToast(err.message || 'No se pudo cambiar el estado');
+    }
+  });
+
+  $('btn-pausar-domicilios').addEventListener('click', async () => {
+    const pausados = state.settings.domiciliosPausados === true;
+    try {
+      await settingsApi.guardarCampo('domiciliosPausados', !pausados);
+      showToast(pausados ? 'Domicilios reanudados' : 'Domicilios pausados: solo recoger en tienda');
+    } catch (err) {
+      showToast(err.message || 'No se pudo cambiar los domicilios');
+    }
+  });
+
+  setInterval(renderEstadoHorario, 60000);
+
+  $('btn-add-zone').addEventListener('click', () => openZoneForm(null));
+  $('btn-cancel-zone').addEventListener('click', () => closeZoneForm());
+  $('zone-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = $('zone-form-name').value.trim();
+    const fee = Number($('zone-form-fee').value);
+    const keywords = $('zone-form-keywords')
+      .value.split(',')
+      .map((k) => k.trim())
+      .filter(Boolean);
+    if (!name || keywords.length === 0) {
+      showToast('Ponle nombre y al menos una palabra clave a la zona');
+      return;
+    }
+    const idx = $('zone-form-idx').value;
+    const zones = [...(state.settings.coverageZones || [])];
+    const zone = { name, keywords, fee: fee || 0 };
+    if (idx !== '') {
+      zones[Number(idx)] = zone;
+    } else {
+      zones.push(zone);
+    }
+    try {
+      await settingsApi.saveSettings({ ...state.settings, coverageZones: zones });
+      closeZoneForm();
+      showToast('Zona guardada');
+    } catch (err) {
+      showToast(err.message || 'No se pudo guardar la zona');
+    }
+  });
+
+}
+
+function renderZonesList() {
+  const container = $('admin-zones-list');
+  const zones = state.settings.coverageZones || [];
+  if (zones.length === 0) {
+    container.innerHTML = `<div class="config-empty"><strong>Todavía no hay zonas.</strong><span>Agrega la primera con «+ Agregar zona». Mientras no haya, se cobra el costo de envío por defecto.</span></div>`;
+    return;
+  }
+  // Tabla de zonas (rediseño 2026-10-23): punto de color, nombre,
+  // palabras clave como etiquetas, costo y acciones. El buscador solo
+  // filtra lo que se ve; cada fila guarda su índice REAL en
+  // coverageZones para que editar/eliminar apunten a la zona correcta.
+  const ZONE_COLORS = ['#2E6E47', '#2C5A80', '#C2410C', '#6D28D9', '#B45309', '#0F766E', '#B52A20'];
+  const term = normalizeText($('config-zone-search')?.value || '');
+  const visible = zones
+    .map((zone, idx) => ({ zone, idx }))
+    .filter(({ zone }) => !term || normalizeText(`${zone.name} ${(zone.keywords || []).join(' ')}`).includes(term));
+  if (visible.length === 0) {
+    container.innerHTML = `<div class="config-empty"><strong>Ninguna zona coincide con la búsqueda.</strong><span>Prueba con otro nombre o palabra clave.</span></div>`;
+    return;
+  }
+  container.innerHTML = `
+    <div class="config-zone-table">
+      <div class="config-zone-row config-zone-row-head" aria-hidden="true">
+        <span>Zona</span><span>Palabras clave</span><span>Costo de envío</span><span>Acciones</span>
+      </div>
+      ${visible
+        .map(({ zone, idx }) => {
+          const kws = zone.keywords || [];
+          return `
+      <div class="config-zone-row">
+        <span class="config-zone-name">
+          <span class="config-zone-color" style="background:${ZONE_COLORS[idx % ZONE_COLORS.length]}" aria-hidden="true"></span>
+          <span><strong>${escapeHtml(zone.name)}</strong><small>${kws.length} palabra${kws.length === 1 ? '' : 's'} clave</small></span>
+        </span>
+        <span class="config-zone-keywords">${kws.map((k) => `<span>${escapeHtml(k)}</span>`).join('')}</span>
+        <span class="config-zone-fee">${formatCOP(zone.fee || 0)}</span>
+        <span class="admin-item-actions">
+          <button type="button" data-edit-zone="${idx}" aria-label="Editar zona ${escapeHtml(zone.name)}">${pencilSvg()}</button>
+          <button type="button" class="admin-delete-btn" data-delete-zone="${idx}" aria-label="Eliminar zona ${escapeHtml(zone.name)}">${trashSvg()}</button>
+        </span>
+      </div>`;
+        })
+        .join('')}
+    </div>`;
+
+  container.querySelectorAll('[data-edit-zone]').forEach((btn) => {
+    btn.addEventListener('click', () => openZoneForm(zones[Number(btn.dataset.editZone)], Number(btn.dataset.editZone)));
+  });
+  container.querySelectorAll('[data-delete-zone]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const idx = Number(btn.dataset.deleteZone);
+      const zones = (state.settings.coverageZones || []).filter((_, i) => i !== idx);
+      try {
+        await settingsApi.saveSettings({ ...state.settings, coverageZones: zones });
+        showToast('Zona eliminada');
+      } catch (err) {
+        showToast(err.message || 'No se pudo eliminar la zona');
+      }
+    });
+  });
+}
+
+function openZoneForm(zone, idx) {
+  $('zone-form-idx').value = zone ? idx : '';
+  $('zone-form-name').value = zone ? zone.name : '';
+  $('zone-form-keywords').value = zone ? (zone.keywords || []).join(', ') : '';
+  $('zone-form-fee').value = zone ? zone.fee || 0 : '';
+  $('zone-form').hidden = false;
+  $('zone-form-title').textContent = zone ? `Editar zona: ${zone.name}` : 'Agregar nueva zona';
+  $('zone-form-name').focus();
+}
+
+function closeZoneForm() {
+  $('zone-form').hidden = true;
+  $('zone-form').reset();
+  $('zone-form-idx').value = '';
+  $('zone-form-title').textContent = 'Agregar nueva zona';
+}
+
+/* ---------- Domiciliarios ---------- */
+/* Cualquier admin (dueño o cajero) puede leer la lista y asignar —
+   es una tarea operativa del día a día, no de gestión del negocio.
+   Crear/deshabilitar un domiciliario (pestaña Domiciliarios) sigue
+   siendo solo del dueño, igual que con admins/. */
+function subscribeDrivers() {
+  unsubDrivers = onValue(
+    ref(db, 'drivers'),
+    (snapshot) => {
+      const value = snapshot.val() || {};
+      // state.allDrivers: TODOS (para la pestaña de gestión, incluye
+      // deshabilitados). state.drivers: solo los que pueden recibir
+      // pedidos hoy (para el selector "Domiciliario" de cada pedido).
+      state.allDrivers = Object.fromEntries(
+        Object.entries(value)
+          .filter(([, d]) => d)
+          .map(([uid, d]) => [
+            uid,
+            { name: d.name || '', phone: d.phone || '', email: d.email || '', available: !!d.available, access: d.access === true },
+          ])
+      );
+      state.drivers = Object.fromEntries(Object.entries(state.allDrivers).filter(([, d]) => d.access));
+      renderDriversList();
+      renderOrders();
+    },
+    errors.logOnValueError('admin:drivers')
+  );
+}
+
+function filteredDrivers() {
+  const term = normalizeText(state.driversSearch);
+  const entries = Object.entries(state.allDrivers).filter(
+    ([, d]) => !term || normalizeText(d.name).includes(term) || normalizeText(d.phone).includes(term)
+  );
+  switch (state.driversFilter) {
+    case 'disponibles':
+      return entries.filter(([, d]) => d.access && d.available);
+    case 'no-disponibles':
+      return entries.filter(([, d]) => d.access && !d.available);
+    case 'deshabilitados':
+      return entries.filter(([, d]) => !d.access);
+    default:
+      return entries;
+  }
+}
+
+// Solo dígitos, con indicativo de país — wa.me no acepta espacios,
+// guiones ni el "+". Si el teléfono no trae indicativo, se asume
+// Colombia (57) — mismo criterio que usa el resto del panel para
+// los botones de llamar/WhatsApp del restaurante.
+function whatsappHref(phone) {
+  const digits = (phone || '').replace(/\D/g, '');
+  if (!digits) return null;
+  const withCountry = digits.length <= 10 ? `57${digits}` : digits;
+  return `https://wa.me/${withCountry}`;
+}
+/* Mensaje de WhatsApp para el domiciliario con todo lo que necesita para
+   salir: cliente, dirección, enlace de Google Maps (si el cliente dio su
+   ubicación) y cuánto cobrar. Sin ubicación (típico si pidió desde un
+   computador) el enlace se omite y el domiciliario escribe al cliente
+   por WhatsApp con el teléfono del mensaje. */
+function driverOrderWhatsappHref(order) {
+  const phone = order.driverPhone || state.drivers[order.driverId]?.phone;
+  const base = whatsappHref(phone);
+  if (!base) return null;
+  const lines = [`Pedido ${order.codigo || order.id.slice(-5)} · Rodízio`];
+  lines.push(`Cliente: ${order.customerName || 'Cliente'}${order.phone ? ' · Tel: ' + order.phone : ''}`);
+  lines.push(`Dirección: ${order.address || '—'}`);
+  if (order.reference) lines.push(`Referencia: ${order.reference}`);
+  if (order.customerLocation) {
+    lines.push(`Ubicación: https://www.google.com/maps?q=${order.customerLocation.lat},${order.customerLocation.lng}`);
+  }
+  const items = (order.items || []).map((i) => `${i.qty}x ${i.name}${i.notes ? ' (' + i.notes + ')' : ''}`);
+  if (items.length) lines.push(`Pedido: ${items.join(', ')}`);
+  lines.push(order.pagado === true ? 'Ya está pagado, no cobrar' : `Cobrar al entregar: ${formatCOP(order.total || 0)}`);
+  return `${base}?text=${encodeURIComponent(lines.join('\n'))}`;
+}
+
+function whatsappSvg() {
+  return '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.29-1.39a9.9 9.9 0 004.75 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm0 18.02h-.01a8.2 8.2 0 01-4.18-1.14l-.3-.18-3.14.82.84-3.06-.2-.32a8.2 8.2 0 01-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24 2.2 0 4.27.86 5.83 2.42a8.18 8.18 0 012.41 5.83c0 4.55-3.7 8.25-8.24 8.25zm4.52-6.17c-.25-.12-1.47-.72-1.69-.81-.23-.08-.4-.12-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.12-1.04-.38-1.98-1.22-.73-.65-1.23-1.46-1.37-1.7-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.43-.14-.01-.31-.01-.48-.01-.17 0-.43.06-.66.31-.23.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.24 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.55.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.14-1.18-.06-.11-.23-.17-.48-.29z"/></svg>';
+}
+
+/* Lista (tabla) de domiciliarios: nombre, teléfono, estado y acciones.
+   En celular cada fila se apila como una tarjeta (ver admin.css). */
+function renderDriversList() {
+  const container = $('admin-drivers-list');
+  if (!container) return;
+  const entries = filteredDrivers();
+  if (entries.length === 0) {
+    container.innerHTML = `<p class="admin-hint">Ningún domiciliario en este filtro todavía.</p>`;
+    return;
+  }
+  // Tarjetas con avatar (rediseño 2026-10-23) en vez de tabla — mismos
+  // botones y mismos data-* de siempre, solo cambia cómo se ven.
+  const cards = entries
+    .map(([uid, d]) => {
+      const wa = whatsappHref(d.phone);
+      const name = d.name || 'Domiciliario';
+      const initials = escapeHtml(
+        name
+          .trim()
+          .split(/\s+/)
+          .slice(0, 2)
+          .map((w) => w[0] || '')
+          .join('')
+          .toUpperCase() || 'D'
+      );
+      const estado = d.access
+        ? `<button type="button" class="admin-driver-card-badge admin-driver-switch ${d.available ? 'is-available' : 'is-offline'}" data-available-uid="${uid}" data-next="${!d.available}" title="Tocar para cambiar" role="switch" aria-checked="${d.available ? 'true' : 'false'}"><span class="admin-switch-track" aria-hidden="true"></span>${d.available ? 'Disponible' : 'No disponible'}</button>`
+        : `<span class="admin-driver-card-badge is-disabled">Deshabilitado</span>`;
+      return `
+      <div class="admin-driver-card${d.access ? '' : ' is-disabled'}" data-uid="${uid}">
+        <span class="admin-driver-avatar${d.available && d.access ? ' is-available' : ''}" aria-hidden="true">${initials}</span>
+        <div class="admin-driver-card-name">${escapeHtml(name)}</div>
+        <div class="admin-driver-card-phone">${escapeHtml(d.phone || 'Sin teléfono')}</div>
+        ${d.email ? `<span class="admin-driver-email">${escapeHtml(d.email)}</span>` : ''}
+        <div class="admin-driver-card-state">${estado}</div>
+        <div class="admin-driver-card-actions">
+          ${wa ? `<a class="admin-driver-whatsapp-btn" href="${wa}" target="_blank" rel="noopener" aria-label="WhatsApp">${whatsappSvg()}WhatsApp</a>` : ''}
+          <span class="admin-driver-card-icons">
+            <button type="button" data-edit-driver="${uid}" aria-label="Editar">${pencilSvg()}</button>
+            <button type="button" class="admin-delete-btn" data-delete-driver="${uid}" aria-label="Eliminar">${trashSvg()}</button>
+          </span>
+        </div>
+        ${
+          d.access
+            ? `<button type="button" class="admin-driver-toggle-btn" data-uid="${uid}" data-next="false">Deshabilitar cuenta</button>`
+            : `<button type="button" class="admin-driver-toggle-btn" data-uid="${uid}" data-next="true">Habilitar cuenta</button>`
+        }
+      </div>`;
+    })
+    .join('');
+  container.innerHTML = `<div class="admin-drivers-grid">${cards}</div>`;
+
+  container.querySelectorAll('.admin-driver-toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', () => handleToggleDriverAccess(btn.dataset.uid, btn.dataset.next === 'true'));
+  });
+  container.querySelectorAll('[data-available-uid]').forEach((btn) => {
+    btn.addEventListener('click', () => handleToggleDriverAvailable(btn.dataset.availableUid, btn.dataset.next === 'true'));
+  });
+  container.querySelectorAll('[data-edit-driver]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const uid = btn.dataset.editDriver;
+      openDriverForm(uid, state.allDrivers[uid]);
+    });
+  });
+  container.querySelectorAll('[data-delete-driver]').forEach((btn) => {
+    btn.addEventListener('click', () => handleDeleteDriver(btn.dataset.deleteDriver));
+  });
+}
+
+// El admin puede marcar "Disponible" directo desde el panel (tocando el
+// badge de la tarjeta) — antes SOLO el propio domiciliario podía
+// cambiar esto desde driver.js, así que para que uno recién creado
+// pudiera empezar a trabajar de una, había que pedirle que entrara a
+// su app primero (o editarlo a mano en la consola de Firebase).
+async function handleToggleDriverAvailable(uid, nextAvailable) {
+  try {
+    await update(ref(db, `drivers/${uid}`), { available: nextAvailable });
+  } catch (err) {
+    showToast(err.message || 'No se pudo cambiar la disponibilidad');
+  }
+}
+
+// Solo borra el perfil de drivers/{uid} — igual que "Eliminar
+// trabajador" en el resto del proyecto, la cuenta de Firebase
+// Authentication queda huérfana y hay que borrarla a mano desde la
+// consola (documentado, no es un olvido).
+async function handleDeleteDriver(uid) {
+  const d = state.allDrivers[uid];
+  const ok = await confirmDialog(
+    `¿Eliminar a ${d?.name || 'este domiciliario'}? Ya no va a poder entrar a su app. Esto no borra su cuenta de correo/contraseña — eso se hace aparte desde la consola de Firebase si hace falta.`,
+    { confirmLabel: 'Sí, eliminar', cancelLabel: 'Cancelar', danger: true }
+  );
+  if (!ok) return;
+  try {
+    await remove(ref(db, `drivers/${uid}`));
+    showToast('Domiciliario eliminado');
+  } catch (err) {
+    showToast(err.message || 'No se pudo eliminar');
+  }
+}
+
+async function handleToggleDriverAccess(uid, nextAccess) {
+  try {
+    await update(ref(db, `drivers/${uid}`), { access: nextAccess });
+    showToast(nextAccess ? 'Domiciliario habilitado' : 'Domiciliario deshabilitado');
+  } catch (err) {
+    showToast(err.message || 'No se pudo cambiar el acceso');
+  }
+}
+
+// Al crear: crea la cuenta de Authentication (app secundaria, ver
+// firebase-config.js) y de una vez el perfil en drivers/{uid} con
+// access:true — reemplaza el paso manual de antes (el domiciliario
+// se registraba solo y el dueño le daba acceso desde la consola de
+// Firebase). El domiciliario ya puede entrar a driver.html con el
+// correo/contraseña que se le puso acá.
+// Al editar: solo actualiza nombre/teléfono/disponible — el correo
+// queda de solo lectura (cambiarlo de verdad implicaría actualizar
+// también la cuenta de Firebase Authentication, no solo el perfil en
+// RTDB) y no se pide contraseña de nuevo.
+async function handleSaveDriver(e) {
+  e.preventDefault();
+  const name = $('driver-form-name').value.trim();
+  const phone = $('driver-form-phone').value.trim();
+  const editingUid = state.editingDriverUid;
+  const btn = $('btn-save-driver');
+  btn.disabled = true;
+  btn.classList.add('is-loading');
+  try {
+    if (editingUid) {
+      if (!name) {
+        showToast('Ponle un nombre al domiciliario');
+        return;
+      }
+      // "available" NO se toca acá — al editar, ese campo se maneja
+      // aparte tocando el badge de la tarjeta (ver
+      // handleToggleDriverAvailable), no se repite en este formulario.
+      await update(ref(db, `drivers/${editingUid}`), { name, phone });
+      showToast('Domiciliario actualizado');
+    } else {
+      const email = $('driver-form-email').value.trim();
+      const password = $('driver-form-password').value;
+      const available = $('driver-form-available').checked;
+      if (!name || !email || password.length < 6) {
+        showToast('Completa nombre, correo y una contraseña de al menos 6 caracteres');
+        return;
+      }
+      const uid = await createDriverAuthAccount(email, password);
+      // update(), no set(): las reglas de drivers/{uid} solo tienen
+      // .write por campo (name/phone/email/access/...), no en el nodo
+      // drivers/{uid} completo — un set() con el objeto entero pedía un
+      // permiso que no existe a ese nivel y siempre daba PERMISSION_DENIED
+      // aunque cada campo individual sí estuviera autorizado. update()
+      // sí evalúa cada campo contra su propia regla (multi-location
+      // update de Firebase), que es justo lo que ya está permitido.
+      await update(ref(db, `drivers/${uid}`), {
+        name,
+        phone,
+        email,
+        access: true,
+        available,
+        createdAt: serverTimestamp(),
+      });
+      showToast('Domiciliario creado');
+    }
+    closeDriverForm();
+  } catch (err) {
+    showToast(err.message || 'No se pudo guardar el domiciliario');
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('is-loading');
+  }
+}
+
+// Mismo patrón que el modal de producto (openProductForm/closeProductForm)
+// — antes este formulario vivía pegado en la página y la alargaba
+// aunque estuviera cerrado. Sirve tanto para crear (uid null) como
+// para editar (uid + datos existentes) — a diferencia de categorías/
+// productos, acá NO se reutiliza toda la tarjeta como fila editable
+// porque crear un domiciliario necesita correo+contraseña, que no
+// tiene sentido mostrar sueltos en la tarjeta.
+function openDriverForm(uid, driver) {
+  $('driver-form').reset();
+  state.editingDriverUid = uid || null;
+  const isEditing = !!uid;
+  $('driver-modal-title').textContent = isEditing ? 'Editar domiciliario' : 'Nuevo domiciliario';
+  $('btn-save-driver').textContent = isEditing ? 'Guardar cambios' : 'Crear domiciliario';
+  $('driver-form-email-field').hidden = isEditing;
+  $('driver-form-password-field').hidden = isEditing;
+  $('driver-form-available-row').hidden = isEditing;
+  if (isEditing) {
+    $('driver-form-name').value = driver?.name || '';
+    $('driver-form-phone').value = driver?.phone || '';
+  } else {
+    $('driver-form-available').checked = false;
+  }
+  $('driver-modal').hidden = false;
+  requestAnimationFrame(() => $('driver-modal').classList.add('is-open'));
+  $('overlay').classList.add('is-open');
+}
+
+function closeDriverForm() {
+  $('driver-modal').classList.remove('is-open');
+  $('overlay').classList.remove('is-open');
+  state.editingDriverUid = null;
+  setTimeout(() => {
+    $('driver-modal').hidden = true;
+  }, 250);
+  $('driver-form').reset();
+}
+
+function bindDriversEvents() {
+  $('btn-add-driver').addEventListener('click', () => openDriverForm(null, null));
+  $('btn-cancel-driver').addEventListener('click', closeDriverForm);
+  $('btn-close-driver-modal').addEventListener('click', closeDriverForm);
+  $('driver-form').addEventListener('submit', handleSaveDriver);
+
+  document.querySelectorAll('#admin-drivers-filter button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#admin-drivers-filter button').forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      state.driversFilter = btn.dataset.filter;
+      renderDriversList();
+    });
+  });
+
+  $('admin-drivers-search')?.addEventListener('input', (e) => {
+    state.driversSearch = e.target.value;
+    renderDriversList();
+  });
+
+  // Cierres de turno: cambiar el rango de días vuelve a pedir a Firebase;
+  // domiciliario y estado filtran lo ya cargado.
+  const onCashRange = () => {
+    state.cashFilter.from = $('cash-from').value || isoDiaCO();
+    state.cashFilter.to = $('cash-to').value || state.cashFilter.from;
+    resubscribeCashSettlements();
+  };
+  $('cash-from')?.addEventListener('change', onCashRange);
+  $('cash-to')?.addEventListener('change', onCashRange);
+  $('cash-today')?.addEventListener('click', () => {
+    state.cashFilter.from = isoDiaCO();
+    state.cashFilter.to = isoDiaCO();
+    resubscribeCashSettlements();
+  });
+  $('cash-driver')?.addEventListener('change', (e) => {
+    state.cashFilter.driverId = e.target.value;
+    state.cashPage = 0;
+    renderCashSettlementsList();
+  });
+  $('cash-status')?.addEventListener('change', (e) => {
+    state.cashFilter.status = e.target.value;
+    state.cashPage = 0;
+    renderCashSettlementsList();
+  });
+  $('admin-cash-pager')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-cash-page]');
+    if (!btn || btn.disabled) return;
+    state.cashPage += btn.dataset.cashPage === 'next' ? 1 : -1;
+    renderCashSettlementsList();
+  });
+}
+
+/* "Reintentar entrega" — el pedido quedó en "no_entregado" (el
+   domiciliario avisó que no pudo entregarlo). El cajero/dueño puede
+   cambiar el domiciliario asignado con el selector de arriba antes
+   de esto si hace falta; este botón vuelve a mandarlo a la calle
+   ("en_camino") con quien haya quedado asignado en ese momento. */
+async function handleRetryDelivery(orderId) {
+  const ok = await confirmDialog('¿Reintentar la entrega de este pedido?', {
+    confirmLabel: 'Sí, reintentar',
+    cancelLabel: 'Cancelar',
+    danger: false,
+  });
+  if (!ok) return;
+  try {
+    await update(ref(db, `orders/${orderId}`), {
+      status: 'en_camino',
+      deliveryFailureReason: null,
+      deliveryFailureAt: null,
+    });
+    push(ref(db, `orders/${orderId}/statusHistory`), {
+      status: 'en_camino',
+      byEmail: auth.currentUser?.email || 'panel',
+      at: serverTimestamp(),
+      note: 'Reintento de entrega',
+    }).catch(() => {});
+    showToast('Pedido reenviado — en camino de nuevo');
+  } catch (err) {
+    showToast(err.message || 'No se pudo reintentar la entrega');
+  }
+}
+
+const CANCEL_REASONS = [
+  'El cliente llamó a cancelar',
+  'Producto no disponible',
+  'Pedido duplicado o de prueba',
+  'No se pudo contactar al cliente',
+  'Otro motivo',
+];
+
+/* Cancelar un pedido desde el panel — a diferencia del botón del
+   cliente (solo disponible los primeros minutos), esto lo puede
+   hacer el cajero/dueño en cualquier momento mientras el pedido no
+   esté ya "entregado". Pide un motivo (mismo patrón que "No se pudo
+   entregar" del domiciliario) y lo deja en el historial — no
+   restaura inventario, mismo comportamiento que ya tenía cancelar
+   desde el lado del cliente. */
+async function handleCancelOrderFromPanel(orderId, btn) {
+  const reason = await pickReasonDialog('¿Por qué se cancela este pedido?', CANCEL_REASONS);
+  if (!reason) return;
+  // Mismo patrón que los botones de acción de domiciliarios: solo
+  // spinner, sin check de éxito — la tarjeta se repinta apenas
+  // confirma Firebase (cambia de pestaña/estado), así que un check
+  // con pausa propia nunca llegaría a verse completo.
+  btn?.classList.add('is-loading');
+  try {
+    await update(ref(db, `orders/${orderId}`), { status: 'cancelado', driverLocation: null, driverTrail: null });
+    push(ref(db, `orders/${orderId}/statusHistory`), {
+      status: 'cancelado',
+      byEmail: auth.currentUser?.email || 'panel',
+      at: serverTimestamp(),
+      note: reason,
+    }).catch(() => {});
+    showToast('Pedido cancelado');
+  } catch (err) {
+    showToast(err.message || 'No se pudo cancelar el pedido');
+    btn?.classList.remove('is-loading');
+  }
+}
+
+/* Patrón repetido en varios handlers de escritura simple del panel:
+   `update()` a un pedido, toast de éxito o de error, nada más que
+   coordinar (a diferencia de handleStatusButtonClick/handleCancelOrder-
+   FromPanel, que además tocan botones/grupos y quedaron aparte). */
+function updateOrderField(orderId, patch, successMsg, errorFallback) {
+  return update(ref(db, `orders/${orderId}`), patch)
+    .then(() => showToast(successMsg))
+    .catch((err) => showToast(err.message || errorFallback));
+}
+
+function handleAssignDriver(orderId, driverId) {
+  const patch = driverId
+    ? { driverId, driverName: state.drivers[driverId]?.name || '', driverPhone: state.drivers[driverId]?.phone || '' }
+    : { driverId: null, driverName: null, driverPhone: null };
+  updateOrderField(
+    orderId,
+    patch,
+    driverId ? 'Domiciliario asignado' : 'Asignación quitada',
+    'No se pudo asignar el domiciliario'
+  );
+}
+
+/* ---------- Clientes bloqueados ---------- */
+/* Solo el dueño puede marcar/desmarcar (las reglas de RTDB también lo
+   exigen); un cajero puede ver la etiqueta "cliente bloqueado" en un
+   pedido pero no tiene el botón. Sirve para clientes con muchas
+   cancelaciones o pedidos no reclamados: no borra su cuenta ni sus
+   pedidos anteriores, solo evita que confirme pedidos nuevos. */
+function subscribeCustomerFlags() {
+  unsubCustomerFlags = onValue(
+    ref(db, 'customerFlags'),
+    (snapshot) => {
+      const value = snapshot.val() || {};
+      state.blockedUids = new Set(
+        Object.entries(value)
+          .filter(([, v]) => v && v.blocked)
+          .map(([uid]) => uid)
+      );
+      renderOrders();
+    },
+    errors.logOnValueError('admin:customerFlags')
+  );
+}
+
+function handleBlockToggle(uid, block, btn) {
+  if (state.role !== 'dueno' || !uid) return;
+  btn?.classList.add('is-loading');
+  const op = block
+    ? set(ref(db, `customerFlags/${uid}`), { blocked: true, byEmail: auth.currentUser?.email || 'admin', at: serverTimestamp() })
+    : remove(ref(db, `customerFlags/${uid}`));
+  op.then(() => showToast(block ? 'Cliente bloqueado' : 'Cliente desbloqueado')).catch((err) => {
+    showToast(err.message || 'No se pudo actualizar');
+    btn?.classList.remove('is-loading');
+  });
+}
+
+/* ---------- Tiempo estimado de entrega/recogida ---------- */
+function handleSetEta(orderId, minutes) {
+  updateOrderField(
+    orderId,
+    { etaMinutes: minutes, etaSetAt: serverTimestamp() },
+    `Tiempo estimado: ${minutes} min`,
+    'No se pudo guardar el tiempo estimado'
+  );
+}
+
+/* ---------- Nota interna del cajero ---------- */
+/* Nunca se muestra al cliente — solo vive en el panel, para dejar
+   contexto a quien atienda después ("cliente llamó, cambió la
+   dirección", "pagó por transferencia", etc.). */
+function handleSaveInternalNote(orderId, note) {
+  updateOrderField(orderId, { internalNote: note }, 'Nota guardada', 'No se pudo guardar la nota');
+}
+
+/* ---------- PWA: instalar el panel como app aparte ---------- */
+/* Mismo service worker que la app de clientes (un solo sw.js con
+   scope raíz controla todo el sitio) — lo que hace instalable esta
+   página en concreto es que ella misma también lo registre (no
+   basta con que lo haya hecho index.html en otra visita) más el
+   manifest-admin.json enlazado en admin.html, con su propio
+   start_url para que abra el panel y no el menú de clientes. */
+function registerServiceWorker() {
+  // En localhost (entorno de pruebas con emuladores) no: serviría CSS/JS
+  // viejos de su caché mientras se edita. Ver scripts/entorno-local.mjs.
+  if (['localhost', '127.0.0.1'].includes(location.hostname)) {
+    navigator.serviceWorker?.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {});
+    return;
+  }
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch((err) => {
+        console.warn('No se pudo registrar el service worker:', err);
+      });
+    });
+  }
+}
+
+/* Antes el splash se ocultaba con un timer fijo (500ms tras "load"),
+   sin relación con si Firebase Auth ya había confirmado la sesión —
+   en una conexión lenta o un arranque en frío del SDK, esos 500ms se
+   cumplían ANTES de que onAuthChange (ver init()) resolviera, así que
+   se alcanzaba a ver la pantalla de login por un instante aunque la
+   persona ya tuviera sesión iniciada, hasta que un repintado la
+   reemplazaba por el panel real. Ahora hideSplash() la esconde recién
+   dentro de showGate() — es decir, en el mismo momento en que ya se
+   sabe qué pantalla mostrar de verdad. Se deja igual un límite de
+   seguridad por si algo se cuelga (sin red, Firebase Auth nunca
+   responde) para que el splash no quede pegado para siempre. */
+let splashHidden = false;
+function hideSplash() {
+  if (splashHidden) return;
+  splashHidden = true;
+  $('splash')?.classList.add('is-hidden');
+}
+
+function hideSplashWhenReady() {
+  window.addEventListener('load', () => {
+    setTimeout(hideSplash, 4000);
+  });
+}
+
+/* Arma un enlace de Google Maps "Cómo llegar" encadenando los puntos
+   del recorrido del domiciliario como paradas (hasta 25, la muestra
+   pareja si el recorrido tiene más) — sin librería de mapas ni clave
+   de API, mismo enlace público usado en toda la app. */
+// Mismo umbral que ui.js (GPS_STALE_MS) — si el domiciliario lleva
+// más de esto sin mandar una posición nueva, se lo avisamos al
+// panel en vez de mostrarle en silencio una ubicación vieja.
+const DRIVER_GPS_STALE_MS = 5 * 60 * 1000;
+function isDriverLocationStale(loc) {
+  const updatedMs = typeof loc?.updatedAt === 'number' ? loc.updatedAt : 0;
+  return updatedMs > 0 && Date.now() - updatedMs > DRIVER_GPS_STALE_MS;
+}
+
+function trailMapsUrl(trail, current) {
+  const points = (Array.isArray(trail) ? trail : [])
+    .filter((p) => typeof p.lat === 'number' && typeof p.lng === 'number')
+    .map((p) => `${p.lat},${p.lng}`);
+  const currentStr = current ? `${current.lat},${current.lng}` : null;
+  if (currentStr && points[points.length - 1] !== currentStr) points.push(currentStr);
+  if (points.length <= 1) return `https://www.google.com/maps?q=${points[0] || currentStr}`;
+  const sampled = points.length > 25 ? sampleEvenly(points, 25) : points;
+  return `https://www.google.com/maps/dir/${sampled.join('/')}`;
+}
+
+function sampleEvenly(points, max) {
+  const step = (points.length - 1) / (max - 1);
+  const result = [];
+  for (let i = 0; i < max; i++) {
+    result.push(points[Math.round(i * step)]);
+  }
+  return result;
+}
+
+/* ---------- Utilidades ---------- */
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str == null ? '' : String(str);
+  return div.innerHTML;
+}
+
+function showToast(message) {
+  const toast = $('admin-toast');
+  toast.textContent = message;
+  toast.classList.add('is-visible');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toast.classList.remove('is-visible'), 2500);
+}
+
+init();

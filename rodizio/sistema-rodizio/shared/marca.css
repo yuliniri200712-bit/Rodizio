@@ -1,0 +1,112 @@
+/* Rodizio Cucuta - ParaTouch (DJG . djgv . Mxi . 0808 . 0724 . uwu) */
+/* ─────────────────────────────────────────────────────────────
+   RODÍZIO BRASA — la paleta y las medidas de TODO el sistema.
+   Fuente de verdad: el sistema de diseño
+   https://claude.ai/artifact/SthJTy9aDEApsUAqbPgo2k (tokens.json).
+   Si cambia un valor allá, cambia acá y en ningún otro lado.
+
+   Quién lo carga:
+     - paneles del restaurante (mesero, caja, cocina, admin, carta QR,
+       acceso): directo, antes de shared/theme.css.
+     - tienda/ (tienda, admin de domicilios, domiciliario): una COPIA en
+       tienda/css/marca.css, porque ese hosting no sirve shared/. La copia
+       la regenera scripts/sync-marca.mjs; no editarla a mano.
+
+   Temas: claro por defecto; cocina pone data-theme="oscuro" en <html>.
+   Los nombres son los mismos en los dos temas.
+   ───────────────────────────────────────────────────────────── */
+
+:root,
+[data-theme="claro"] {
+  --fondo: #ECEAE6;
+  --superficie: #F7F6F3;
+  --superficie-hundida: #E3E0DA;
+  --campo: #FFFFFF;
+  --borde: #D3CFC8;
+  --borde-control: #8E8A83;
+  --tinta: #24262B;
+  --tinta-suave: #56595F;
+  --carbon: #2A2D33;
+  --sobre-carbon: #F2F0EC;
+  --sobre-carbon-suave: #B4B1AB;
+  --sobre-carbon-borde: rgba(180, 177, 171, 0.35);
+  --sobre-carbon-exito: #6CC495;
+  --sobre-carbon-marca: #E0584C;
+  --marca: #B52A20;
+  --marca-hover: #9A231B;
+  --sobre-marca: #FFFFFF;
+  --marca-texto: #9A231B;
+  --marca-tinte: #F4DEDA;
+  --marca-borde: #D9958E;
+  --exito: #2E6E47;
+  --exito-tinte: #DCEADF;
+  --aviso: #7D5200;
+  --aviso-tinte: #F2E5C6;
+  --info: #2C5A80;
+  --info-tinte: #DCE5EE;
+  --foco: #2C5A80;
+  --sombra-tarjeta: 0 1px 2px rgba(36, 38, 43, 0.06);
+  --sombra-flotante: 0 8px 24px rgba(36, 38, 43, 0.14);
+  color-scheme: light;
+}
+
+[data-theme="oscuro"] {
+  --fondo: #17191C;
+  --superficie: #202328;
+  --superficie-hundida: #1A1C20;
+  --campo: #2A2E34;
+  --borde: #373B42;
+  --borde-control: #7A7F88;
+  --tinta: #ECEAE6;
+  --tinta-suave: #A9ACB2;
+  --carbon: #0F1114;
+  --sobre-carbon: #F2F0EC;
+  --sobre-carbon-suave: #A9A6A0;
+  --sobre-carbon-borde: rgba(169, 166, 160, 0.35);
+  --sobre-carbon-exito: #6CC495;
+  --sobre-carbon-marca: #E0584C;
+  --marca: #E0584C;
+  --marca-hover: #EB7064;
+  --sobre-marca: #17191C;
+  --marca-texto: #F08A80;
+  --marca-tinte: #3A2422;
+  --marca-borde: #6E3530;
+  --exito: #6CC495;
+  --exito-tinte: #1E3328;
+  --aviso: #E2A64B;
+  --aviso-tinte: #392D16;
+  --info: #7FB0DA;
+  --info-tinte: #1C2B38;
+  --foco: #7FB0DA;
+  --sombra-tarjeta: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sombra-flotante: 0 8px 24px rgba(0, 0, 0, 0.55);
+  color-scheme: dark;
+}
+
+:root {
+  --font-display: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --font-texto: Manrope, "Segoe UI", system-ui, sans-serif;
+
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-5: 24px;
+  --espacio-6: 32px;
+  --espacio-7: 48px;
+
+  --radio-0: 0;
+  --radio-sm: 4px;
+  --radio-redondo: 999px;
+
+  --alto-encabezado: 56px;
+  --alto-control: 44px;
+  --alto-control-compacto: 36px;
+  --borde-indicador: 3px;
+}
+
+/* Anillo de foco de teclado, igual en todas las pantallas. */
+:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+}

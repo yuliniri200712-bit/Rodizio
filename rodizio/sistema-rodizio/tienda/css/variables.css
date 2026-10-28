@@ -1,0 +1,85 @@
+/* Rodizio Cucuta - ParaTouch (DJG . djgv . Mxi . 0808 . 0724 . uwu) */
+/* =========================================================
+   RODÍZIO CÚCUTA — Design tokens
+   Paleta clara inspirada en la parrilla: brasa, humo y espeto
+   dorado, sobre fondo cálido claro (a pedido del usuario — hubo
+   una versión con modo oscuro/claro alternable, se quitó el
+   oscuro por completo y se dejó un solo tema, sin botón para
+   cambiarlo).
+   ========================================================= */
+:root {
+  /* --- Color: crema cálido y brasa --- */
+  --color-bg: var(--fondo);
+  --color-surface: var(--superficie);
+  --color-surface-raised: var(--superficie);
+  --color-border: var(--borde);
+
+  --color-flame: var(--marca);            /* rojo vivo de las fotos reales del restaurante (servilletas/mantelería) — muestreado de img rodizio/1.webp, más saturado y menos anaranjado que el rojo anterior */
+  --color-flame-hover: var(--marca-hover);
+  --color-ember: var(--marca-hover);            /* brasa profunda — CTA / hover oscuro */
+  --color-gold: var(--aviso);             /* espeto dorado — precios, badges premium */
+  --color-gold-soft: var(--aviso);
+
+  --color-text: var(--tinta);             /* texto principal sobre fondo claro */
+  --color-text-muted: var(--tinta-suave);
+  --color-text-faint: var(--tinta-suave);
+
+  --color-success: var(--exito);
+  --color-danger: var(--marca-texto);
+
+  /* --- Tipografía --- */
+  --font-display: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-md: 1.125rem;
+  --fs-lg: 1.375rem;
+  --fs-xl: 1.75rem;
+  --fs-2xl: 2.5rem;
+  --fs-3xl: 3.25rem;
+
+  /* --- Espaciado --- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* --- Forma --- */
+  --radius-sm: var(--radio-sm);
+  --radius-md: var(--radio-sm);
+  --radius-lg: var(--radio-sm);
+  --radius-pill: var(--radio-sm);
+
+  /* --- Elevación --- */
+  --shadow-card: var(--sombra-tarjeta);
+  --shadow-float: var(--sombra-flotante);
+  --shadow-glow-flame: none;
+
+  /* Degradado del hero/pantalla de acceso (.hero en layout.css,
+     .admin-gate en admin.css) — opacidad baja a propósito: con la
+     misma intensidad que tendría sobre un fondo oscuro, sobre este
+     fondo claro se ve un lavado salmón muy fuerte en vez de un
+     brillo sutil. */
+  --hero-glow-1: transparent;
+  --hero-glow-2: transparent;
+  --hero-glow-1-soft: transparent;
+  --hero-glow-2-soft: transparent;
+
+  /* --- Capas --- */
+  --z-header: 100;
+  --z-bottom-nav: 150;
+  --z-cart-fab: 200;
+  --z-drawer: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+
+  /* --- Layout --- */
+  --max-width: 480px; /* ancho fijo de drawers y modales: un panel de carrito no debe crecer con la pantalla */
+  --header-height: 64px;
+}

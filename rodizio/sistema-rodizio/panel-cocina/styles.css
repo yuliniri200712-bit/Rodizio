@@ -1,0 +1,71 @@
+/* Rodizio Cucuta - ParaTouch (DJG . djgv . Mxi . 0808 . 0724 . uwu) */
+/* Ambiente de cocina: oscuro y con letra más grande, para leer de lejos
+   con las manos ocupadas (decisión del dueño). Desde 2026-10-05 usa el
+   tema "oscuro" del sistema Rodízio Brasa (shared/marca.css), activado
+   con data-theme="oscuro" en <html> — ya no define una paleta propia ni
+   la rampa invertida: tinta y tinta-suave ya son claras en ese tema. */
+body { font-size: 16.5px }
+
+h1,h2,h3{font-family:var(--font-heading);font-weight:800;letter-spacing:-0.025em;margin:0}
+  @keyframes rzPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.015)}}
+  @keyframes rzPop{0%{opacity:0;transform:translateY(-8px) scale(.97)}100%{opacity:1;transform:translateY(0) scale(1)}}
+  @keyframes rzRing{0%{box-shadow:0 0 0 0 color-mix(in srgb, var(--color-accent) 55%, transparent)}100%{box-shadow:0 0 0 14px transparent}}
+
+
+  main{max-width:1400px;margin:0 auto;padding:18px 20px 24px}
+  .board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+  @media (max-width:980px){.board{grid-template-columns:1fr;gap:22px}}
+  .col{min-width:0}
+  .col-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:0 4px}
+  .col-head .swatch{width:11px;height:11px;border-radius:var(--radio-sm);flex:none}
+  .col-head h2{font-size:21px;flex:1}
+  .col-count{font-family:var(--font-body);font-weight:800;font-size:14px;background:var(--color-neutral-200);color:var(--color-neutral-800);border-radius:var(--radio-sm);min-width:28px;height:24px;padding:0 8px;display:flex;align-items:center;justify-content:center}
+  .cards{display:flex;flex-direction:column;gap:12px;min-height:70px}
+
+  .ticket{background:var(--color-neutral-100);border:1px solid var(--color-divider);border-radius:var(--radio-sm);padding:18px 19px;box-shadow:var(--shadow-sm);animation:rzPop .28s ease both}
+  .ticket.enviado{border-color:var(--color-accent-300)}
+  .ticket.listo{border-color:var(--color-accent-2-500);background:var(--color-accent-2-100)}
+  .ticket.nueva{animation:rzPop .28s ease both, rzRing 1.1s ease-out 1}
+  .t-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .t-codigo{font-family:var(--font-heading);font-size:28px;line-height:1}
+  .t-mesa{display:inline-block;margin-top:6px;font-size:14px;font-weight:700;color:var(--color-bg);background:var(--color-neutral-800);border-radius:var(--radio-sm);padding:5px 13px}
+  .t-time{font-size:14px;font-weight:700;color:var(--color-neutral-600);white-space:nowrap;text-align:right}
+  .t-time.warn{color:var(--color-accent-700)}
+  .t-personas{display:flex;gap:18px;margin:4px 0 12px;flex-wrap:wrap}
+  .t-persona{display:flex;flex-direction:column;gap:1px}
+  .t-persona-label{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--color-neutral-500)}
+  .t-persona-valor{font-size:14.5px;font-weight:700;color:var(--color-neutral-700)}
+  .t-aviso{display:flex;align-items:flex-start;gap:8px;background:var(--aviso-tinte);border:1px solid var(--aviso);border-radius:var(--radio-sm);padding:10px 12px;margin-bottom:12px;animation:rzPulse 1.6s ease-in-out infinite}
+  .t-aviso .material-symbols-outlined{color:var(--aviso);font-size:20px;flex:none;margin-top:1px}
+  .t-aviso-texto{flex:1;font-size:13.5px;color:var(--tinta);line-height:1.4}
+  .t-aviso button{flex:none;align-self:center;border:1px solid var(--aviso);background:transparent;color:var(--aviso);border-radius:var(--radio-sm);padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer}
+  .t-lineas{display:flex;flex-direction:column;gap:9px;margin-bottom:2px}
+  .t-ronda-header{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--color-accent-700);padding-bottom:9px;margin-bottom:9px;border-bottom:1px dashed var(--color-divider)}
+  .t-programado{background:var(--color-accent-100);color:var(--color-accent-700);border-radius:4px;padding:1px 6px}
+  .t-ronda-header.ronda-sep{margin-top:9px;padding-top:14px;border-top:1px dashed var(--color-divider)}
+  .t-linea{display:flex;gap:10px;font-size:17.5px;line-height:1.35}
+  .t-qty{font-weight:800;color:var(--color-accent-700);min-width:30px}
+  .t-nombre{flex:1}
+  .t-nota{display:block;font-size:13.5px;color:var(--color-accent-700);background:var(--color-accent-100);border-radius:var(--radio-sm);padding:4px 9px;margin-top:4px;width:fit-content}
+  .t-ronda-btn{flex:none;border:0;border-radius:var(--radio-sm);padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;color:var(--color-bg);text-transform:none;letter-spacing:0}
+  .t-ronda-btn.a-prep{background:var(--color-accent)}
+  .t-ronda-btn.a-listo{background:var(--color-accent-2-600)}
+  .t-ronda-badge{flex:none;font-size:12.5px;font-weight:800;display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0}
+  .t-ronda-badge.b-espera{color:var(--color-accent-2-700)}
+  .t-ronda-badge.b-espera .b{width:7px;height:7px;border-radius:var(--radio-sm);background:var(--color-accent-2-600);animation:rzPulse 1.4s ease-in-out infinite}
+  .t-ronda-badge.b-servido{color:var(--color-neutral-500)}
+  .t-ronda-badge.b-servido .material-symbols-outlined{font-size:16px}
+
+  .empty{border:1.5px dashed var(--color-divider);border-radius:var(--radio-sm);padding:26px 16px;text-align:center;color:var(--color-neutral-500);font-size:13.5px}
+
+  /* ————— Franja de recién entregados: solo confirmación visual, sin reportes ————— */
+  .entregados-strip{max-width:1400px;margin:24px auto 0;padding:0 20px}
+  .entregados-strip h3{font-size:13px;font-weight:700;color:var(--color-neutral-600);text-transform:uppercase;letter-spacing:.04em;margin-bottom:9px;padding:0 4px}
+  .entregados-chips{display:flex;gap:8px;flex-wrap:wrap}
+  .entregado-chip{display:flex;align-items:center;gap:7px;background:var(--color-neutral-200);color:var(--color-neutral-600);border-radius:var(--radio-sm);padding:7px 13px;font-size:12.5px;font-weight:600}
+  .entregado-chip .ok{color:var(--color-accent-2-600)}
+
+  .banner{max-width:1400px;margin:0 auto 14px;padding:11px 16px;border-radius:var(--radio-sm);background:var(--color-accent-100);border:1px solid var(--color-accent-300);color:var(--color-accent-700);font-size:12.5px;display:none;align-items:center;gap:8px}
+  .banner.show{display:flex}
+
+  .cargando{text-align:center;color:var(--color-neutral-600);padding:60px 20px}

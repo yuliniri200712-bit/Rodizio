@@ -1,0 +1,9 @@
+{
+  "name": "rodizio-sistema-mesas",
+  "private": true,
+  "description": "Sistema de mesas de Rodízio Cúcuta (mesero-app, panel-cocina, panel-caja, panel-admin, panel-cliente) — scripts de deploy con el proyecto de Firebase forzado a rodiziomarketplace (el default de .firebaserc sigue siendo el proyecto viejo rodizio-eb49a, no confiar en él).",
+  "scripts": {
+    "deploy": "firebase use rodiziomarketplace && firebase deploy --only hosting",
+    "deploy:db": "firebase use rodiziomarketplace && firebase deploy --only database"
+  }
+}

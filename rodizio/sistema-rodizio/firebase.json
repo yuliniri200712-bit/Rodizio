@@ -1,0 +1,154 @@
+{
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "functions": {
+    "source": "tienda/functions"
+  },
+  "hosting": [
+    {
+      "target": "mesero",
+      "public": ".",
+      "ignore": [
+        ".git", ".git/**", "**/.git/**", "icons/menu/**", "storage.rules",
+        "firebase.json", ".firebaserc", "**/.*", "**/node_modules/**",
+        "CLAUDE.md", "README.md", "docs-fusion/**", "scripts/**",
+        "database.rules.json", ".claude/**", "docs/**", "package.json", "package-lock.json", "firebase.test.json", "tienda/**", "*.zip",
+        "panel-cocina/**", "panel-caja/**", "panel-admin/**", "panel-cliente/**"
+      ],
+      "headers": [
+        { "regex": "/$", "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }] },
+        { "source": "**/*.@(html|js|css|json)", "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }] },
+        { "source": "**/*.webmanifest", "headers": [{ "key": "Content-Type", "value": "application/manifest+json" }] },
+        { "source": "**/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+        { "source": "/icons/**", "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }] },
+        {
+          "source": "**",
+          "headers": [
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+            { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+            { "key": "Permissions-Policy", "value": "geolocation=(), camera=(), microphone=()" },
+            { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" }
+          ]
+        }
+      ]
+    },
+    {
+      "target": "cocina",
+      "public": ".",
+      "ignore": [
+        ".git", ".git/**", "**/.git/**", "icons/menu/**", "storage.rules",
+        "firebase.json", ".firebaserc", "**/.*", "**/node_modules/**",
+        "CLAUDE.md", "README.md", "docs-fusion/**", "scripts/**",
+        "database.rules.json", ".claude/**", "docs/**", "package.json", "package-lock.json", "firebase.test.json", "tienda/**", "*.zip",
+        "mesero-app/**", "panel-caja/**", "panel-admin/**", "panel-cliente/**"
+      ],
+      "headers": [
+        { "regex": "/$", "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }] },
+        { "source": "**/*.@(html|js|css|json)", "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }] },
+        { "source": "**/*.webmanifest", "headers": [{ "key": "Content-Type", "value": "application/manifest+json" }] },
+        { "source": "**/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+        { "source": "/icons/**", "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }] },
+        {
+          "source": "**",
+          "headers": [
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+            { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+            { "key": "Permissions-Policy", "value": "geolocation=(), camera=(), microphone=()" },
+            { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" }
+          ]
+        }
+      ]
+    },
+    {
+      "target": "caja",
+      "public": ".",
+      "ignore": [
+        ".git", ".git/**", "**/.git/**", "icons/menu/**", "storage.rules",
+        "firebase.json", ".firebaserc", "**/.*", "**/node_modules/**",
+        "CLAUDE.md", "README.md", "docs-fusion/**", "scripts/**",
+        "database.rules.json", ".claude/**", "docs/**", "package.json", "package-lock.json", "firebase.test.json", "tienda/**", "*.zip",
+        "mesero-app/**", "panel-cocina/**", "panel-admin/**", "panel-cliente/**"
+      ],
+      "headers": [
+        { "regex": "/$", "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }] },
+        { "source": "**/*.@(html|js|css|json)", "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }] },
+        { "source": "**/*.webmanifest", "headers": [{ "key": "Content-Type", "value": "application/manifest+json" }] },
+        { "source": "**/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+        { "source": "/icons/**", "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }] },
+        {
+          "source": "**",
+          "headers": [
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+            { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+            { "key": "Permissions-Policy", "value": "geolocation=(), camera=(), microphone=()" },
+            { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" }
+          ]
+        }
+      ]
+    },
+    {
+      "target": "admin",
+      "public": ".",
+      "ignore": [
+        ".git", ".git/**", "**/.git/**", "icons/menu/**", "storage.rules",
+        "firebase.json", ".firebaserc", "**/.*", "**/node_modules/**",
+        "CLAUDE.md", "README.md", "docs-fusion/**", "scripts/**",
+        "database.rules.json", ".claude/**", "docs/**", "package.json", "package-lock.json", "firebase.test.json", "tienda/**", "*.zip",
+        "mesero-app/**", "panel-cocina/**", "panel-caja/**", "panel-cliente/**"
+      ],
+      "headers": [
+        { "regex": "/$", "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }] },
+        { "source": "**/*.@(html|js|css|json)", "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }] },
+        { "source": "**/*.webmanifest", "headers": [{ "key": "Content-Type", "value": "application/manifest+json" }] },
+        { "source": "**/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+        { "source": "/icons/**", "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }] },
+        {
+          "source": "**",
+          "headers": [
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+            { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+            { "key": "Permissions-Policy", "value": "geolocation=(), camera=(), microphone=()" },
+            { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" }
+          ]
+        }
+      ]
+    },
+    {
+      "target": "cliente",
+      "public": ".",
+      "ignore": [
+        ".git", ".git/**", "**/.git/**", "icons/menu/**", "storage.rules",
+        "firebase.json", ".firebaserc", "**/.*", "**/node_modules/**",
+        "CLAUDE.md", "README.md", "docs-fusion/**", "scripts/**",
+        "database.rules.json", ".claude/**", "docs/**", "package.json", "package-lock.json", "firebase.test.json", "tienda/**", "*.zip",
+        "index.html", "app.js", "styles.css", "manifest.webmanifest",
+        "mesero-app/**", "panel-cocina/**", "panel-caja/**", "panel-admin/**"
+      ],
+      "rewrites": [{ "source": "/", "destination": "/panel-cliente/index.html" }],
+      "headers": [
+        { "regex": "/$", "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }] },
+        { "source": "**/*.@(html|js|css|json)", "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }] },
+        { "source": "**/*.webmanifest", "headers": [{ "key": "Content-Type", "value": "application/manifest+json" }] },
+        { "source": "/icons/**", "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }] },
+        {
+          "source": "**",
+          "headers": [
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+            { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+            { "key": "Permissions-Policy", "value": "geolocation=(), camera=(), microphone=()" },
+            { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" }
+          ]
+        }
+      ]
+    }
+  ]
+}

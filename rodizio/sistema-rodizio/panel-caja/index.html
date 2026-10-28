@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2A2D33">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rodizio Caja">
+<title>Rodizio · Panel de caja</title>
+<meta name="author" content="ParaTouch — DJG (djgv · Mxi)" />
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="../icons/favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="../icons/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js" defer></script>
+<link rel="stylesheet" href="../shared/marca.css">
+<link rel="stylesheet" href="../shared/theme.css">
+<link rel="stylesheet" href="../shared/ui.css">
+<link rel="stylesheet" href="../shared/pwa.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="vistaCargando" class="cargando cargando-wrap">
+  <div class="cargando-logo"><img src="../icons/icon-192.png" alt="Rodizio"></div>
+  <div class="spinner"></div>
+  <p class="cargando-texto">Verificando sesión…</p>
+</div>
+
+<div id="app" style="display:none">
+<header>
+  <div class="headwrap">
+    <div class="brand">
+      <img class="brand-logo" src="../icons/logo-blanco.webp" alt="Rodízio" height="28">
+      <h1 class="sr-only">Rodízio · Caja</h1>
+      <small aria-hidden="true">Caja</small>
+    </div>
+    <div class="status"><span class="dot off" id="dot"></span><span id="statusTxt">Conectando…</span></div>
+    <div class="clock" id="clock">--:--</div>
+    <nav class="cajatabs" id="cajatabs">
+      <button type="button" data-tab="cobrar" class="active">Cobrar</button>
+      <button type="button" data-tab="domicilios">Domicilios<span class="tab-badge" id="domiBadge" hidden>0</span></button>
+    </nav>
+    <button class="sound-btn" id="soundBtn" data-on="1" title="Silenciar aviso de nuevo pedido">
+      <svg id="soundIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+    </button>
+    <button class="btn-instalar-pwa" id="btnInstalarApp"><svg class="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Instalar App</button>
+    <button class="logout" id="btnLogout">Salir</button>
+  </div>
+</header>
+
+<div id="tabCobrar">
+<main>
+  <div class="banner" id="banner">Sin conexión con Firebase — mostrando la última comanda recibida.</div>
+
+  <section>
+    <div class="col-head"><span class="swatch" style="background:var(--color-accent)"></span><h2>Por cobrar</h2><span class="col-count" id="cPorCobrar">0</span></div>
+    <div class="cards" id="colPorCobrar"></div>
+  </section>
+</main>
+
+<section class="entregados-sec">
+  <div class="entregados-head">
+    <span class="swatch"></span><h2>Cobrados hoy</h2><span class="col-count" id="cCobrados">0</span>
+    <input type="month" class="mes-exportar" id="mesExportar" title="Mes a exportar">
+    <button class="btn-exportar" id="btnExportar" title="Descargar en Excel"><svg class="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Exportar Excel</button>
+  </div>
+  <div class="entregados-list" id="entregadosList"></div>
+</section>
+
+<div class="footbar">
+  <div class="stat"><b id="statHoy">0</b>comandas hoy</div>
+  <div class="stat"><b id="statCobradas">0</b>cobradas hoy</div>
+  <div class="stat"><b id="statPorCobrar">0</b>por cobrar</div>
+</div>
+</div>
+
+<div id="tabDomicilios" hidden>
+<main>
+  <section>
+    <div class="col-head"><span class="swatch" style="background:var(--color-accent)"></span><h2>Pedidos de domicilio</h2><span class="col-count" id="cDomicilios">0</span></div>
+    <p class="domi-hint">Caja confirma el pedido para que entre a cocina, y controla la logística. El panel de domiciliarios sigue funcionando en paralelo.</p>
+    <div class="domi-pausa" id="domiPausa" data-pausado="false">
+      <div class="domi-pausa-texto">
+        <b id="domiPausaTitulo">Domicilios activos</b>
+        <span id="domiPausaDetalle">La tienda en línea recibe pedidos a domicilio y para recoger.</span>
+      </div>
+      <button type="button" class="domi-pausa-btn" id="btnPausaDomi">Pausar domicilios</button>
+    </div>
+    <div class="cards" id="colDomicilios"></div>
+  </section>
+</main>
+</div>
+</div>
+
+<script type="module" src="../shared/firebase.js"></script>
+<script src="../shared/util.js"></script>
+<script src="../shared/ui.js"></script>
+<script src="../shared/pwa.js"></script>
+<script src="../shared/roles.js"></script>
+<script type="module" src="../shared/auth.js"></script>
+<script src="app.js"></script>
+  <p class="dev-credit">Desarrollado por <strong>ParaTouch</strong></p>
+</body>
+</html>

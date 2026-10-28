@@ -1,0 +1,451 @@
+{
+  "contadores": {
+    "2026-08-22": 4,
+    "2026-08-30": 1,
+    "2026-08-31": 2
+  },
+  "pedidos": {
+    "-P-bGgqZUpS1v62zHfXr": {
+      "cajero": "rodizio",
+      "cajeroUsuario": "rodizio",
+      "codigo": "P-001",
+      "estado": "entregado",
+      "lineas": [
+        {
+          "cat": "Entradas",
+          "id": "ENT-02",
+          "nombre": "Sopa del Día",
+          "nota": "",
+          "precio": 20000,
+          "qty": 4,
+          "ronda": 1
+        }
+      ],
+      "mesa": "Mesa 5",
+      "mesaId": "mesa-5",
+      "mesero": "rodizio",
+      "meseroUsuario": "rodizio",
+      "metodoPago": "efectivo",
+      "pagado": true,
+      "rondaActual": 1,
+      "rondaEstados": [
+        null,
+        "entregado"
+      ],
+      "rondaPrepInicio": [
+        null,
+        1787365353934
+      ],
+      "rondas": [
+        null,
+        1787365346650
+      ],
+      "total": 80000,
+      "ts": 1787365346650,
+      "tsCambio": 1787365414496,
+      "tsPago": 1787365422208,
+      "tsUltimaRonda": 1787365346650
+    },
+    "-P-bc2xMf8kP8YQflQ4s": {
+      "cajero": "rodizio",
+      "cajeroUsuario": "rodizio",
+      "codigo": "P-002",
+      "estado": "entregado",
+      "lineas": [
+        {
+          "cat": "Entradas",
+          "id": "ENT-01",
+          "nombre": "Crema de Pollo ó Champiñones",
+          "nota": "",
+          "precio": 24000,
+          "qty": 2,
+          "ronda": 1
+        },
+        {
+          "cat": "Entradas",
+          "id": "ENT-02",
+          "nombre": "Sopa del Día",
+          "nota": "",
+          "precio": 20000,
+          "qty": 2,
+          "ronda": 1
+        },
+        {
+          "cat": "Entradas",
+          "id": "ENT-02",
+          "nombre": "Sopa del Día",
+          "nota": "",
+          "precio": 20000,
+          "qty": 2,
+          "ronda": 2
+        },
+        {
+          "cat": "Entradas",
+          "id": "ENT-03",
+          "nombre": "Coctel de Camarón",
+          "nota": "",
+          "precio": 35000,
+          "qty": 1,
+          "ronda": 3
+        },
+        {
+          "cat": "Entradas",
+          "id": "ENT-01",
+          "nombre": "Crema de Pollo ó Champiñones",
+          "nota": "",
+          "precio": 24000,
+          "qty": 1,
+          "ronda": 4
+        },
+        {
+          "cat": "Entradas",
+          "id": "ENT-05",
+          "nombre": "Ensalada al César",
+          "nota": "",
+          "precio": 20000,
+          "qty": 3,
+          "ronda": 5
+        },
+        {
+          "cat": "Entradas",
+          "id": "ENT-01",
+          "nombre": "Crema de Pollo ó Champiñones",
+          "nota": "",
+          "precio": 24000,
+          "qty": 1,
+          "ronda": 6
+        }
+      ],
+      "mesa": "Mesa 1",
+      "mesaId": "mesa-1",
+      "mesero": "rodizio",
+      "meseroUsuario": "rodizio",
+      "metodoPago": "tarjeta",
+      "pagado": true,
+      "rondaActual": 6,
+      "rondaEstados": [
+        null,
+        "entregado",
+        "entregado",
+        "entregado",
+        "entregado",
+        "entregado",
+        "entregado"
+      ],
+      "rondaPrepInicio": [
+        null,
+        1787371214519,
+        1787371449488,
+        1787371668366,
+        1787374876658,
+        1787374917290,
+        1787374932183
+      ],
+      "rondas": [
+        null,
+        1787371208415,
+        1787371223492,
+        1787371630356,
+        1787374867947,
+        1787374891994,
+        1787374926944
+      ],
+      "total": 271000,
+      "ts": 1787371208415,
+      "tsCambio": 1787374950953,
+      "tsPago": 1787374961971,
+      "tsUltimaRonda": 1787374926944
+    },
+    "-P-eXJuR-qcFbRSKbV60": {
+      "cajero": "rodizio",
+      "cajeroUsuario": "rodizio",
+      "codigo": "P-003",
+      "estado": "entregado",
+      "lineas": [
+        {
+          "cat": "Entradas",
+          "id": "ENT-02",
+          "nombre": "Sopa del Día",
+          "nota": "",
+          "precio": 20000,
+          "qty": 1,
+          "ronda": 1
+        },
+        {
+          "cat": "Entradas",
+          "id": "ENT-05",
+          "nombre": "Ensalada al César",
+          "nota": "",
+          "precio": 20000,
+          "qty": 1,
+          "ronda": 1
+        },
+        {
+          "cat": "Entradas",
+          "id": "ENT-04",
+          "nombre": "Tuna a la Tártara",
+          "nota": "",
+          "precio": 25000,
+          "qty": 1,
+          "ronda": 1
+        },
+        {
+          "cat": "Menú Infantil",
+          "id": "INF-01",
+          "nombre": "Mini - Hamburguesa",
+          "nota": "",
+          "precio": 28000,
+          "qty": 1,
+          "ronda": 1
+        },
+        {
+          "cat": "Vinos",
+          "id": "VIN-02",
+          "nombre": "Trivento Golden Reserve Malbec",
+          "nota": "",
+          "precio": 350000,
+          "qty": 1,
+          "ronda": 1
+        },
+        {
+          "cat": "Vinos",
+          "id": "VIN-01",
+          "nombre": "Marqués de Riscal Reserva",
+          "nota": "",
+          "precio": 440000,
+          "qty": 1,
+          "ronda": 1
+        },
+        {
+          "cat": "Vinos",
+          "id": "VIN-03",
+          "nombre": "Marqués de Casa Concha Merlot",
+          "nota": "",
+          "precio": 310000,
+          "qty": 1,
+          "ronda": 1
+        }
+      ],
+      "mesa": "Mesa 20",
+      "mesaId": "mesa-20",
+      "mesero": "Maria",
+      "meseroUsuario": "maria",
+      "metodoPago": "efectivo",
+      "pagado": true,
+      "rondaActual": 1,
+      "rondaEstados": [
+        null,
+        "entregado"
+      ],
+      "rondaPrepInicio": [
+        null,
+        1787420048767
+      ],
+      "rondas": [
+        null,
+        1787420034696
+      ],
+      "total": 1193000,
+      "ts": 1787420034696,
+      "tsCambio": 1787420119844,
+      "tsPago": 1787420131277,
+      "tsUltimaRonda": 1787420034696
+    },
+    "-P-fJUvOv2YTi3-ccjSD": {
+      "codigo": "P-004",
+      "estado": "entregado",
+      "lineas": [
+        {
+          "cat": "Entradas",
+          "id": "ENT-02",
+          "nombre": "Sopa del Día",
+          "nota": "",
+          "precio": 20000,
+          "qty": 1,
+          "ronda": 1
+        },
+        {
+          "cat": "Entradas",
+          "id": "ENT-03",
+          "nombre": "Coctel de Camarón",
+          "nota": "",
+          "precio": 35000,
+          "qty": 1,
+          "ronda": 1
+        }
+      ],
+      "mesa": "Mesa 1",
+      "mesaId": "mesa-1",
+      "mesero": "rodizio",
+      "meseroUsuario": "rodizio",
+      "pagado": true,
+      "rondaActual": 1,
+      "rondaEstados": [
+        null,
+        "entregado"
+      ],
+      "rondaPrepInicio": [
+        null,
+        1787433202154
+      ],
+      "rondas": [
+        null,
+        1787433188981
+      ],
+      "total": 55000,
+      "ts": 1787433188981,
+      "tsCambio": 1787433211701,
+      "tsPago": 1787835590917,
+      "tsUltimaRonda": 1787433188981
+    },
+    "-P0JAS94SrzwFkxX2qmX": {
+      "codigo": "P-001",
+      "estado": "entregado",
+      "lineas": [
+        {
+          "cat": "Del Mar",
+          "id": "dm3",
+          "nombre": "Salmón Marinera",
+          "nota": "",
+          "precio": 95000,
+          "qty": 1,
+          "ronda": 1
+        },
+        {
+          "cat": "Bebidas",
+          "id": "be1",
+          "nombre": "Limonada Cerezada",
+          "nota": "",
+          "precio": 15000,
+          "qty": 1,
+          "ronda": 1
+        },
+        {
+          "cat": "Postres",
+          "id": "po6",
+          "nombre": "Copa de Helado",
+          "nota": "",
+          "precio": 15000,
+          "qty": 1,
+          "ronda": 1
+        }
+      ],
+      "mesa": "Mesa 2",
+      "mesaId": "mesa-2",
+      "mesero": "Maria",
+      "meseroUsuario": "maria",
+      "pagado": true,
+      "rondaActual": 1,
+      "rondas": [
+        null,
+        1788118683675
+      ],
+      "total": 125000,
+      "ts": 1788118683675,
+      "tsCambio": 1788118701114,
+      "tsPago": 1788118733988,
+      "tsUltimaRonda": 1788118683675
+    },
+    "-P0OyFY4s9ENTsE_9f8p": {
+      "cajero": "rodizio",
+      "cajeroUsuario": "rodizio",
+      "codigo": "P-001",
+      "estado": "entregado",
+      "lineas": [
+        {
+          "cat": "Champagnes",
+          "id": "CHA-01",
+          "nombre": "Veuve Clicquot Rose Box",
+          "nota": "",
+          "precio": 1200000,
+          "qty": 1,
+          "ronda": 1
+        }
+      ],
+      "mesa": "Mesa 20",
+      "mesaId": "mesa-20",
+      "mesero": "rodizio",
+      "meseroUsuario": "rodizio",
+      "metodoPago": "efectivo",
+      "pagado": true,
+      "rondaActual": 1,
+      "rondaEstados": [
+        null,
+        "entregado"
+      ],
+      "rondaPrepInicio": [
+        null,
+        1788215959658
+      ],
+      "rondas": [
+        null,
+        1788215888625
+      ],
+      "total": 1200000,
+      "ts": 1788215888625,
+      "tsCambio": 1788215991843,
+      "tsPago": 1788216661544,
+      "tsUltimaRonda": 1788215888625
+    },
+    "-P0OzpUWBgagTeXqXXDQ": {
+      "cajero": "rodizio",
+      "cajeroUsuario": "rodizio",
+      "codigo": "P-002",
+      "estado": "entregado",
+      "lineas": [
+        {
+          "cat": "Angus Beef",
+          "id": "ANG-02",
+          "nombre": "Asado de Tira",
+          "nota": "",
+          "precio": 120000,
+          "qty": 1,
+          "ronda": 1
+        }
+      ],
+      "mesa": "Mesa 1",
+      "mesaId": "mesa-1",
+      "mesero": "rodizio",
+      "meseroUsuario": "rodizio",
+      "metodoPago": "efectivo",
+      "pagado": true,
+      "rondaActual": 1,
+      "rondaEstados": [
+        null,
+        "entregado"
+      ],
+      "rondaPrepInicio": [
+        null,
+        1788216467305
+      ],
+      "rondas": [
+        null,
+        1788216302094
+      ],
+      "total": 120000,
+      "ts": 1788216302094,
+      "tsCambio": 1788216631716,
+      "tsPago": 1788216663065,
+      "tsUltimaRonda": 1788216302094
+    }
+  },
+  "trabajadores": {
+    "VPf2r0xTlVbUVEi24VmF9nrNomx2": {
+      "actualizado": 1786825998812,
+      "creado": 1786825998812,
+      "estado": "activo",
+      "nombre": "Maria",
+      "usuario": "maria"
+    },
+    "mvTAsqM7idU3vZHklO1x4Xgv4G63": {
+      "actualizado": 1786821370707,
+      "creado": 1786821370707,
+      "estado": "activo",
+      "nombre": "rodizio",
+      "rolesPermitidos": [
+        "admin"
+      ],
+      "usuario": "rodizio"
+    }
+  }
+}

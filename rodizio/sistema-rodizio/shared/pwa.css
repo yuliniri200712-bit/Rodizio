@@ -1,0 +1,125 @@
+/* Rodizio Cucuta - ParaTouch (DJG . djgv . Mxi . 0808 . 0724 . uwu) */
+html {
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  overscroll-behavior-x: none;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+@media (max-width: 600px) {
+  body .headwrap {
+    padding: 10px 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  body .headwrap > .brand {
+    flex: 1 1 100%;
+    min-width: 0;
+    margin-right: 0;
+  }
+
+  body .brand h1 {
+    font-size: 18px;
+  }
+
+  body .headwrap > .status,
+  body .headwrap > .clock {
+    flex: 1 1 76px;
+    min-width: 0;
+    justify-content: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    white-space: nowrap;
+  }
+
+  body .headwrap > .sound-btn {
+    flex: 0 0 38px;
+  }
+
+  body .headwrap > .btn-instalar-pwa {
+    flex: 1 1 130px;
+    min-width: 0;
+    justify-content: center;
+    padding-left: 10px;
+    padding-right: 10px;
+    white-space: nowrap;
+  }
+
+  body .headwrap > .logout {
+    flex: 0 0 auto;
+  }
+
+  body main,
+  body .entregados-sec,
+  body .entregados-strip,
+  body .footbar {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  body .tabs {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  body .card {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  body table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  body .qr-custom {
+    flex-wrap: wrap;
+  }
+
+  body .qr-custom input {
+    flex-basis: 100%;
+  }
+
+  body .qr-custom button {
+    width: 100% !important;
+    min-height: 46px;
+  }
+
+  body .t-top,
+  body .t-foot,
+  body .entregados-head {
+    flex-wrap: wrap;
+  }
+
+  body .t-time {
+    margin-left: auto;
+  }
+
+  body .t-ronda-header,
+  body .t-aviso {
+    align-items: flex-start;
+  }
+
+  body .t-ronda-btn {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  body .t-nombre,
+  body .t-aviso-texto {
+    overflow-wrap: anywhere;
+  }
+}

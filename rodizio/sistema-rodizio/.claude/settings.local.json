@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(identify rodizio-192.png rodizio-512.png)",
+      "Bash(node -e \"console.log\\(1\\)\")"
+    ]
+  }
+}
