@@ -108,6 +108,16 @@ app de domiciliarios.
 
 - Se quitaron a pedido del usuario y no se reintroducen solos: reseñas de
   producto, cupones de descuento, foto de evidencia de entrega.
+- Descuentos del Marketplace (pedidos por el usuario el 2026-11-04): NO son
+  cupones, se aplican solos. Nodo `descuentos`, pestaña Descuentos de
+  `admin.html` (solo dueño). Los calcula el servidor con `calcularDescuento`
+  (`js/reglas-pedido.js`): sobre todos los productos o solo los elegidos
+  (`alcance`/`productos`), sin acumular, tope 90 %.
+  El navegador solo los muestra. No aplican a mesa ni QR.
+- Obsequio de Burger Angus (2026-11-04): una gaseosa personal gratis por cada
+  hamburguesa de `burger-angus`. El cliente ve el aviso (`avisoObsequio` en
+  `js/ui.js`) y el servidor guarda la cantidad en `gaseosasObsequio` para
+  cocina, caja, panel y domiciliario. No suma al total ni toca inventario.
 - La propina del domiciliario no suma al efectivo esperado del cierre de turno.
 - "Reasignar a mitad de camino" reutiliza "No se pudo entregar" + "Reintentar
   entrega" del panel; no construir un flujo aparte.

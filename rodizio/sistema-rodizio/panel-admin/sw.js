@@ -4,7 +4,7 @@
 // (RTDB) nunca se cachean â€” deben ir siempre en vivo. Las llamadas de
 // autenticaciÃ³n son POST y el fetch handler ya las deja pasar de largo
 // (solo intercepta GET), asÃ­ que no hace falta excluirlas aparte.
-const CACHE = "rodizio-admin-v40";
+const CACHE = "rodizio-admin-v41";
 const SHELL = [
   "./",
   "./index.html",

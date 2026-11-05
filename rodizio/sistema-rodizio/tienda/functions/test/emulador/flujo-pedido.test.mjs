@@ -51,11 +51,11 @@ async function conectarComo(uid) {
 
 const CHECKOUT = { deliveryMode: 'domicilio', phone: '3001234567', address: 'Barrio Caobos', reference: 'Casa azul' };
 
-let cliente, cliente2, bloqueado, anonimo, domi, domiSinAcceso, mesero, adminTienda, adminMesa, apurado;
+let cliente, cliente2, bloqueado, anonimo, domi, domiSinAcceso, mesero, adminTienda, adminMesa, apurado, visitante, visitante2;
 
 before(async () => {
   const adminAuth = getAdminAuth(adminApp);
-  const usuarios = ['cliente1', 'cliente2', 'bloqueado1', 'driver1', 'driver2', 'trabajador1', 'admintienda', 'adminmesa', 'apurado1'];
+  const usuarios = ['cliente1', 'cliente2', 'bloqueado1', 'driver1', 'driver2', 'trabajador1', 'admintienda', 'adminmesa', 'apurado1', 'visitante1', 'visitante2'];
   for (const uid of usuarios) {
     await adminAuth.createUser({ uid, email: `${uid}@test.local`, password: CLAVE, displayName: `Usuario ${uid}` });
   }
@@ -82,10 +82,10 @@ before(async () => {
     drivers: { driver1: { access: true, name: 'Domi Uno' }, driver2: { access: false, name: 'Domi Dos' } },
   });
 
-  [cliente, cliente2, bloqueado, anonimo, domi, domiSinAcceso, mesero, adminTienda, adminMesa, apurado] = await Promise.all([
+  [cliente, cliente2, bloqueado, anonimo, domi, domiSinAcceso, mesero, adminTienda, adminMesa, apurado, visitante, visitante2] = await Promise.all([
     conectarComo('cliente1'), conectarComo('cliente2'), conectarComo('bloqueado1'), conectarComo(null),
     conectarComo('driver1'), conectarComo('driver2'), conectarComo('trabajador1'), conectarComo('admintienda'),
-    conectarComo('adminmesa'), conectarComo('apurado1'),
+    conectarComo('adminmesa'), conectarComo('apurado1'), conectarComo('visitante1'), conectarComo('visitante2'),
   ]);
 
   // Calentamiento: en este PC el primer arranque de una función tarda ~10 s
@@ -400,6 +400,153 @@ test('cashSettlements: solo un domiciliario con acceso crea su cierre de turno',
   await assert.rejects(push(ref(cliente.db, 'cashSettlements'), cierre('cliente1')), DENEGADO);
   await assert.rejects(push(ref(domiSinAcceso.db, 'cashSettlements'), cierre('driver2')), DENEGADO);
   await push(ref(domi.db, 'cashSettlements'), cierre('driver1'));
+});
+
+/* ---------- descuentos del Marketplace ---------- */
+
+test('descuentos: el público los lee; escribe solo el dueño y con forma válida', async () => {
+  await adminDb.ref('products/DES-01').set({ name: 'Plato descuento', price: 50000, image: '', categoryId: 'burger-angus' });
+  const bueno = { nombre: 'Marketplace', tipo: 'porcentaje', valor: 10, activo: true, compraMinima: 0 };
+
+  for (const quien of [anonimo, cliente, mesero, domi, adminMesa]) {
+    await assert.rejects(set(ref(quien.db, 'descuentos/intruso'), bueno), DENEGADO);
+  }
+  await set(ref(adminTienda.db, 'descuentos/prueba'), bueno);
+  assert.equal((await get(ref(anonimo.db, 'descuentos/prueba'))).val().valor, 10);
+  assert.ok((await get(ref(anonimo.db, 'descuentos'))).exists());
+
+  for (const quien of [anonimo, cliente, mesero, domi]) {
+    await assert.rejects(set(ref(quien.db, 'descuentos/prueba/activo'), false), DENEGADO);
+    await assert.rejects(set(ref(quien.db, 'descuentos/prueba'), null), DENEGADO);
+  }
+  await adminDb.ref('admins/visitante1').set('cajero');
+  await assert.rejects(set(ref(visitante.db, 'descuentos/prueba/activo'), false), DENEGADO);
+  await adminDb.ref('admins/visitante1').remove();
+
+  // Nadie borra o reemplaza la lista completa de una.
+  await assert.rejects(set(ref(adminTienda.db, 'descuentos'), null), DENEGADO);
+
+  const malos = [
+    { ...bueno, valor: 91 }, { ...bueno, valor: 0 }, { ...bueno, valor: 10.5 }, { ...bueno, valor: '10' },
+    { ...bueno, tipo: 'regalo' }, { ...bueno, tipo: 'monto', valor: 1000001 }, { ...bueno, nombre: '' },
+    { ...bueno, nombre: 'x'.repeat(61) }, { ...bueno, activo: 'si' }, { ...bueno, compraMinima: -1 }, { ...bueno, basura: 'x' },
+    { nombre: 'Incompleto', tipo: 'monto', valor: 5000 },
+  ];
+  for (const datos of malos) {
+    await assert.rejects(set(ref(adminTienda.db, 'descuentos/prueba'), datos), DENEGADO, JSON.stringify(datos));
+  }
+
+  await update(ref(adminTienda.db, 'descuentos/prueba'), { activo: false, actualizadoEn: serverTimestamp() });
+  assert.equal((await adminDb.ref('descuentos/prueba/activo').get()).val(), false);
+  await set(ref(adminTienda.db, 'descuentos/prueba'), null);
+  assert.equal((await adminDb.ref('descuentos/prueba').get()).exists(), false);
+});
+
+test('descuentos: activo, editado, desactivado y eliminado cambian el total del servidor', async () => {
+  const items = [{ id: 'DES-01', qty: 2 }]; // 100.000 + envío 7.000
+  const total = async () => (await cliente2.crearPedido({ ...CHECKOUT, items })).data;
+
+  await set(ref(adminTienda.db, 'descuentos/ciclo'), { nombre: 'Marketplace', tipo: 'porcentaje', valor: 10, activo: true, compraMinima: 0 });
+  const activo = await total();
+  assert.deepEqual([activo.subtotal, activo.descuento, activo.shipping, activo.total], [100000, 10000, 7000, 97000]);
+  const pedido = (await adminDb.ref(`orders/${activo.orderId}`).get()).val();
+  assert.equal(pedido.total, 97000);
+  assert.equal(pedido.descuento, 10000);
+  assert.deepEqual(pedido.descuentoAplicado, { id: 'ciclo', nombre: 'Marketplace', tipo: 'porcentaje', valor: 10 });
+
+  await update(ref(adminTienda.db, 'descuentos/ciclo'), { valor: 20 });
+  assert.equal((await total()).total, 87000);
+
+  await update(ref(adminTienda.db, 'descuentos/ciclo'), { activo: false });
+  const desactivado = await total();
+  assert.equal(desactivado.total, 107000);
+  const sinDescuento = (await adminDb.ref(`orders/${desactivado.orderId}`).get()).val();
+  assert.equal(sinDescuento.descuento, undefined);
+  assert.equal(sinDescuento.descuentoAplicado, undefined);
+
+  await update(ref(adminTienda.db, 'descuentos/ciclo'), { activo: true });
+  assert.equal((await total()).total, 87000);
+
+  await set(ref(adminTienda.db, 'descuentos/ciclo'), null);
+  assert.equal((await total()).total, 107000);
+  // El pedido viejo conserva lo que se le aplicó.
+  assert.equal((await adminDb.ref(`orders/${activo.orderId}/total`).get()).val(), 97000);
+});
+
+test('descuentos: lo que vio el cliente manda; el navegador no puede inventar uno', async () => {
+  await adminDb.ref('descuentos/control').set({ nombre: 'Control', tipo: 'porcentaje', valor: 10, activo: true, compraMinima: 0 });
+  const base = { ...CHECKOUT, items: [{ id: 'DES-01', qty: 1 }] }; // 50.000 - 5.000 + 7.000 = 52.000
+
+  assert.equal((await visitante.crearPedido({ ...base, totalEsperado: 52000 })).data.total, 52000);
+  // App vieja: vio el total sin descuento. Paga menos de lo que vio: se acepta.
+  assert.equal((await visitante.crearPedido({ ...base, totalEsperado: 57000 })).data.total, 52000);
+  // Mandar un total más bajo o campos de descuento propios no sirve.
+  await assert.rejects(
+    visitante.crearPedido({ ...base, totalEsperado: 1000, descuento: 56000 }),
+    (err) => err.code === 'functions/aborted' && err.details.total === 52000 && err.details.descuento === 5000,
+  );
+  // Vio un descuento que ya se desactivó: pagaría más de lo que vio, se rechaza.
+  await adminDb.ref('descuentos/control/activo').set(false);
+  await assert.rejects(visitante.crearPedido({ ...base, totalEsperado: 52000 }), (err) => err.code === 'functions/aborted');
+  await adminDb.ref('descuentos/control').remove();
+});
+
+test('obsequio: queda en el pedido y en el pago pendiente, calculado por el servidor', async () => {
+  const conBurger = { ...CHECKOUT, deliveryMode: 'recoger', gaseosasObsequio: 50, items: [{ id: 'DES-01', qty: 2 }] };
+  const { data } = await visitante.crearPedido(conBurger);
+  assert.equal((await adminDb.ref(`orders/${data.orderId}/gaseosasObsequio`).get()).val(), 2);
+
+  const sinBurger = await visitante.crearPedido({ ...conBurger, items: [{ id: 'BEB-01', qty: 1 }] });
+  assert.equal((await adminDb.ref(`orders/${sinBurger.data.orderId}/gaseosasObsequio`).get()).exists(), false);
+
+  await adminDb.ref('settings/pagoEnLinea').set(true);
+  const pago = await visitante.crearPagoEnLinea(conBurger);
+  assert.equal((await adminDb.ref(`pagosPendientes/${pago.data.orderNumber}/gaseosasObsequio`).get()).val(), 2);
+  await adminDb.ref('settings/pagoEnLinea').remove();
+});
+
+test('descuentos por producto: reglas y total del servidor', async () => {
+  await adminDb.ref('products/OTR-01').set({ name: 'Otro plato', price: 15000, image: '', categoryId: 'rodizio-casero' });
+  const base = { nombre: 'Solo burger', tipo: 'porcentaje', valor: 10, activo: true, compraMinima: 0 };
+  const malos = [
+    { ...base, alcance: 'productos' },
+    { ...base, alcance: 'algunos', productos: { 'DES-01': true } },
+    { ...base, alcance: 'productos', productos: { 'DES-01': 'si' } },
+    { ...base, alcance: 'productos', productos: 'DES-01' },
+  ];
+  for (const datos of malos) {
+    await assert.rejects(set(ref(adminTienda.db, 'descuentos/alcance'), datos), DENEGADO, JSON.stringify(datos));
+  }
+  await assert.rejects(set(ref(cliente.db, 'descuentos/alcance'), { ...base, alcance: 'productos', productos: { 'DES-01': true } }), DENEGADO);
+
+  await set(ref(adminTienda.db, 'descuentos/alcance'), { ...base, alcance: 'productos', productos: { 'DES-01': true } });
+  const compra = { ...CHECKOUT, deliveryMode: 'recoger' };
+  const mixto = (await visitante2.crearPedido({ ...compra, items: [{ id: 'DES-01', qty: 1 }, { id: 'OTR-01', qty: 1 }], totalEsperado: 60000 })).data;
+  assert.deepEqual([mixto.subtotal, mixto.descuento, mixto.total], [65000, 5000, 60000]);
+  const otro = (await visitante2.crearPedido({ ...compra, items: [{ id: 'OTR-01', qty: 1 }] })).data;
+  assert.equal(otro.descuento, 0);
+  assert.equal(otro.total, 15000);
+
+  // Editar para que aplique a todos quita la lista.
+  await set(ref(adminTienda.db, 'descuentos/alcance'), { ...base, alcance: 'todos' });
+  assert.equal((await visitante2.crearPedido({ ...compra, items: [{ id: 'OTR-01', qty: 1 }] })).data.descuento, 1500);
+  await set(ref(adminTienda.db, 'descuentos/alcance'), null);
+});
+
+test('descuentos: el pago en línea cobra y guarda el total con descuento', async () => {
+  await adminDb.ref('descuentos/enlinea').set({ nombre: 'En línea', tipo: 'monto', valor: 12000, activo: true, compraMinima: 0 });
+  await adminDb.ref('settings/pagoEnLinea').set(true);
+  const { data } = await visitante.crearPagoEnLinea({ ...CHECKOUT, deliveryMode: 'recoger', items: [{ id: 'PAG-01', qty: 1 }], totalEsperado: 38000 });
+  assert.equal(data.total, 38000);
+  assert.equal(data.campos.amount, '38000');
+  // verificarPago exige que AAvance cobre exactamente este total.
+  const pendiente = (await adminDb.ref(`pagosPendientes/${data.orderNumber}`).get()).val();
+  assert.equal(pendiente.total, 38000);
+  assert.equal(pendiente.subtotal, 50000);
+  assert.equal(pendiente.descuento, 12000);
+  assert.equal(pendiente.descuentoAplicado.nombre, 'En línea');
+  await adminDb.ref('settings/pagoEnLinea').remove();
+  await adminDb.ref('descuentos/enlinea').remove();
 });
 
 /* ---------- límite de intentos por cliente ---------- */

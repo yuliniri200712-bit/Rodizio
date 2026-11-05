@@ -381,6 +381,7 @@
       <p class="product-sheet-price" id="modal-product-price"></p>
       <p class="modal-restaurant-only-notice" id="modal-restaurant-only-notice" data-i18n="disponibleSoloRestaurante" hidden>Solo disponible en el restaurante.</p>
       <p class="product-sheet-desc" id="modal-product-desc"></p>
+      <p class="producto-obsequio producto-obsequio-detalle" id="modal-product-obsequio" data-i18n="obsequioBurgerDetalle" hidden>Por la compra de esta hamburguesa te obsequiamos una gaseosa personal.</p>
       <p class="leyenda-alcohol" id="modal-product-legal" hidden>Prohíbase el expendio de bebidas embriagantes a menores de edad. El exceso de alcohol es perjudicial para la salud.</p>
 
       <!-- Selector de sabor: se muestra solo si el producto lo necesita
@@ -443,6 +444,7 @@
     </div>
     <div class="drawer-footer" id="cart-footer">
       <div class="summary-row"><span data-i18n="subtotal">Subtotal</span><span id="cart-subtotal">$0</span></div>
+      <div class="summary-row summary-row-descuento" id="cart-discount-row" hidden><span id="cart-discount-label"></span><span id="cart-discount"></span></div>
       <button class="btn btn-primary" id="btn-go-checkout" data-i18n="continuar" style="margin-top: var(--sp-3);">Continuar</button>
     </div>
 
@@ -508,6 +510,7 @@
       <h4 class="checkout-section-title" data-i18n="resumen">Resumen</h4>
       <div class="checkout-summary-box">
         <div class="summary-row"><span data-i18n="subtotal">Subtotal</span><span id="ck-subtotal">$0</span></div>
+        <div class="summary-row summary-row-descuento" id="ck-discount-row" hidden><span id="ck-discount-label"></span><span id="ck-discount"></span></div>
         <div class="summary-row"><span data-i18n="domicilio">Domicilio</span><span id="ck-shipping">$0</span></div>
         <div class="summary-row total"><span data-i18n="total">Total</span><span id="ck-total">$0</span></div>
       </div>

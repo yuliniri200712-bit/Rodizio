@@ -189,6 +189,32 @@
       }
     },
 
+    // Descuentos del Marketplace (admin.html → Descuentos). Lectura pública:
+    // el carrito los muestra antes de iniciar sesión y no traen nada privado.
+    // Escribe solo el dueño, uno por uno (nunca la lista completa), con forma
+    // y topes. Los aplica la Cloud Function crearPedido/crearPagoEnLinea; el
+    // navegador solo los lee para mostrar lo que va a calcular el servidor.
+    "descuentos": {
+      ".read": true,
+      "$descuentoId": {
+        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('admins').child(auth.uid).val() === 'dueno')",
+        // alcance 'productos' sin ninguno marcado se rechaza; un descuento
+        // sin alcance aplica a todos (los creados antes de esta opción).
+        ".validate": "newData.hasChildren(['nombre', 'tipo', 'valor', 'activo', 'compraMinima']) && (newData.child('alcance').val() !== 'productos' || newData.child('productos').hasChildren())",
+        "nombre": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 60" },
+        "tipo": { ".validate": "newData.val() === 'porcentaje' || newData.val() === 'monto'" },
+        "valor": { ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 1 && (newData.parent().child('tipo').val() === 'porcentaje' ? newData.val() <= 90 : newData.val() <= 1000000)" },
+        "activo": { ".validate": "newData.isBoolean()" },
+        "compraMinima": { ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 10000000" },
+        "actualizadoEn": { ".validate": "newData.val() === now" },
+        "alcance": { ".validate": "newData.val() === 'todos' || newData.val() === 'productos'" },
+        "productos": {
+          "$productoId": { ".validate": "$productoId.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.val() === true" }
+        },
+        "$otro": { ".validate": false }
+      }
+    },
+
     "drivers": {
       ".read": "auth != null && (root.child('admins').child(auth.uid).exists() || root.child('trabajadores').child(auth.uid).child('estado').val() === 'activo')",
       "$uid": {

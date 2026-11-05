@@ -12,6 +12,7 @@
 import { auth, db, createDriverAuthAccount } from './firebase-config.js';
 import * as authApi from './auth.js';
 import * as catalog from './catalog.js';
+import { esProductoVendible } from './reglas-pedido.js';
 import * as settingsApi from './settings.js';
 import * as errors from './errors.js';
 import { confirmDialog, pickReasonDialog } from './confirm.js';
@@ -129,6 +130,7 @@ let unsubSettings = null;
 let unsubCustomerFlags = null;
 let unsubErrors = null;
 let unsubDrivers = null;
+let unsubDescuentos = null;
 let unsubCashSettlements = null;
 let ordersRefreshTimer = null;
 let hasLoadedOrdersOnce = false;
@@ -145,6 +147,7 @@ function init() {
   bindMenuEvents();
   bindSettingsEvents();
   bindDriversEvents();
+  bindDescuentosEvents();
   bindReportsFilterEvents();
   bindConfigTabEvents();
   $('btn-export-orders-csv').addEventListener('click', exportOrdersXLSX);
@@ -192,6 +195,7 @@ function init() {
         renderErrorLog();
       });
       unsubCashSettlements = subscribeCashSettlements();
+      subscribeDescuentos();
     }
   });
 }
@@ -221,6 +225,7 @@ function detachSubscriptions() {
   if (unsubCustomerFlags) unsubCustomerFlags();
   if (unsubErrors) unsubErrors();
   if (unsubDrivers) unsubDrivers();
+  if (unsubDescuentos) unsubDescuentos();
   if (unsubCashSettlements) unsubCashSettlements();
   if (ordersRefreshTimer) clearInterval(ordersRefreshTimer);
   if (renderOrdersTimer) clearTimeout(renderOrdersTimer);
@@ -235,6 +240,7 @@ function detachSubscriptions() {
   unsubCustomerFlags = null;
   unsubErrors = null;
   unsubDrivers = null;
+  unsubDescuentos = null;
   unsubCashSettlements = null;
   ordersRefreshTimer = null;
   hasLoadedOrdersOnce = false;
@@ -340,6 +346,7 @@ function bindTabEvents() {
       $('tab-pedidos').hidden = tab !== 'pedidos';
       $('tab-inventario').hidden = tab !== 'inventario';
       $('tab-menu').hidden = tab !== 'menu';
+      $('tab-descuentos').hidden = tab !== 'descuentos';
       $('tab-domiciliarios').hidden = tab !== 'domiciliarios';
       $('tab-reportes').hidden = tab !== 'reportes';
       $('tab-config').hidden = tab !== 'config';
@@ -1003,7 +1010,11 @@ function renderOrderCard(order) {
         ${item.price ? `<span class="admin-order-item-price">${formatCOP(item.price * (item.qty || 1))}</span>` : ''}
       </div>`
     )
-    .join('');
+    .join('') + (order.gaseosasObsequio > 0 ? `
+      <div class="admin-order-item-row">
+        <span class="admin-order-item-qty">${order.gaseosasObsequio}×</span>
+        <span class="admin-order-item-text">Gaseosa personal<em>Obsequio</em></span>
+      </div>` : '');
   const PAY_METHOD_LABELS = { efectivo: 'efectivo', tarjeta: 'tarjeta', transferencia: 'transferencia', en_linea: 'en línea' };
   const modeLabel = order.deliveryMode === 'recoger' ? 'Recoger en tienda' : 'A domicilio';
   const addressLine = order.deliveryMode === 'recoger' ? '' : order.address || 'sin dirección';
@@ -1051,6 +1062,7 @@ function renderOrderCard(order) {
         </div>
         <div class="admin-order-top-actions">
           <span class="price">${formatCOP(order.total || 0)}</span>
+          ${order.descuento ? `<span class="admin-order-paid">Descuento −${formatCOP(order.descuento)}</span>` : ''}
           ${order.pagado ? '<span class="admin-order-paid">Pagado</span>' : ''}
         </div>
       </div>
@@ -1806,6 +1818,7 @@ function bindCategoryModalEvents() {
 function subscribeProducts() {
   unsubProducts = catalog.onProductsChange((products) => {
     state.products = products;
+    renderDescuentos();
     renderProductsList();
     renderStockList();
     // El conteo por categoría cambia con los productos; no se repinta si hay una
@@ -2088,7 +2101,7 @@ async function printOrder(order) {
       <div class="ticket-item">${item.qty}× ${escapeHtml(item.name)}</div>
       ${item.notes ? `<div class="ticket-notes">Nota: ${escapeHtml(item.notes)}</div>` : ''}`
     )
-    .join('');
+    .join('') + (order.gaseosasObsequio > 0 ? `<div class="ticket-item">${order.gaseosasObsequio}× Gaseosa personal (obsequio)</div>` : '');
 
   // Correlativo D-001 que le pone caja al confirmar; si todavía no lo
   // tiene (pedido sin confirmar, o dato viejo), un corto del pushId.
@@ -2112,6 +2125,7 @@ async function printOrder(order) {
       <hr />
       ${itemsHtml}
       <hr />
+      ${order.descuento ? `<p>Descuento${order.descuentoAplicado?.nombre ? ' (' + escapeHtml(order.descuentoAplicado.nombre) + ')' : ''}: −${formatCOP(order.descuento)}</p>` : ''}
       ${order.tipAmount ? `<p>Propina: ${formatCOP(order.tipAmount)}</p>` : ''}
       <p><strong>Total: ${formatCOP(order.total || 0)}</strong></p>
     </div>
@@ -2443,6 +2457,7 @@ async function exportOrdersXLSX() {
       { header: 'Dirección', width: 28 },
       { header: 'Productos', width: 40 },
       { header: 'Subtotal', width: 13 },
+      { header: 'Descuento', width: 12 },
       { header: 'Domicilio', width: 12 },
       { header: 'Total', width: 13 },
       { header: 'Propina', width: 12 },
@@ -2507,6 +2522,7 @@ async function exportOrdersXLSX() {
         o.address || '',
         (o.items || []).map((i) => `${i.qty}x ${i.name}${i.notes ? ` (${i.notes})` : ''}`).join('\n'),
         o.subtotal || 0,
+        o.descuento || 0,
         o.shipping || 0,
         o.total || 0,
         o.tipAmount || 0,
@@ -2514,7 +2530,7 @@ async function exportOrdersXLSX() {
           (o.status === 'no_entregado' ? 'No entregado' : o.status === 'cancelado' ? 'Cancelado' : o.status || 'Recibido'),
       ]);
       row.getCell(6).alignment = { wrapText: true, vertical: 'top' };
-      [7, 8, 9, 10].forEach((col) => {
+      [7, 8, 9, 10, 11].forEach((col) => {
         row.getCell(col).numFmt = MONEY_FORMAT;
       });
       row.eachCell((cell) => {
@@ -2533,13 +2549,14 @@ async function exportOrdersXLSX() {
       '',
       `Total cobrado (${paidOrders.length} de ${todayOrders.length} pedidos)`,
       paidOrders.reduce((sum, o) => sum + (o.subtotal || 0), 0),
+      paidOrders.reduce((sum, o) => sum + (o.descuento || 0), 0),
       paidOrders.reduce((sum, o) => sum + (o.shipping || 0), 0),
       paidOrders.reduce((sum, o) => sum + (o.total || 0), 0),
       paidOrders.reduce((sum, o) => sum + (o.tipAmount || 0), 0),
       '',
     ]);
     totalsRow.font = { bold: true };
-    [7, 8, 9, 10].forEach((col) => {
+    [7, 8, 9, 10, 11].forEach((col) => {
       totalsRow.getCell(col).numFmt = MONEY_FORMAT;
     });
     totalsRow.eachCell((cell) => {
@@ -3249,6 +3266,7 @@ function driverOrderWhatsappHref(order) {
     lines.push(`Ubicación: https://www.google.com/maps?q=${order.customerLocation.lat},${order.customerLocation.lng}`);
   }
   const items = (order.items || []).map((i) => `${i.qty}x ${i.name}${i.notes ? ' (' + i.notes + ')' : ''}`);
+  if (order.gaseosasObsequio > 0) items.push(`${order.gaseosasObsequio}x Gaseosa personal (obsequio)`);
   if (items.length) lines.push(`Pedido: ${items.join(', ')}`);
   lines.push(order.pagado === true ? 'Ya está pagado, no cobrar' : `Cobrar al entregar: ${formatCOP(order.total || 0)}`);
   return `${base}?text=${encodeURIComponent(lines.join('\n'))}`;
@@ -3260,6 +3278,219 @@ function whatsappSvg() {
 
 /* Lista (tabla) de domiciliarios: nombre, teléfono, estado y acciones.
    En celular cada fila se apila como una tarjeta (ver admin.css). */
+/* ---------- Descuentos del Marketplace ----------
+   Solo el dueño (database.rules.json). Esto solo guarda la configuración:
+   quien aplica el descuento es el servidor (calcularDescuento en
+   reglas-pedido.js, desde crearPedido/crearPagoEnLinea). */
+const MAX_PORCENTAJE = 90;
+const MAX_MONTO = 1000000;
+
+function subscribeDescuentos() {
+  unsubDescuentos = onValue(
+    ref(db, 'descuentos'),
+    (snapshot) => {
+      state.descuentos = snapshot.val() || {};
+      renderDescuentos();
+    },
+    errors.logOnValueError('admin:descuentos')
+  );
+}
+
+function textoDescuento(d) {
+  const valor = d.tipo === 'porcentaje' ? `${d.valor} % de descuento` : `${formatCOP(d.valor)} de descuento`;
+  return `${valor} · ${d.compraMinima > 0 ? `compras desde ${formatCOP(d.compraMinima)}` : 'sin compra mínima'}`;
+}
+
+function productosDeDescuento(d) {
+  if (d.alcance !== 'productos') return 'Aplica a todos los productos';
+  const ids = Object.keys(d.productos || {});
+  const nombres = ids.map((id) => state.products.find((p) => p.id === id)?.name || `${id} (ya no existe)`);
+  return `Solo: ${nombres.join(', ')}`;
+}
+
+/* Solo los productos que se pueden comprar en la tienda, por categoría:
+   marcar uno que solo es de muestra no tendría ningún efecto. */
+function pintarProductosDescuento(marcados) {
+  const grupos = state.categories
+    .map((c) => ({ nombre: c.name, productos: state.products.filter((p) => p.categoryId === c.id && esProductoVendible(p)) }))
+    .filter((g) => g.productos.length > 0);
+  $('descuento-form-productos').innerHTML = grupos.length === 0
+    ? '<p class="admin-hint">No hay productos a la venta en la tienda.</p>'
+    : grupos
+        .map((g) => `
+        <div class="descuento-productos-grupo">${escapeHtml(g.nombre)}</div>
+        ${g.productos
+          .map((p) => `
+          <label class="checkbox-field">
+            <input type="checkbox" data-descuento-producto="${escapeHtml(p.id)}" ${marcados[p.id] === true ? 'checked' : ''} />
+            <span>${escapeHtml(p.name || p.id)} · ${formatCOP(p.price || 0)}${p.hidden ? ' (oculto)' : ''}</span>
+          </label>`)
+          .join('')}`)
+        .join('');
+}
+
+function renderDescuentos() {
+  const container = $('admin-descuentos-list');
+  if (!container) return;
+  const entradas = Object.entries(state.descuentos || {}).sort(([, a], [, b]) => (a.nombre || '').localeCompare(b.nombre || '', 'es'));
+  if (entradas.length === 0) {
+    container.innerHTML = '<p class="admin-hint">Todavía no hay descuentos. Crea el primero con "+ Nuevo descuento".</p>';
+    return;
+  }
+  container.innerHTML = `<div class="admin-drivers-grid">${entradas
+    .map(([id, d]) => {
+      const activo = d.activo === true;
+      return `
+      <div class="admin-driver-card${activo ? '' : ' is-disabled'}" data-descuento="${id}">
+        <div class="admin-driver-card-name">${escapeHtml(d.nombre || 'Descuento')}</div>
+        <div class="admin-driver-card-phone">${escapeHtml(textoDescuento(d))}</div>
+        <div class="admin-driver-card-phone">${escapeHtml(productosDeDescuento(d))}</div>
+        <div class="admin-driver-card-state">
+          <button type="button" class="admin-driver-card-badge admin-driver-switch ${activo ? 'is-available' : 'is-offline'}" data-toggle-descuento="${id}" title="Tocar para ${activo ? 'desactivar' : 'activar'}" role="switch" aria-checked="${activo}"><span class="admin-switch-track" aria-hidden="true"></span>${activo ? 'Activo' : 'Desactivado'}</button>
+        </div>
+        <div class="admin-driver-card-actions">
+          <span class="admin-driver-card-icons">
+            <button type="button" data-edit-descuento="${id}" aria-label="Editar ${escapeHtml(d.nombre || '')}">${pencilSvg()}</button>
+            <button type="button" class="admin-delete-btn" data-delete-descuento="${id}" aria-label="Eliminar ${escapeHtml(d.nombre || '')}">${trashSvg()}</button>
+          </span>
+        </div>
+      </div>`;
+    })
+    .join('')}</div>`;
+
+  container.querySelectorAll('[data-toggle-descuento]').forEach((btn) => {
+    btn.addEventListener('click', () => toggleDescuento(btn.dataset.toggleDescuento));
+  });
+  container.querySelectorAll('[data-edit-descuento]').forEach((btn) => {
+    btn.addEventListener('click', () => openDescuentoForm(btn.dataset.editDescuento));
+  });
+  container.querySelectorAll('[data-delete-descuento]').forEach((btn) => {
+    btn.addEventListener('click', () => deleteDescuento(btn.dataset.deleteDescuento));
+  });
+}
+
+async function toggleDescuento(id) {
+  const actual = state.descuentos[id];
+  if (!actual) return;
+  try {
+    await update(ref(db, `descuentos/${id}`), { activo: actual.activo !== true, actualizadoEn: serverTimestamp() });
+  } catch (err) {
+    showToast(err.message || 'No se pudo cambiar el descuento');
+  }
+}
+
+async function deleteDescuento(id) {
+  const actual = state.descuentos[id];
+  if (!actual) return;
+  const ok = await confirmDialog(`¿Eliminar el descuento "${actual.nombre}"? Los pedidos ya hechos conservan lo que se les descontó.`, {
+    confirmLabel: 'Eliminar',
+    danger: true,
+  });
+  if (!ok) return;
+  try {
+    await remove(ref(db, `descuentos/${id}`));
+    showToast('Descuento eliminado');
+  } catch (err) {
+    showToast(err.message || 'No se pudo eliminar el descuento');
+  }
+}
+
+function pintarCampoValorDescuento() {
+  const esPorcentaje = $('descuento-form-tipo').value === 'porcentaje';
+  $('descuento-form-valor-label').textContent = esPorcentaje ? `Porcentaje (de 1 a ${MAX_PORCENTAJE})` : 'Valor a descontar, en pesos';
+  $('descuento-form-valor').max = esPorcentaje ? MAX_PORCENTAJE : MAX_MONTO;
+  $('descuento-form-valor').step = esPorcentaje ? 1 : 1000;
+}
+
+function openDescuentoForm(id) {
+  const d = id ? state.descuentos[id] : null;
+  state.editingDescuentoId = d ? id : null;
+  $('descuento-form').reset();
+  $('descuento-modal-title').textContent = d ? 'Editar descuento' : 'Nuevo descuento';
+  $('btn-save-descuento').textContent = d ? 'Guardar cambios' : 'Crear descuento';
+  $('descuento-form-nombre').value = d?.nombre || '';
+  $('descuento-form-tipo').value = d?.tipo || 'porcentaje';
+  $('descuento-form-valor').value = d?.valor ?? '';
+  $('descuento-form-minimo').value = d?.compraMinima ?? 0;
+  $('descuento-form-activo').checked = d ? d.activo === true : true;
+  $('descuento-form-alcance').value = d?.alcance === 'productos' ? 'productos' : 'todos';
+  $('descuento-form-productos-field').hidden = $('descuento-form-alcance').value !== 'productos';
+  pintarProductosDescuento(d?.productos || {});
+  pintarCampoValorDescuento();
+  $('descuento-modal').hidden = false;
+  requestAnimationFrame(() => $('descuento-modal').classList.add('is-open'));
+  $('overlay').classList.add('is-open');
+}
+
+function closeDescuentoForm() {
+  $('descuento-modal').classList.remove('is-open');
+  $('overlay').classList.remove('is-open');
+  state.editingDescuentoId = null;
+  setTimeout(() => {
+    $('descuento-modal').hidden = true;
+  }, 250);
+}
+
+async function handleSaveDescuento(e) {
+  e.preventDefault();
+  const nombre = $('descuento-form-nombre').value.trim();
+  const tipo = $('descuento-form-tipo').value;
+  const valor = Number($('descuento-form-valor').value);
+  const compraMinima = Number($('descuento-form-minimo').value || 0);
+  if (!nombre) {
+    showToast('Ponle un nombre al descuento');
+    return;
+  }
+  const maximo = tipo === 'porcentaje' ? MAX_PORCENTAJE : MAX_MONTO;
+  if (!Number.isInteger(valor) || valor < 1 || valor > maximo) {
+    showToast(tipo === 'porcentaje' ? `El porcentaje debe ser un número entero de 1 a ${MAX_PORCENTAJE}` : `El valor debe ser un número entero de 1 a ${formatCOP(MAX_MONTO)}`);
+    return;
+  }
+  if (!Number.isInteger(compraMinima) || compraMinima < 0 || compraMinima > 10000000) {
+    showToast('La compra mínima debe ser un número entero, 0 o mayor');
+    return;
+  }
+  const alcance = $('descuento-form-alcance').value;
+  const elegidos = [...document.querySelectorAll('[data-descuento-producto]:checked')].map((c) => c.dataset.descuentoProducto);
+  if (alcance === 'productos' && elegidos.length === 0) {
+    showToast('Elige al menos un producto');
+    return;
+  }
+  const datos = {
+    nombre,
+    tipo,
+    valor,
+    compraMinima,
+    activo: $('descuento-form-activo').checked,
+    alcance,
+    productos: alcance === 'productos' ? Object.fromEntries(elegidos.map((id) => [id, true])) : null,
+    actualizadoEn: serverTimestamp(),
+  };
+  const boton = $('btn-save-descuento');
+  boton.disabled = true;
+  try {
+    const id = state.editingDescuentoId || push(ref(db, 'descuentos')).key;
+    await set(ref(db, `descuentos/${id}`), datos);
+    showToast(state.editingDescuentoId ? 'Descuento actualizado' : 'Descuento creado');
+    closeDescuentoForm();
+  } catch (err) {
+    showToast(err.message || 'No se pudo guardar el descuento');
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+function bindDescuentosEvents() {
+  $('btn-add-descuento').addEventListener('click', () => openDescuentoForm(null));
+  $('btn-cancel-descuento').addEventListener('click', closeDescuentoForm);
+  $('btn-close-descuento-modal').addEventListener('click', closeDescuentoForm);
+  $('descuento-form-tipo').addEventListener('change', pintarCampoValorDescuento);
+  $('descuento-form-alcance').addEventListener('change', (e) => {
+    $('descuento-form-productos-field').hidden = e.target.value !== 'productos';
+  });
+  $('descuento-form').addEventListener('submit', handleSaveDescuento);
+}
+
 function renderDriversList() {
   const container = $('admin-drivers-list');
   if (!container) return;

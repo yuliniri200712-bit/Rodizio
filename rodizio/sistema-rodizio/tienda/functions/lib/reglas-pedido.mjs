@@ -212,6 +212,12 @@ export function esProductoVendible(producto) {
   return Boolean(producto && CATEGORIAS_VENDIBLES.has(producto.categoryId));
 }
 
+/* Obsequio de Burger Angus (2026-11-04): por cada hamburguesa de esta
+   categoría va una gaseosa personal de regalo. No suma al total ni descuenta
+   inventario; el servidor guarda la cantidad en el pedido (gaseosasObsequio)
+   para que cocina, caja y domiciliario sepan que deben incluirla. */
+export const CATEGORIA_CON_OBSEQUIO = 'burger-angus';
+
 /* Bebidas con alcohol (2026-10-13): las categorías de licor y, dentro de
    "bebidas", el subgrupo "cervezas". Si el carrito trae alguna, el
    cliente debe confirmar que es mayor de 18 años (casilla del checkout) y
@@ -224,6 +230,45 @@ export function esAlcohol(producto) {
   return Boolean(producto) && (CATEGORIAS_ALCOHOL.includes(producto.categoryId) || producto.subGroup === 'cervezas');
 }
 
+/* Descuentos del Marketplace (nodo "descuentos", los maneja el dueño en
+   admin.html → Descuentos). Se aplican solos, sin cupón, solo a compras de
+   la tienda: el pedido de mesa/QR no pasa por construirPedido.
+   - Es sobre los productos, nunca sobre el domicilio.
+   - alcance: 'productos' lo limita a los marcados en `productos` ({id: true});
+     sin ese campo aplica a todo (así quedaron los descuentos ya creados).
+   - Compra mínima: contra todos los productos del pedido.
+   - El valor fijo se descuenta una vez por pedido, no por unidad.
+   - No se acumulan: si hay varios activos gana el que más ahorra.
+   - Nunca pasa del 90 % de los productos a los que aplica: un valor mal
+     digitado no puede regalar el pedido ni dejar un total de $0 que la
+     pasarela no cobra.
+   Siempre pesos enteros, para que el total coincida con el monto exacto
+   que se le pide a AAvance.
+   items: líneas del pedido o del carrito, con { id, price, qty }. */
+export const TOPE_DESCUENTO = 0.9;
+
+export function calcularDescuento(descuentos, items) {
+  const lineas = Array.isArray(items) ? items : [];
+  const valorDe = (filtro) => lineas.filter(filtro).reduce((sum, i) => sum + i.price * i.qty, 0);
+  const subtotal = valorDe(() => true);
+  let mejor = null;
+  const lista = Object.entries(descuentos || {}).sort(([a], [b]) => (a < b ? -1 : 1));
+  for (const [id, d] of lista) {
+    if (!d || d.activo !== true || !Number.isFinite(d.valor) || d.valor <= 0) continue;
+    if (d.tipo !== 'porcentaje' && d.tipo !== 'monto') continue;
+    if (subtotal < (Number.isFinite(d.compraMinima) ? d.compraMinima : 0)) continue;
+    const base = d.alcance === 'productos'
+      ? valorDe((i) => Object.prototype.hasOwnProperty.call(d.productos || {}, i.id) && d.productos[i.id] === true)
+      : subtotal;
+    const bruto = d.tipo === 'porcentaje' ? Math.round((base * d.valor) / 100) : Math.round(d.valor);
+    const monto = Math.min(bruto, Math.floor(base * TOPE_DESCUENTO));
+    if (monto > 0 && (!mejor || monto > mejor.monto)) {
+      mejor = { monto, id, nombre: textoCorto(d.nombre, 60) || 'Descuento', tipo: d.tipo, valor: d.valor };
+    }
+  }
+  return mejor;
+}
+
 function textoCorto(valor, max) {
   return typeof valor === 'string' ? valor.trim().slice(0, max) : '';
 }
@@ -234,10 +279,12 @@ function textoCorto(valor, max) {
 
    datos: lo que manda el checkout ({ items, deliveryMode, address,
      reference, phone, customerLocation, scheduledFor, mayorDeEdad }).
-   Devuelve { problemas, items, subtotal, shipping, total, campos }.
+   descuentos: el nodo "descuentos" tal cual está en la base.
+   Devuelve { problemas, items, subtotal, descuento, descuentoAplicado,
+   gaseosasObsequio, shipping, total, campos }.
    Si `problemas` trae algo, el pedido NO se debe crear — el primer
    problema es el mensaje que ve el cliente. */
-export function construirPedido({ datos, products, outOfStock, settings: settingsRaw, bloqueado = false, ahora = Date.now() }) {
+export function construirPedido({ datos, products, outOfStock, settings: settingsRaw, descuentos = null, bloqueado = false, ahora = Date.now() }) {
   const settings = { ...DEFAULT_SETTINGS, ...(settingsRaw || {}) };
   const problemas = [];
   const d = datos || {};
@@ -344,6 +391,9 @@ export function construirPedido({ datos, products, outOfStock, settings: setting
   }
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const gaseosasObsequio = items
+    .filter((i) => products[i.id].categoryId === CATEGORIA_CON_OBSEQUIO)
+    .reduce((sum, i) => sum + i.qty, 0);
 
   if (
     deliveryMode === 'domicilio' &&
@@ -360,12 +410,19 @@ export function construirPedido({ datos, products, outOfStock, settings: setting
   }
 
   const shipping = deliveryMode ? shippingFee(deliveryMode, address, settings) : 0;
-  const total = Math.max(0, subtotal + shipping);
+  const aplicado = calcularDescuento(descuentos, items);
+  const descuento = aplicado ? aplicado.monto : 0;
+  const total = Math.max(0, subtotal - descuento + shipping);
 
   return {
     problemas,
     items,
     subtotal,
+    descuento,
+    // Constancia de cuál se usó: el dueño puede editarlo o borrarlo después
+    // y el pedido debe seguir diciendo lo que se aplicó en su momento.
+    descuentoAplicado: aplicado ? { id: aplicado.id, nombre: aplicado.nombre, tipo: aplicado.tipo, valor: aplicado.valor } : null,
+    gaseosasObsequio,
     shipping,
     total,
     campos: {

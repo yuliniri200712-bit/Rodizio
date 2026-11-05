@@ -1405,6 +1405,26 @@ body:has(#admin-app), body:has(#driver-app) {
   gap: var(--sp-3);
   margin: var(--sp-3) var(--sp-4);
 }
+.descuento-productos {
+  margin: 0 0 var(--sp-3);
+  padding: var(--sp-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.descuento-productos[hidden] {
+  display: none;
+}
+.descuento-productos legend {
+  padding: 0 var(--sp-1);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.descuento-productos-grupo {
+  margin: var(--sp-2) 0 var(--sp-1);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
 .admin-driver-card {
   padding: var(--sp-3);
   background: var(--color-surface);
@@ -1659,6 +1679,7 @@ button.admin-driver-card-badge.is-offline {
   #tab-pedidos,
   #tab-inventario,
   #tab-menu,
+  #tab-descuentos,
   #tab-domiciliarios,
   #tab-reportes,
   #tab-config {
@@ -2845,6 +2866,7 @@ body:has(#admin-app) {
   #admin-app #tab-pedidos,
   #admin-app #tab-inventario,
   #admin-app #tab-menu,
+  #admin-app #tab-descuentos,
   #admin-app #tab-domiciliarios,
   #admin-app #tab-reportes,
   #admin-app #tab-config {

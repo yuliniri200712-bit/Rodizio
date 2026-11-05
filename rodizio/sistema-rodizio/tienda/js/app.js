@@ -33,6 +33,7 @@ const PAGO_PENDIENTE_KEY = 'rodizio_pago_pendiente';
 const RESTAURANT_WHATSAPP_NUMBER = '573143938235';
 
 const state = {
+  descuentos: {},
   activeCategoryId: ALL_CATEGORIES_ID,
   activeSubGroup: null, // sub-pestaña dentro de una categoría (hoy solo Bebidas la usa)
   searchTerm: '',
@@ -129,7 +130,7 @@ function init() {
       onQtyChange: cart.updateQty,
       onRemove: cart.removeItem,
     });
-    ui.renderCheckoutTotals(cartState.subtotal, currentShippingFee());
+    renderTotales(cartState.subtotal);
     renderMinOrderHint(cartState.subtotal);
   });
 
@@ -145,6 +146,11 @@ function init() {
     // para iniciar sesión.
     const bottomNav = $('bottom-nav');
     if (bottomNav) bottomNav.hidden = !user;
+  });
+
+  settingsApi.onDescuentosChange((descuentos) => {
+    state.descuentos = descuentos;
+    renderTotales(cart.getState().subtotal);
   });
 
   settingsApi.onSettingsChange((settings) => {
@@ -678,7 +684,7 @@ function showCheckoutStep() {
   const { subtotal, items } = cart.getState();
   $('ck-adult-field').hidden = !carritoLlevaAlcohol(items);
   $('ck-adult').checked = false;
-  ui.renderCheckoutTotals(subtotal, currentShippingFee());
+  renderTotales(subtotal);
   renderMinOrderHint(subtotal);
   setScheduleTimeMin();
   prefillLastPhone();
@@ -899,7 +905,7 @@ function updateZoneInfo() {
     coverageZones: state.settings.coverageZones,
   });
   const { subtotal } = cart.getState();
-  ui.renderCheckoutTotals(subtotal, currentShippingFee());
+  renderTotales(subtotal);
   renderMinOrderHint(subtotal);
 }
 
@@ -912,6 +918,15 @@ function bestMinOrderSuggestion(missing) {
   const available = PRODUCTS.filter((p) => !state.outOfStockIds.has(p.id)).sort((a, b) => a.price - b.price);
   if (available.length === 0) return null;
   return available.find((p) => p.price >= missing) || available[available.length - 1];
+}
+
+/* Carrito y checkout muestran el descuento con la misma cuenta que hace el
+   servidor (calcularDescuento en reglas-pedido.js). Si difieren, crearPedido
+   rechaza antes de cobrar más de lo que el cliente vio. */
+function renderTotales(subtotal) {
+  const descuento = settingsApi.calcularDescuento(state.descuentos, cart.getState().items);
+  ui.renderCartDiscount(descuento);
+  ui.renderCheckoutTotals(subtotal, currentShippingFee(), descuento);
 }
 
 function renderMinOrderHint(subtotal) {
@@ -1166,7 +1181,8 @@ async function handleConfirmOrder() {
 
   try {
     const shipping = currentShippingFee();
-    const total = Math.max(0, subtotal + shipping);
+    const descuento = settingsApi.calcularDescuento(state.descuentos, items);
+    const total = Math.max(0, subtotal - (descuento ? descuento.monto : 0) + shipping);
     
     const orderPayload = {
       items,

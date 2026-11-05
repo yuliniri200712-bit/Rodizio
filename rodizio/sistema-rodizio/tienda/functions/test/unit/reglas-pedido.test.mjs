@@ -2,7 +2,7 @@
    Corren sin emuladores ni red: `node --test test/unit/` */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { construirPedido, esProductoVendible, getScheduleStatus, nowInColombia } from '../../lib/reglas-pedido.mjs';
+import { calcularDescuento, construirPedido, esProductoVendible, getScheduleStatus, nowInColombia } from '../../lib/reglas-pedido.mjs';
 
 // Lunes 5 oct 2026, 13:00 en Colombia (18:00 UTC).
 const AHORA = Date.parse('2026-10-05T18:00:00Z');
@@ -181,4 +181,123 @@ test('datos de contacto: obligatorios, recortados, ubicación validada', () => {
 test('carrito vacío o sin items', () => {
   assert.ok(pedir({ items: [] }).problemas.includes('El carrito está vacío.'));
   assert.ok(pedir({}).problemas.includes('El carrito está vacío.'));
+});
+
+/* ---------- Descuentos del Marketplace ---------- */
+
+const unaLinea = (price) => [{ id: 'X', price, qty: 1 }];
+const DIEZ = { nombre: 'Marketplace', tipo: 'porcentaje', valor: 10, activo: true, compraMinima: 0 };
+
+test('descuento: porcentaje sobre los productos, nunca sobre el domicilio', () => {
+  const r = pedir({ address: 'Barrio Caobos', items: [{ id: 'PAR-01', qty: 2 }] }, { descuentos: { a: DIEZ } });
+  assert.deepEqual(r.problemas, []);
+  assert.equal(r.subtotal, 100000);
+  assert.equal(r.descuento, 10000);
+  assert.equal(r.shipping, 7000);
+  assert.equal(r.total, 97000);
+  assert.deepEqual(r.descuentoAplicado, { id: 'a', nombre: 'Marketplace', tipo: 'porcentaje', valor: 10 });
+});
+
+test('descuento: sin descuentos, desactivado o malformado no cambia el total', () => {
+  const items = [{ id: 'PAR-01', qty: 1 }];
+  for (const descuentos of [undefined, null, {}, { a: { ...DIEZ, activo: false } }, { a: { ...DIEZ, activo: 'true' } }, { a: { ...DIEZ, tipo: 'regalo' } }, { a: { ...DIEZ, valor: 'mucho' } }, { a: { ...DIEZ, valor: -10 } }, { a: null }]) {
+    const r = pedir({ items }, { descuentos });
+    assert.equal(r.descuento, 0, JSON.stringify(descuentos));
+    assert.equal(r.descuentoAplicado, null);
+    assert.equal(r.total, 55000);
+  }
+});
+
+test('descuento: lo que mande el navegador no cuenta', () => {
+  const r = pedir({ items: [{ id: 'PAR-01', qty: 1 }], descuento: 50000, descuentos: { x: { ...DIEZ, valor: 90 } } });
+  assert.equal(r.descuento, 0);
+  assert.equal(r.total, 55000);
+});
+
+test('descuento: compra mínima contra el subtotal, sin contar el domicilio', () => {
+  const descuentos = { a: { ...DIEZ, compraMinima: 50000 } };
+  assert.equal(calcularDescuento(descuentos, unaLinea(49999)), null);
+  assert.equal(calcularDescuento(descuentos, unaLinea(50000)).monto, 5000);
+});
+
+test('descuento: no se acumulan, gana el que más ahorra según el subtotal', () => {
+  const descuentos = {
+    a: { ...DIEZ, nombre: 'Diez' },
+    b: { nombre: 'Fijo', tipo: 'monto', valor: 8000, activo: true, compraMinima: 0 },
+  };
+  assert.equal(calcularDescuento(descuentos, unaLinea(50000)).nombre, 'Fijo');
+  assert.equal(calcularDescuento(descuentos, unaLinea(100000)).nombre, 'Diez');
+  assert.equal(calcularDescuento(descuentos, unaLinea(100000)).monto, 10000);
+});
+
+test('descuento: pesos enteros y tope del 90 % (nunca pedido gratis)', () => {
+  assert.equal(calcularDescuento({ a: { ...DIEZ, valor: 15 } }, unaLinea(33333)).monto, 5000);
+  assert.equal(calcularDescuento({ a: { nombre: 'x', tipo: 'monto', valor: 999999, activo: true, compraMinima: 0 } }, unaLinea(15000)).monto, 13500);
+  const r = pedir({ deliveryMode: 'recoger', items: [{ id: 'BEB-01', qty: 1 }] }, { descuentos: { a: { nombre: 'x', tipo: 'monto', valor: 999999, activo: true, compraMinima: 0 } } });
+  assert.equal(r.total, 1500);
+  assert.ok(Number.isInteger(r.total));
+});
+
+test('descuento: el mínimo de domicilio se mide antes del descuento', () => {
+  // minOrderDomicilio = 20000: 25000 con 90 % sigue cumpliendo el mínimo.
+  const r = pedir({ items: [{ id: 'BEB-05', qty: 5 }] }, { descuentos: { a: { ...DIEZ, valor: 90 } } });
+  assert.deepEqual(r.problemas, []);
+  assert.equal(r.descuento, 22500);
+});
+
+/* ---------- Obsequio de Burger Angus ---------- */
+
+test('obsequio: una gaseosa por hamburguesa, sin cambiar el total', () => {
+  const r = pedir({ items: [{ id: 'PAR-01', qty: 2, notes: 'sin tomate' }, { id: 'PAR-01', qty: 1 }, { id: 'BEB-01', qty: 1 }] });
+  assert.equal(r.gaseosasObsequio, 3);
+  assert.equal(r.subtotal, 165000);
+  assert.equal(r.total, 170000);
+  assert.equal(r.items.length, 3);
+});
+
+test('obsequio: otras categorías no llevan, y el navegador no lo puede pedir', () => {
+  const r = pedir({ items: [{ id: 'BEB-01', qty: 2 }], gaseosasObsequio: 9 });
+  assert.equal(r.gaseosasObsequio, 0);
+});
+
+/* ---------- Descuentos por producto ---------- */
+
+const SOLO_PICANHA = { ...DIEZ, alcance: 'productos', productos: { 'PAR-01': true } };
+
+test('descuento por producto: solo cuenta lo elegido', () => {
+  const r = pedir({ items: [{ id: 'PAR-01', qty: 2 }, { id: 'BEB-01', qty: 2 }] }, { descuentos: { a: SOLO_PICANHA } });
+  assert.equal(r.subtotal, 130000);
+  assert.equal(r.descuento, 10000);
+  assert.equal(r.total, 125000);
+});
+
+test('descuento por producto: sin esos productos no aplica', () => {
+  const r = pedir({ items: [{ id: 'BEB-01', qty: 2 }] }, { descuentos: { a: SOLO_PICANHA } });
+  assert.equal(r.descuento, 0);
+  assert.equal(r.descuentoAplicado, null);
+});
+
+test('descuento por producto: el tope del 90 % se mide contra lo elegido', () => {
+  const monto = { nombre: 'x', tipo: 'monto', valor: 999999, activo: true, compraMinima: 0, alcance: 'productos', productos: { 'BEB-01': true } };
+  const r = pedir({ items: [{ id: 'PAR-01', qty: 1 }, { id: 'BEB-01', qty: 1 }] }, { descuentos: { a: monto } });
+  assert.equal(r.descuento, 13500);
+});
+
+test('descuento por producto: el valor fijo va una vez por pedido', () => {
+  const monto = { nombre: 'x', tipo: 'monto', valor: 5000, activo: true, compraMinima: 0, alcance: 'productos', productos: { 'PAR-01': true } };
+  assert.equal(pedir({ items: [{ id: 'PAR-01', qty: 3 }] }, { descuentos: { a: monto } }).descuento, 5000);
+});
+
+test('descuento por producto: alcance sin lista no aplica; sin alcance aplica a todo', () => {
+  const items = [{ id: 'PAR-01', qty: 1 }];
+  assert.equal(pedir({ items }, { descuentos: { a: { ...DIEZ, alcance: 'productos' } } }).descuento, 0);
+  assert.equal(pedir({ items }, { descuentos: { a: { ...SOLO_PICANHA, productos: { 'PAR-01': 'si' } } } }).descuento, 0);
+  // Forma exacta del descuento creado antes de esta opción.
+  assert.equal(pedir({ items }, { descuentos: { a: { nombre: 'Lanzamiento', tipo: 'monto', valor: 15000, activo: true, compraMinima: 0, actualizadoEn: 1 } } }).descuento, 15000);
+});
+
+test('descuento por producto: gana el que más ahorra con este carrito', () => {
+  const descuentos = { a: { ...SOLO_PICANHA, nombre: 'Solo picanha', valor: 50 }, b: { ...DIEZ, nombre: 'Todo' } };
+  assert.equal(calcularDescuento(descuentos, [{ id: 'PAR-01', price: 50000, qty: 1 }]).nombre, 'Solo picanha');
+  assert.equal(calcularDescuento(descuentos, [{ id: 'BEB-01', price: 15000, qty: 1 }]).nombre, 'Todo');
 });

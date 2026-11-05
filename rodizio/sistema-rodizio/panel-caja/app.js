@@ -216,7 +216,7 @@ function etiquetaOrigenCaja(p) {
 function ticket(id, p) {
   const min = minsDesde(p.tsCambio || tsDe(p));
   const nueva = !vistos.has(id) && !primeraCarga;
-  const lineasHtml = (p.lineas || []).map(linea).join("");
+  const lineasHtml = [...(p.lineas || []), ...(lineaObsequio(p) ? [lineaObsequio(p)] : [])].map(linea).join("");
   const esDomicilio = origenDe(p) === "domicilio";
   const contacto = origenDe(p) === "mesa"
     ? (p.mesero || "Mesero")
@@ -409,7 +409,7 @@ function domiCard(id, p) {
   const nueva = s === "recibido" && !domiVistos.has(id) && !primeraCarga;
   const quien = p.cliente || p.customerName || "Cliente";
   const esRecoger = origenDe(p) === "recoger";
-  const lineasHtml = (p.lineas || []).map(linea).join("");
+  const lineasHtml = [...(p.lineas || []), ...(lineaObsequio(p) ? [lineaObsequio(p)] : [])].map(linea).join("");
   const confirmado = s !== "recibido";
 
   // Ubicación del domi en vivo (si ya salió) — link a Maps.
@@ -468,6 +468,7 @@ function domiCard(id, p) {
     <div class="domi-lineas">${lineasHtml}</div>
     <div class="domi-foot">
       <span class="domi-total">${fmtCop(p.total)}</span>
+      ${p.descuento ? `<span class="domi-chip">Descuento −${fmtCop(p.descuento)}</span>` : ""}
       ${p.pagado
         ? `<span class="domi-chip pagado">Pagado${p.metodoPago ? " · " + (p.metodoPago === "en_linea" ? "en línea" : p.metodoPago) : ""}</span>`
         : `<span class="domi-chip sincobrar">Sin cobrar</span>`}

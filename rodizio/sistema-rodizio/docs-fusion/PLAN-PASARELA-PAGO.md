@@ -382,8 +382,7 @@ pruebas en esta cuenta.**
 
 El `28613` sirve solo para probar: al ser de **monto abierto**, el cliente
 escoge el valor entre un mínimo y un máximo, lo que no tiene sentido para
-cobrar el total de un pedido. El de producción sigue siendo el `25681`
-(`PASARELA_FORM_ID` en `.env`).
+cobrar el total de un pedido. **Vigente desde octubre de 2026: el botón `30262`** ("Tienda en línea Rodízio", creado el 8 de oct, producción, monto cerrado; `PASARELA_FORM_ID` en `.env`). El `25681` es el botón anterior.
 
 *(Detalle del botón abierto: el ejemplo oficial manda `amount=0`, pero el
 servidor lo rechaza con "No se ha suministrado el monto o el monto es menor a

@@ -25,6 +25,7 @@ export {
   nowInColombia,
   getScheduleStatus,
   matchZone,
+  calcularDescuento,
   MENSAJE_DOMICILIOS_PAUSADOS,
 } from './reglas-pedido.js';
 
@@ -36,6 +37,17 @@ export function onSettingsChange(callback) {
       callback(value ? { ...DEFAULT_SETTINGS, ...value } : { ...DEFAULT_SETTINGS });
     },
     logOnValueError('settings')
+  );
+}
+
+/* Descuentos del Marketplace: el carrito los lee solo para MOSTRAR lo que
+   va a calcular el servidor; el navegador no decide nada (ver
+   calcularDescuento en reglas-pedido.js y crearPedido en functions/). */
+export function onDescuentosChange(callback) {
+  return onValue(
+    ref(db, 'descuentos'),
+    (snapshot) => callback(snapshot.val() || {}),
+    logOnValueError('descuentos')
   );
 }
 

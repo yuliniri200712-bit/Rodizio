@@ -2,7 +2,7 @@
 // Rodizio Cocina — service worker: cachea el cascarón de la app para que
 // abra al instante y quede instalable, sin interferir con el streaming
 // en vivo de Firebase (esas peticiones nunca se cachean).
-const CACHE = "rodizio-cocina-simple-v29";
+const CACHE = "rodizio-cocina-simple-v30";
 const SHELL = [
   "./",
   "./index.html",

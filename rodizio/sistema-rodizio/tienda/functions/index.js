@@ -150,6 +150,9 @@ exports.notifyDriverAssigned = onValueWritten(
    Si no coincide con el real (cambió un precio mientras tenía el
    carrito guardado), se rechaza con "aborted" en vez de cobrarle algo
    que no vio — el checkout refresca los precios y le pide confirmar.
+   Excepción: si vio el total SIN el descuento vigente se acepta, porque
+   paga menos de lo que vio. Pasa con una app instalada que aún no se
+   actualiza: sin esto, activar un descuento le bloquearía las compras.
    ========================================================= */
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
@@ -193,12 +196,13 @@ async function prepararPedido(auth, data) {
   const { construirPedido } = await cargarReglas();
   const db = getDatabase();
   await respetarLimite(db, auth.uid);
-  const [products, outOfStock, settings, flag] = (
+  const [products, outOfStock, settings, flag, descuentos] = (
     await Promise.all([
       db.ref('products').get(),
       db.ref('outOfStock').get(),
       db.ref('settings').get(),
       db.ref(`customerFlags/${auth.uid}`).get(),
+      db.ref('descuentos').get(),
     ])
   ).map((snap) => snap.val());
 
@@ -207,6 +211,7 @@ async function prepararPedido(auth, data) {
     products: products || {},
     outOfStock: outOfStock || {},
     settings: settings || {},
+    descuentos: descuentos || {},
     bloqueado: Boolean(flag && flag.blocked),
   });
 
@@ -214,12 +219,12 @@ async function prepararPedido(auth, data) {
     throw new HttpsError('failed-precondition', pedido.problemas[0], { problemas: pedido.problemas });
   }
 
-  const { subtotal, shipping, total, items, campos } = pedido;
-  if (data && data.totalEsperado !== undefined && data.totalEsperado !== total) {
+  const { subtotal, descuento, descuentoAplicado, gaseosasObsequio, shipping, total, items, campos } = pedido;
+  if (data && data.totalEsperado !== undefined && data.totalEsperado !== total && data.totalEsperado !== total + descuento) {
     throw new HttpsError(
       'aborted',
       'Los precios de tu carrito cambiaron. Revisa el total antes de confirmar.',
-      { subtotal, shipping, total, items: items.map(({ id, price }) => ({ id, price })) }
+      { subtotal, descuento, shipping, total, items: items.map(({ id, price }) => ({ id, price })) }
     );
   }
 
@@ -230,6 +235,9 @@ async function prepararPedido(auth, data) {
     campos,
     items,
     subtotal,
+    descuento,
+    descuentoAplicado,
+    gaseosasObsequio,
     shipping,
     total,
   };
@@ -237,7 +245,7 @@ async function prepararPedido(auth, data) {
 
 // Escribe el pedido en `orders` y descuenta inventario. `extra` = campos
 // adicionales (los del pago en línea). Devuelve la llave del pedido.
-async function guardarPedido(db, { uid, customerName, customerEmail, campos, items, subtotal, shipping, total }, extra = {}, orderRef = db.ref('orders').push()) {
+async function guardarPedido(db, { uid, customerName, customerEmail, campos, items, subtotal, descuento = 0, descuentoAplicado = null, gaseosasObsequio = 0, shipping, total }, extra = {}, orderRef = db.ref('orders').push()) {
   await orderRef.set({
     uid,
     customerName,
@@ -252,6 +260,10 @@ async function guardarPedido(db, { uid, customerName, customerEmail, campos, ite
     lineas: items,
     rondaActual: 1,
     subtotal,
+    // null = sin descuento: no se guarda el campo en la base.
+    descuento: descuento || null,
+    descuentoAplicado,
+    gaseosasObsequio: gaseosasObsequio || null,
     shipping,
     total,
     status: 'recibido',
@@ -278,8 +290,8 @@ async function guardarPedido(db, { uid, customerName, customerEmail, campos, ite
 exports.crearPedido = onCall({ region: 'us-central1', maxInstances: 5 }, async (request) => {
   const pedido = await prepararPedido(request.auth, request.data);
   const orderId = await guardarPedido(getDatabase(), pedido);
-  const { subtotal, shipping, total } = pedido;
-  return { orderId, subtotal, shipping, total };
+  const { subtotal, descuento, shipping, total } = pedido;
+  return { orderId, subtotal, descuento, shipping, total };
 });
 
 /* =========================================================

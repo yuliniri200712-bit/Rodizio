@@ -39,7 +39,7 @@ try {
   console.warn('Firebase Messaging no se pudo inicializar en el service worker:', err);
 }
 
-const CACHE_NAME = 'rodizio-cucuta-v160';
+const CACHE_NAME = 'rodizio-cucuta-v165';
 
 const APP_SHELL = [
   './',

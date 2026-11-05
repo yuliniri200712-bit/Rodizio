@@ -206,7 +206,9 @@ function ticket(u, esNueva) {
     <span>${esDomicilio ? (origenDe(p) === "recoger" ? "Recoge en tienda" : "Domicilio") : (u.ronda === 1 ? "Pedido inicial" : "Ronda " + u.ronda)}${tiempoRonda}${esDomicilio && p.scheduledFor ? ` · <strong class="t-programado">para las ${fmtHoraCO(p.scheduledFor)}</strong>` : ""}</span>
     ${accionRonda(u.id, u.ronda, u.estado, esDomicilio, origenDe(p) === "recoger")}
   </div>`;
-  const lineasHtml = header + u.lineas.map(linea).join("");
+  // El obsequio va con la primera ronda: un pedido de la tienda solo tiene esa.
+  const obsequio = u.ronda === 1 ? lineaObsequio(p) : null;
+  const lineasHtml = header + [...u.lineas, ...(obsequio ? [obsequio] : [])].map(linea).join("");
 
   // El pedido en sí no se toca — solo un aviso visible de que el mesero
   // quiere coordinar un cambio en persona (ver marcarAvisoVisto arriba).

@@ -308,6 +308,14 @@ function variacionPct(actual, anterior) {
   return Math.round(((actual - anterior) / anterior) * 100);
 }
 
+// Línea "2× Gaseosa personal (Obsequio)" de un pedido de la tienda, con la
+// forma de cualquier línea para pintarla igual. null si no lleva obsequio.
+function lineaObsequio(p) {
+  return p && p.gaseosasObsequio > 0
+    ? { qty: p.gaseosasObsequio, name: "Gaseosa personal", notes: "Obsequio" }
+    : null;
+}
+
 // ── Resumen de ventas (solo pagados) ──
 function resumenVentas(entriesPagados) {
   const lista = entriesPagados || [];

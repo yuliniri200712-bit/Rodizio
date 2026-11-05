@@ -1033,6 +1033,7 @@ function renderOrderCard(order) {
           ${phoneDigits && isEnCurso ? `<span class="driver-order-phone">${PHONE_SVG}${escapeHtml(order.phone)}</span>` : ''}
           <div class="driver-order-address">${PIN_SVG}<span>${escapeHtml(address)}${order.reference ? ' · ' + escapeHtml(order.reference) : ''}${order.customerLocation ? ' <span class="driver-precise-badge">Ubicación exacta</span>' : ''}</span></div>
           <div class="driver-order-items">${itemsListHtml}</div>
+          ${order.gaseosasObsequio > 0 ? `<div class="driver-order-note">Incluye de obsequio: ${order.gaseosasObsequio} × gaseosa personal</div>` : ''}
           ${order.internalNote ? `<div class="driver-order-note">Nota del restaurante: ${escapeHtml(order.internalNote)}</div>` : ''}
         </div>
       </div>

@@ -9,9 +9,20 @@
 
 import { CATEGORIES, PRODUCTS, formatCOP, fmtHoraCO, normalizeText, debounce, urlFoto } from './data.js';
 import { t, campoIdioma, getLang } from './i18n.js';
-import { esAlcohol, esProductoVendible } from './reglas-pedido.js';
+import { CATEGORIA_CON_OBSEQUIO, esAlcohol, esProductoVendible } from './reglas-pedido.js';
 
 const $ = (id) => document.getElementById(id);
+
+/* Obsequio de Burger Angus: cada hamburguesa de esta categoría informa que
+   trae una gaseosa personal de regalo. No cambia el total. Va por el id
+   estable de la categoría, no por el nombre visible, para que aplique también
+   a las hamburguesas nuevas. Al personal le llega por pedido.gaseosasObsequio. */
+const ICONO_REGALO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>';
+
+function avisoObsequio(producto) {
+  if (producto?.categoryId !== CATEGORIA_CON_OBSEQUIO) return '';
+  return `<div class="producto-obsequio">${ICONO_REGALO}<span>${escapeHtml(t('obsequioBurger'))}</span></div>`;
+}
 
 /* Nombre de una línea del carrito o de un pedido en el idioma actual. Esas
    líneas guardan una copia del nombre en español (es lo que viaja a cocina
@@ -521,6 +532,7 @@ export function renderMenu({
           ${isOut ? `<span class="product-badge product-badge-out">${escapeHtml(t('agotado'))}</span><br/>` : product.badge ? `<span class="product-badge">${escapeHtml(product.badge)}</span><br/>` : ''}
           <div class="product-name">${escapeHtml(nombre)}</div>
           <div class="product-desc">${escapeHtml(campoIdioma(product, 'description'))}</div>
+          ${avisoObsequio(product)}
           <div class="product-footer">
             <span class="price">${formatCOP(product.price)}</span>
           </div>
@@ -699,6 +711,7 @@ export function renderFeaturedCarousel({ outOfStockIds, onOpenProduct }) {
         </div>
         <div class="featured-name">${escapeHtml(campoIdioma(product, 'name'))}</div>
         <div class="featured-price">${formatCOP(product.price)}</div>
+        ${avisoObsequio(product)}
       </div>`;
     })
     .join('');
@@ -862,6 +875,7 @@ export function openProductModal(product, isOutOfStock, { onAdd }) {
   $('modal-product-price').textContent = formatCOP(product.price);
   $('modal-product-desc').textContent = campoIdioma(product, 'description');
   $('modal-product-legal').hidden = !esAlcohol(product);
+  $('modal-product-obsequio').hidden = product.categoryId !== CATEGORIA_CON_OBSEQUIO;
   mostrarFotoDetalle(product, nombre);
   $('modal-product-media').closest('.drawer-body').scrollTop = 0;
 
@@ -989,6 +1003,7 @@ export function renderCartDrawer(state, { onQtyChange, onRemove }) {
       <div class="cart-item-info">
         <div class="cart-item-name">${escapeHtml(nombreDeItem(item))}</div>
         <div class="cart-item-unit">${formatCOP(item.price)} ${escapeHtml(t('cadaUno'))}${item.notes ? ' · ' + escapeHtml(item.notes) : ''}</div>
+        ${avisoObsequio(PRODUCTS.find((p) => p.id === item.id))}
         <div class="cart-item-controls">
           <div class="qty-stepper">
             <button class="btn-minus" aria-label="${escapeHtml(t('restar'))}">−</button>
@@ -1019,10 +1034,22 @@ export function renderCartDrawer(state, { onQtyChange, onRemove }) {
 }
 
 /* --- Checkout: totales --- */
-export function renderCheckoutTotals(subtotal, shipping) {
+function pintarFilaDescuento(fila, etiqueta, monto, descuento) {
+  $(fila).hidden = !descuento;
+  if (!descuento) return;
+  $(etiqueta).textContent = `${t('descuento')}: ${descuento.nombre}`;
+  $(monto).textContent = `−${formatCOP(descuento.monto)}`;
+}
+
+export function renderCartDiscount(descuento) {
+  pintarFilaDescuento('cart-discount-row', 'cart-discount-label', 'cart-discount', descuento);
+}
+
+export function renderCheckoutTotals(subtotal, shipping, descuento = null) {
   $('ck-subtotal').textContent = formatCOP(subtotal);
+  pintarFilaDescuento('ck-discount-row', 'ck-discount-label', 'ck-discount', descuento);
   $('ck-shipping').textContent = formatCOP(shipping);
-  $('ck-total').textContent = formatCOP(Math.max(0, subtotal + shipping));
+  $('ck-total').textContent = formatCOP(Math.max(0, subtotal - (descuento ? descuento.monto : 0) + shipping));
 }
 
 /* Si falta para el pedido mínimo a domicilio, en vez de solo decir
@@ -1455,6 +1482,7 @@ export function openOrderDetailModal(order) {
     ${order.reference ? `<p class="receipt-meta">${escapeHtml(t('referencia'))}: ${escapeHtml(order.reference)}</p>` : ''}
     <div class="receipt-items">${itemsHtml}</div>
     <div class="summary-row"><span>${t('subtotal')}</span><span>${formatCOP(order.subtotal || 0)}</span></div>
+    ${order.descuento ? `<div class="summary-row summary-row-descuento"><span>${escapeHtml(t('descuento'))}${order.descuentoAplicado?.nombre ? ': ' + escapeHtml(order.descuentoAplicado.nombre) : ''}</span><span>−${formatCOP(order.descuento)}</span></div>` : ''}
     <div class="summary-row"><span>${t('domicilio')}</span><span>${formatCOP(order.shipping || 0)}</span></div>
     <div class="summary-row total"><span>${t('total')}</span><span>${formatCOP(order.total || 0)}</span></div>
   `;
